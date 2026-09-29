@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
@@ -37,6 +38,7 @@ func NewServer(addr string, api *API, readTimeout, writeTimeout time.Duration) *
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
+	mux.HandleFunc("/api/status", s.handleStatus)
 
 	s.http = &http.Server{
 		Addr:         addr,
@@ -147,3 +149,59 @@ func (s *Server) handleBatch(w http.ResponseWriter, body []byte) {
 func writeJSON(w http.ResponseWriter, v interface{}) {
 	_ = json.NewEncoder(w).Encode(v)
 }
+
+func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+
+	var height uint64
+	var stateRoot string
+	var peers int
+	var pending int
+	ver := "v0.9.0"
+
+	if s.api != nil {
+		if s.api.engine != nil {
+			height = s.api.engine.Height()
+			if height > 0 {
+				if blk := s.api.engine.BlockByHeight(height - 1); blk != nil {
+					stateRoot = "0x" + hex.EncodeToString(blk.Header.StateRoot[:])
+				}
+			}
+		}
+		if s.api.peersFn != nil {
+			peers = s.api.peersFn()
+		}
+		if s.api.pool != nil {
+			pending = s.api.pool.Len()
+		}
+		if s.api.version != "" {
+			ver = s.api.version
+		}
+	}
+
+	resp := map[string]interface{}{
+		"version":      ver,
+		"network":      "mainnet",
+		"chain_height": height,
+		"peer_count":   peers,
+		"pending_tx":   pending,
+		"state_root":   stateRoot,
+		"timestamp":    time.Now().UTC(),
+		"online":       true,
+	}
+
+	_ = json.NewEncoder(w).Encode(resp)
+}
+

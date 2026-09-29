@@ -153,6 +153,25 @@ func TestRPCServer_Healthz(t *testing.T) {
 	}
 }
 
+func TestRPCServer_Status(t *testing.T) {
+	ts, _ := buildRealServer(t)
+	resp, err := http.Get(ts.URL + "/api/status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+	var data map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		t.Fatalf("failed to decode status response: %v", err)
+	}
+	if data["online"] != true {
+		t.Errorf("expected online=true, got %v", data["online"])
+	}
+}
+
 func TestRPCServer_Start(t *testing.T) {
 	_, srv := buildRealServer(t)
 	// We can't use ts.URL because it uses httptest.Server, but we can call Start on srv directly.

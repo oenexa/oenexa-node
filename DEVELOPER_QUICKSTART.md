@@ -10,30 +10,38 @@ This document outlines the step-by-step process for running the project locally 
 
 Local development runs a single-node "devnet" or local testnet. This allows you to deploy WASM smart contracts, test the JSON-RPC interface, and interact with the web dashboards without requiring a full peer-to-peer network.
 
-### Step 1: Prerequisites
-Ensure you have the following installed on your local machine:
-1. **Go 1.22+** (tested and verified on Go 1.26+).
-2. **Pure Go Environment**: No C compiler required (`CGO_ENABLED=0`).
-3. **TinyGo** (optional, required to compile custom Go smart contracts into WebAssembly for OenexaVM).
+### 🚀 One-Command Local Startup (Recommended)
 
----
-
-### Step 2: Build the Core Node and Client CLI
-Compile both the main blockchain daemon (`oenexa-node`) and the high-speed client wallet tool (`oenexa-cli`):
+You can build and run the entire project locally using a single script:
 
 ```bash
-# In PowerShell / Windows:
-go build -o oenexa-node.exe ./cmd/node
-go build -o oenexa-cli.exe ./cmd/oenexa-cli
+# Windows (PowerShell):
+.\run-local.ps1
 
-# In Linux / macOS / Git Bash:
-go build -o oenexa-node ./cmd/node
-go build -o oenexa-cli ./cmd/oenexa-cli
+# Windows (Command Prompt / Double-Click):
+run-local.bat
+
+# Linux / macOS / Git Bash:
+./run-local.sh
+
+# Or via Makefile:
+make run-local
+```
+
+**Common Flags:**
+- `-Reset` (or `--reset`): Clear previous local chain state (`data/local-devnet`) and start fresh from genesis.
+- `-Rebuild` (or `--rebuild`): Force re-compilation of `bin/oenexa-node` and `bin/oenexa-cli`.
+- `-Port 8545`: Override JSON-RPC port.
+- `-MetricsPort 9090`: Override Prometheus metrics port.
+
+To test the running node in a second terminal:
+```powershell
+.\scripts\test-local.ps1
 ```
 
 ---
 
-### Step 3: Run the Local Node
+### Manual Setup (Step-by-Step)
 Start the node in standalone/dev mode:
 
 ```bash

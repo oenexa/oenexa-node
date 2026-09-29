@@ -398,29 +398,40 @@ go build -o oenexa-cli ./cmd/oenexa-cli
 
 ---
 
-### B. Running a Full Node (`oenexa-node`)
+### B. Running a Full Node Locally (`run-local`)
 
-Start the node in local devnet/standalone mode:
+Launch the complete local development network with a single command (automatically compiles binaries, sets up isolated devnet storage, and produces blocks):
 
-```powershell
-# Windows:
-.\oenexa-node.exe start
+```bash
+# Windows (PowerShell):
+.\run-local.ps1
 
-# Linux / macOS:
-./oenexa-node start
+# Windows (Command Prompt / Double-Click):
+run-local.bat
 
-# Or run directly via Go:
-go run ./cmd/node start
+# Linux / macOS / Git Bash:
+./run-local.sh
+
+# Or using Make:
+make run-local
 ```
 
-> [!NOTE]
-> On Windows, running `node start` will launch the JavaScript Node.js interpreter if present in your `PATH`. Always invoke `.\oenexa-node.exe start` or `go run ./cmd/node start`.
+#### Common Options:
+- `-Reset` (or `--reset`): Clear previous local chain state (`data/local-devnet`) and start fresh from genesis.
+- `-Rebuild` (or `--rebuild`): Force re-compilation of `bin/oenexa-node` and `bin/oenexa-cli`.
+- `-Port <port>`: Change JSON-RPC port (default: `8545`).
+- `-MetricsPort <port>`: Change Prometheus port (default: `9090`).
 
-The node initializes its state at `~/.oenexa`, starts block production every 2.0 seconds, and serves:
+To verify and test the running node in a second terminal:
+```powershell
+.\scripts\test-local.ps1
+```
+
+The node produces blocks every 2.0 seconds and exposes:
 - **Web3 JSON-RPC 2.0**: `http://127.0.0.1:8545`
-- **Prometheus Metrics**: `http://127.0.0.1:9100/metrics`
-- **Health Check**: `http://127.0.0.1:9100/healthz`
-- **Interactive Web Portal**: `http://127.0.0.1:8545`
+- **REST Status API**: `http://127.0.0.1:8545/api/status`
+- **Health Check**: `http://127.0.0.1:8545/healthz`
+- **Prometheus Metrics**: `http://127.0.0.1:9090/metrics`
 
 ---
 

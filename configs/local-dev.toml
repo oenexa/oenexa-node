@@ -1,0 +1,40 @@
+# OENEXA Local Devnet Configuration
+# ────────────────────────────────────────────────────────────────────────────
+# Used by run-local scripts for standalone local blockchain development.
+# Blocks are produced locally by the embedded validator engine every 2 seconds.
+
+[chain]
+network_id = 1337
+name       = "OENEXA Local Devnet"
+
+[node]
+data_dir      = "data/local-devnet"
+keystore_file = "keystore.json"
+miner_enabled = true
+log_level     = "info"
+
+[p2p]
+listen_addr     = "127.0.0.1:8765"
+external_addr   = "127.0.0.1:8765"
+max_peers       = 10
+bootstrap_peers = []
+
+[rpc]
+enabled       = true
+listen_addr   = "127.0.0.1:8545"
+cors_origins  = ["*"]
+read_timeout  = "30s"
+write_timeout = "30s"
+
+[storage]
+blocks_dir = "blocks"
+state_dir  = "state"
+
+[metrics]
+enabled     = true
+listen_addr = "127.0.0.1:9090"
+
+[upgrade]
+release_url    = ""
+check_interval = "24h"
+auto_apply     = false

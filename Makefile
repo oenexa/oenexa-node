@@ -23,6 +23,13 @@ build:            ## Build the oenexa-node binary for the current platform
 	  go build -ldflags="$(LDFLAGS)" -trimpath -o $(BINARY) ./cmd/node
 	@echo "  ✓ $(BINARY)"
 
+build-cli:        ## Build the oenexa-cli binary for the current platform
+	@echo "▶ Building bin/oenexa-cli ($(GOOS)/$(GOARCH))…"
+	@mkdir -p bin
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) \
+	  go build -ldflags="$(LDFLAGS)" -trimpath -o bin/oenexa-cli ./cmd/oenexa-cli
+	@echo "  ✓ bin/oenexa-cli"
+
 build-linux:      ## Cross-compile for linux/amd64
 	GOOS=linux GOARCH=amd64 $(MAKE) build BINARY=bin/oenexa-node-linux-amd64
 
@@ -94,6 +101,11 @@ docker-push:      ## Push Docker image to registry (set REGISTRY env var)
 	docker push $(REGISTRY)/oenexa-node:latest
 
 ## ── Local node ───────────────────────────────────────────────────────────────
+
+run-local: build build-cli ## Build and start a local standalone devnet node
+	@echo "▶ Starting local standalone devnet node…"
+	OEN_PASSWORD=devpassword $(BINARY) start \
+	  --config configs/local-dev.toml
 
 run-node: build   ## Build and start a local node (miner, testnet config)
 	@echo "▶ Starting local testnet node…"
