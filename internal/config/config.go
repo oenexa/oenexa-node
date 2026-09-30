@@ -168,7 +168,7 @@ func Default() *Config {
 			ListenAddr: "0.0.0.0:9090",
 		},
 		Upgrade: UpgradeConfig{
-			ReleaseURL:    "https://api.github.com/repos/oen-oenexa/oenexa-node/releases/latest",
+			ReleaseURL:    "https://api.github.com/repos/oenexa/oenexa-node/releases/latest",
 			CheckInterval: duration{time.Hour},
 			AutoApply:     false,
 		},

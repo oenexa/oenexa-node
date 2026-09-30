@@ -38,6 +38,6 @@ enabled     = true   # expose metrics on testnet for dashboards
 listen_addr = "0.0.0.0:19090"
 
 [upgrade]
-release_url    = "https://api.github.com/repos/oen-oenexa/oenexa-node/releases/latest"
+release_url    = "https://api.github.com/repos/oenexa/oenexa-node/releases/latest"
 check_interval = "30m"
 auto_apply     = false

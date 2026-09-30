@@ -135,13 +135,13 @@ Honest assessment of every subsystem.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/oenexa/oenexa.git
-cd oenexa
+git clone https://github.com/oenexa/oenexa-node.git
+cd oenexa-node
 
 # 2. Build the release binary
 make build
 
-# The binary is now at bin/oenexa-node
+# The binary is now at bin/oenexa-node (or bin/oenexa-node.exe on Windows)
 ./bin/oenexa-node version
 ```
 
@@ -171,7 +171,7 @@ oenexa-node version
 docker build -t oenexa-node:v0.5.0 .
 
 # Or pull from registry (when published)
-docker pull ghcr.io/oen-oenexa/oenexa-node:v0.5.0
+docker pull ghcr.io/oenexa/oenexa-node:v0.5.0
 ```
 
 ---
@@ -180,7 +180,7 @@ docker pull ghcr.io/oen-oenexa/oenexa-node:v0.5.0
 
 ```bash
 # Linux amd64
-curl -LO https://github.com/oenexa/oenexa/releases/download/v0.5.0/oenexa-node-linux-amd64
+curl -LO https://github.com/oenexa/oenexa-node/releases/download/v0.5.0/oenexa-node-linux-amd64
 chmod +x oenexa-node-linux-amd64
 sudo mv oenexa-node-linux-amd64 /usr/local/bin/oenexa-node
 
@@ -312,7 +312,7 @@ listen_addr = "0.0.0.0:9090"     # restrict to internal network in production
 
 # ── Auto-upgrade ──────────────────────────────────────────────────────────────
 [upgrade]
-release_url    = "https://api.github.com/repos/oen-oenexa/oenexa-node/releases/latest"
+release_url    = "https://api.github.com/repos/oenexa/oenexa-node/releases/latest"
 check_interval = "1h"
 auto_apply     = false            # NEVER set true on mainnet validators
 ```
@@ -793,7 +793,7 @@ oenexa-node start --config ~/.oen/config.toml
 
 ```bash
 # 1. Download the new binary
-curl -LO https://github.com/oenexa/oenexa/releases/download/v0.6.0/oenexa-node-linux-amd64
+curl -LO https://github.com/oenexa/oenexa-node/releases/download/v0.6.0/oenexa-node-linux-amd64
 
 # 2. Verify the SHA-3-256 checksum published on the release page
 # sha3sum oenexa-node-linux-amd64
@@ -978,7 +978,7 @@ v1.0.0  — Mainnet launch
 
 ```bash
 # ── Build & install ───────────────────────────────────────────────────────────
-git clone https://github.com/oenexa/oenexa.git && cd oenexa
+git clone https://github.com/oenexa/oenexa-node.git && cd oenexa-node
 make build                                   # → bin/oenexa-node
 sudo cp bin/oenexa-node-linux-amd64 /usr/local/bin/oenexa-node
 
