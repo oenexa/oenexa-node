@@ -35,7 +35,7 @@
     - [B. Running a Full Node (`oenexa-node`)](#b-running-a-full-node-oenexa-node)
     - [C. High-Speed Client Wallet CLI (`oenexa-cli`)](#c-high-speed-client-wallet-cli-oenexa-cli)
     - [D. Shielded Pool CLI Operations](#d-shielded-pool-cli-operations)
-    - [E. Interactive Web Portal & Explorer](#e-interactive-web-portal--explorer)
+    - [E. Decoupled Frontend Integration (`oenexa-frontend`)](#e-decoupled-frontend-integration-oenexa-frontend)
 14. [Web3 JSON-RPC 2.0 API Specification](#14-web3-json-rpc-20-api-specification)
 15. [Testing, Benchmarking & Quality Assurance](#15-testing-benchmarking--quality-assurance)
 16. [Educational Curriculum & Student Roadmap](#16-educational-curriculum--student-roadmap)
@@ -306,8 +306,14 @@ To support planetary-scale transaction volume (millions of concurrent micro-tran
 
 ## 12. Repository Directory Structure
 
+The OENEXA ecosystem strictly enforces a **Decoupled Architecture**: the core Layer-1 blockchain backend daemon (`oenexa-node`) is decoupled from the independent web application ecosystem ([`oenexa-frontend`](https://github.com/oenexa/oenexa-frontend)).
+
+### A. Core Blockchain Node Daemon (`oenexa-node`)
+
+The core repository contains the pure-Go (`CGO_ENABLED=0`) consensus, cryptography, state machine, and WASM runtime. To prevent consensus vulnerabilities and eliminate bloat, no frontend visual assets, HTML bundles, or npm dependencies reside in this repository. The `internal/web/` package provides only a lightweight REST telemetry endpoint (`/api/status` with CORS) to serve decoupled clients.
+
 ```
-oenexa/
+oenexa-node/
 ├── cmd/
 │   ├── node/                   # Full node daemon (oenexa-node start / wallet / query / tx)
 │   ├── oenexa-cli/             # High-speed client wallet & RPC CLI (keygen / balance / transfer / info)
@@ -366,10 +372,35 @@ oenexa/
 │   ├── sync/                   # Initial Block Download (IBD) and batch chain synchronizer
 │   ├── upgrade/                # Self-updating binary downloader, scheduler, and rollback manager
 │   ├── vm/                     # Wazero pure-Go WebAssembly VM engine and gas meter
-│   └── web/                    # REST API provider (/api/status) with CORS support
-└── test/
-    └── bdd/                    # Ginkgo v2 & Gomega end-to-end BDD integration test suites
+│   └── web/                    # REST API provider (/api/status) with CORS (frontend decoupled)
+├── scripts/                    # Devnet runner & test automation scripts (run-local.ps1, run-local.sh, test-local.ps1)
+├── test/
+│   └── bdd/                    # Ginkgo v2 & Gomega end-to-end BDD integration test suites
+├── Dockerfile                  # Multi-stage production container build for node daemon
+├── docker-compose.yml          # Containerized local devnet orchestration
+├── Makefile                    # Developer build, test, and run automation targets
+└── run-local.ps1 / .sh / .bat  # Cross-platform 1-command local devnet launch scripts
 ```
+
+### B. Decoupled Web Frontend Ecosystem (`oenexa-frontend`)
+
+The official visual dashboard, block explorer, and quantum wallet reside completely in the standalone [`oenexa-frontend`](https://github.com/oenexa/oenexa-frontend) repository. This decoupling ensures UI changes, component redesigns, and web dependencies never impact consensus stability or require validator node restarts:
+
+```
+oenexa-frontend/                 # Standalone web repository (React 18 + TypeScript + Vite)
+├── src/
+│   ├── components/              # UI feature tabs (ExplorerTab, WalletTab, ShieldedTab, DexTab, CarbonXTab)
+│   ├── services/                # Typed JSON-RPC 2.0 client (rpcClient.ts) & REST telemetry fetchers
+│   ├── types/                   # Blockchain RPC request/response TypeScript interfaces
+│   └── test/                    # Vitest UI component & RPC integration test suites
+├── package.json                 # Web dependencies (React 18, Lucide, TailwindCSS, Vite)
+├── tailwind.config.js           # Responsive UI styling & dark mode design tokens
+└── vite.config.ts               # Vite bundler & dev server config (proxying to :8545)
+```
+
+The web application interfaces with `oenexa-node` via:
+- **Web3 JSON-RPC 2.0 (`http://127.0.0.1:8545`)**: Port 8545 handles state queries, account balances, raw transaction broadcast, and shielded pool interactions via `internal/rpc`.
+- **REST Status Telemetry (`http://127.0.0.1:8545/api/status`)**: Exposes lightweight operational node telemetry with permissive CORS headers via `internal/web`.
 
 ---
 
