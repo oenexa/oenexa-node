@@ -519,3 +519,8 @@ func (e *Engine) AcceptVote(v *Vote) error {
 	}
 	return nil
 }
+
+// ValidatorAddr returns the engine's local validator address.
+func (e *Engine) ValidatorAddr() [crypto.AddressSize]byte {
+	return e.validatorAddr
+}

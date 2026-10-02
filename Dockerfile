@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 1 — Build
 # ─────────────────────────────────────────────────────────────────────────────
-FROM golang:1.23-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 # Version injected via --build-arg VERSION=vX.Y.Z (or Makefile sets it).
 ARG VERSION=v0.5.0

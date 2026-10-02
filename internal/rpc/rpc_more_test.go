@@ -64,6 +64,58 @@ func TestRPCServer_HTTPError(t *testing.T) {
 	}
 }
 
+func TestRPCServer_CORS(t *testing.T) {
+	ts, _ := buildRealServer(t)
+
+	// Test OPTIONS preflight request
+	req, err := http.NewRequest(http.MethodOptions, ts.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Origin", "http://localhost:3000")
+	req.Header.Set("Access-Control-Request-Method", "POST")
+	req.Header.Set("Access-Control-Request-Headers", "Content-Type")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200 for OPTIONS, got %d", resp.StatusCode)
+	}
+	if allowOrigin := resp.Header.Get("Access-Control-Allow-Origin"); allowOrigin != "*" {
+		t.Errorf("expected Access-Control-Allow-Origin: *, got %q", allowOrigin)
+	}
+}
+
+func TestRPCServer_RecentBlocks(t *testing.T) {
+	ts, _ := buildRealServer(t)
+
+	req := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      1,
+		"method":  "oen_recentBlocks",
+		"params":  []int{5},
+	}
+	body, _ := json.Marshal(req)
+	resp, err := http.Post(ts.URL, "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&out)
+	if out["error"] != nil {
+		t.Fatalf("unexpected error: %v", out["error"])
+	}
+	res, ok := out["result"].([]interface{})
+	if !ok {
+		t.Fatalf("expected result array, got %T", out["result"])
+	}
+	if len(res) == 0 {
+		t.Fatalf("expected at least 1 recent block")
+	}
+}
+
 func TestRPCServer_Batch(t *testing.T) {
 	ts, _ := buildRealServer(t)
 	req := []map[string]interface{}{

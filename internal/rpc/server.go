@@ -71,13 +71,21 @@ func (s *Server) Start(ctx context.Context) {
 
 // handleRPC handles all inbound JSON-RPC requests (both single and batch).
 func (s *Server) handleRPC(w http.ResponseWriter, r *http.Request) {
+	// CORS — allow all origins for browser/dApp integration.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "method isn't allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// CORS — allow all origins for now (tighten in production with middleware).
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
 	body, err := io.ReadAll(io.LimitReader(r.Body, maxRequestBody))

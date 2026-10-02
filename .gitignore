@@ -73,3 +73,4 @@ LOCK
 
 # Docker volumes baked into working tree
 volumes/
+.oenexa-docker-deploy/

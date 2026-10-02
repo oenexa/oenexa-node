@@ -61,10 +61,12 @@ type BlockInfo struct {
 	Height        uint64 `json:"height"`
 	Hash          string `json:"hash"`
 	PrevHash      string `json:"prev_hash"`
+	ParentHash    string `json:"parentHash,omitempty"`
 	StateRoot     string `json:"state_root"`
 	MerkleRoot    string `json:"merkle_root"`
 	Timestamp     int64  `json:"timestamp"`
 	ValidatorAddr string `json:"validator_addr"`
+	Proposer      string `json:"proposer,omitempty"`
 	GasUsed       uint64 `json:"gas_used"`
 	GasLimit      uint64 `json:"gas_limit"`
 	BaseFee       uint64 `json:"base_fee"`
@@ -89,14 +91,26 @@ type TxInfo struct {
 
 // ChainInfo carries high-level node status.
 type ChainInfo struct {
-	ChainID    uint32 `json:"chain_id"`
-	NetworkID  uint32 `json:"network_id"`
-	Height     uint64 `json:"height"`
-	TipHash    string `json:"tip_hash"`
-	PeerCount  int    `json:"peer_count"`
-	MempoolLen int    `json:"mempool_len"`
-	Version    string `json:"version"`
-	Ticker     string `json:"ticker"`
+	ChainID             uint32  `json:"chain_id"`
+	ChainIdCamel        string  `json:"chainId,omitempty"`
+	NetworkID           uint32  `json:"network_id"`
+	Height              uint64  `json:"height"`
+	TipHash             string  `json:"tip_hash"`
+	TipHashCamel        string  `json:"tipHash,omitempty"`
+	PeerCount           int     `json:"peer_count"`
+	MempoolLen          int     `json:"mempool_len"`
+	MempoolSize         int     `json:"mempoolSize,omitempty"`
+	Validators          int     `json:"validators,omitempty"`
+	ValidatorAddr       string  `json:"validator_addr,omitempty"`
+	Round               int     `json:"round,omitempty"`
+	BaseFee             uint64  `json:"base_fee"`
+	BaseFeeCamel        uint64  `json:"baseFee,omitempty"`
+	GasLimit            uint64  `json:"gas_limit"`
+	GasLimitCamel       uint64  `json:"gasLimit,omitempty"`
+	GasTargetRatio      float64 `json:"gas_target_ratio"`
+	GasTargetRatioCamel float64 `json:"gasTargetRatio,omitempty"`
+	Version             string  `json:"version"`
+	Ticker              string  `json:"ticker"`
 }
 
 // FeeEstimateResult holds the fee estimate for each tier.

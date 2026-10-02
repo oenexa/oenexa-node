@@ -59,6 +59,8 @@ func (a *API) Dispatch(req *Request) *Response {
 		return a.chainInfo(req)
 
 	// ── Blocks ─────────────────────────────────────────────────────────────
+	case "oen_recentBlocks", "oen_getLatestBlocks":
+		return a.recentBlocks(req)
 	case "oen_blockByHeight":
 		return a.blockByHeight(req)
 	case "oen_blockByHash":
@@ -102,19 +104,65 @@ func (a *API) Dispatch(req *Request) *Response {
 func (a *API) chainInfo(req *Request) *Response {
 	height := a.engine.Height()
 	tipHash := ""
+	var baseFee uint64 = core.InitialBaseFee
+	var gasLimit uint64 = core.BlockGasLimit
 	if blk := a.engine.BlockByHeight(height - 1); blk != nil {
 		tipHash = crypto.ToHex(blk.Hash)
+		baseFee = blk.Header.BaseFee
+		gasLimit = blk.Header.GasLimit
 	}
 	return okResponse(req.ID, &ChainInfo{
-		ChainID:    core.ChainID,
-		NetworkID:  core.ChainID,
-		Height:     height,
-		TipHash:    tipHash,
-		PeerCount:  a.peersFn(),
-		MempoolLen: a.pool.Len(),
-		Version:    a.version,
-		Ticker:     core.Ticker,
+		ChainID:             core.ChainID,
+		ChainIdCamel:        fmt.Sprintf("%d", core.ChainID),
+		NetworkID:           core.ChainID,
+		Height:              height,
+		TipHash:             tipHash,
+		TipHashCamel:        tipHash,
+		PeerCount:           a.peersFn(),
+		MempoolLen:          a.pool.Len(),
+		MempoolSize:         a.pool.Len(),
+		Validators:          1,
+		ValidatorAddr:       crypto.AddressToHex(a.engine.ValidatorAddr()),
+		Round:               int(height % 4),
+		BaseFee:             baseFee,
+		BaseFeeCamel:        baseFee,
+		GasLimit:            gasLimit,
+		GasLimitCamel:       gasLimit,
+		GasTargetRatio:      0.5,
+		GasTargetRatioCamel: 0.5,
+		Version:             a.version,
+		Ticker:              core.Ticker,
 	})
+}
+
+func (a *API) recentBlocks(req *Request) *Response {
+	var count uint64 = 10
+	var params []uint64
+	if len(req.Params) > 0 {
+		if err := json.Unmarshal(req.Params, &params); err == nil && len(params) > 0 && params[0] > 0 {
+			count = params[0]
+			if count > 50 {
+				count = 50
+			}
+		}
+	}
+	height := a.engine.Height()
+	blocks := make([]*BlockInfo, 0, count)
+	if height == 0 {
+		return okResponse(req.ID, blocks)
+	}
+	start := height - 1
+	var end uint64 = 0
+	if start >= count {
+		end = start - count + 1
+	}
+	for h := int64(start); h >= int64(end); h-- {
+		blk := a.engine.BlockByHeight(uint64(h))
+		if blk != nil {
+			blocks = append(blocks, blockToInfo(blk))
+		}
+	}
+	return okResponse(req.ID, blocks)
 }
 
 func (a *API) blockByHeight(req *Request) *Response {
@@ -159,9 +207,11 @@ func (a *API) getBalance(req *Request) *Response {
 		return errResponse(req.ID, CodeInvalidParams, "invalid address: "+err.Error())
 	}
 	bal := a.st.GetBalance(addr)
-	return okResponse(req.ID, map[string]uint64{
+	return okResponse(req.ID, map[string]interface{}{
 		"balance_oenexa":   bal,
 		"balance_nano_oen": bal,
+		"balance":          bal,
+		"balance_oen":      float64(bal) / float64(core.OneOEN),
 	})
 }
 
@@ -260,14 +310,18 @@ func (a *API) gasPrice(req *Request) *Response {
 // ─────────────────────────────────────────────────────────────────────────────
 
 func blockToInfo(blk *core.Block) *BlockInfo {
+	prevHash := crypto.ToHex(blk.Header.PrevHash)
+	validatorAddr := crypto.AddressToHex(blk.Header.ValidatorAddr)
 	return &BlockInfo{
 		Height:        blk.Header.Height,
 		Hash:          crypto.ToHex(blk.Hash),
-		PrevHash:      crypto.ToHex(blk.Header.PrevHash),
+		PrevHash:      prevHash,
+		ParentHash:    prevHash,
 		StateRoot:     crypto.ToHex(blk.Header.StateRoot),
 		MerkleRoot:    crypto.ToHex(blk.Header.MerkleRoot),
 		Timestamp:     blk.Header.Timestamp,
-		ValidatorAddr: crypto.AddressToHex(blk.Header.ValidatorAddr),
+		ValidatorAddr: validatorAddr,
+		Proposer:      validatorAddr,
 		GasUsed:       blk.Header.GasUsed,
 		GasLimit:      blk.Header.GasLimit,
 		BaseFee:       blk.Header.BaseFee,

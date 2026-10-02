@@ -125,7 +125,11 @@ fi
 # Action: STATUS
 if [ "$ACTION" = "status" ]; then
     echo -e "${CYAN}=== OENEXA Container Status ===${NC}"
-    docker ps --filter "name=oenexa" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    if [ -f "$DEPLOY_DIR/docker-compose.yml" ]; then
+        docker compose -f "$DEPLOY_DIR/docker-compose.yml" ps
+    else
+        docker ps --filter "name=oenexa"
+    fi
     echo ""
     echo -e "${CYAN}=== Node Telemetry (/api/status) ===${NC}"
     curl -s --connect-timeout 2 "http://127.0.0.1:$RPC_PORT/api/status" || echo "Node unreachable at http://127.0.0.1:$RPC_PORT"

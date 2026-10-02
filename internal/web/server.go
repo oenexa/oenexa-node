@@ -63,11 +63,15 @@ func buildMux(info NodeInfo) http.Handler {
 
 	// /api/status – lightweight JSON status endpoint.
 	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
+		addCORSHeaders(w, r)
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		addCORSHeaders(w, r)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
 		

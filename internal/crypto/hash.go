@@ -3,6 +3,7 @@ package crypto
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/sha3"
 )
@@ -52,21 +53,30 @@ func HexToHash(s string) ([HashSize]byte, error) {
 }
 
 // HexToAddress decodes a hex string into an [AddressSize]byte.
-// Accepts both bare hex strings and 0x-prefixed hex strings.
+// Accepts bare hex strings, 0x-prefixed, or OEN-prefixed strings,
+// supporting both 32-byte native addresses and 20-byte legacy/EVM addresses.
 func HexToAddress(s string) ([AddressSize]byte, error) {
-	if len(s) >= 2 && (s[:2] == "0x" || s[:2] == "0X") {
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(strings.ToLower(s), "oen") {
+		s = s[3:]
+	} else if len(s) >= 2 && (s[:2] == "0x" || s[:2] == "0X") {
 		s = s[2:]
 	}
 	b, err := hex.DecodeString(s)
 	if err != nil {
 		return [AddressSize]byte{}, err
 	}
-	if len(b) != AddressSize {
-		return [AddressSize]byte{}, fmt.Errorf("hex address must be %d bytes, got %d", AddressSize, len(b))
-	}
 	var out [AddressSize]byte
-	copy(out[:], b)
-	return out, nil
+	if len(b) == AddressSize {
+		copy(out[:], b)
+		return out, nil
+	}
+	if len(b) == 20 {
+		// Align 20-byte address to the lower 20 bytes of the 32-byte array
+		copy(out[AddressSize-20:], b)
+		return out, nil
+	}
+	return [AddressSize]byte{}, fmt.Errorf("hex address must be 20 or %d bytes, got %d", AddressSize, len(b))
 }
 
 // AddressToHex encodes an address to a lowercase hex string.
