@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: oenexa-network
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: oenexa-data-pvc
+  namespace: oenexa-network
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oenexa-secrets
+  namespace: oenexa-network
+type: Opaque
+stringData:
+  OEN_PASSWORD: "my-secure-password" # Change this for production!
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oenexa-node
+  namespace: oenexa-network
+  labels:
+    app: oenexa-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oenexa-node
+  template:
+    metadata:
+      labels:
+        app: oenexa-node
+    spec:
+      containers:
+        - name: node
+          image: oenexa-node:latest
+          imagePullPolicy: IfNotPresent # For local use
+          command:
+            - "start"
+            - "--datadir"
+            - "/data"
+            - "--metrics"
+          env:
+            - name: OEN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oenexa-secrets
+                  key: OEN_PASSWORD
+          ports:
+            - containerPort: 8765
+              name: p2p
+            - containerPort: 8545
+              name: rpc
+            - containerPort: 9090
+              name: metrics
+          volumeMounts:
+            - name: data-volume
+              mountPath: /data
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: oenexa-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oenexa-node-svc
+  namespace: oenexa-network
+spec:
+  selector:
+    app: oenexa-node
+  ports:
+    - name: p2p
+      protocol: TCP
+      port: 8765
+      targetPort: 8765
+    - name: rpc
+      protocol: TCP
+      port: 8545
+      targetPort: 8545
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090

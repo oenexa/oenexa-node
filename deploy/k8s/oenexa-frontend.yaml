@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oenexa-frontend
+  namespace: oenexa-network
+  labels:
+    app: oenexa-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oenexa-frontend
+  template:
+    metadata:
+      labels:
+        app: oenexa-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: oenexa-frontend:latest
+          imagePullPolicy: IfNotPresent # For local use
+          ports:
+            - containerPort: 80
+              name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oenexa-frontend-svc
+  namespace: oenexa-network
+spec:
+  type: LoadBalancer # Exposes the frontend outside the cluster
+  selector:
+    app: oenexa-frontend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 80
