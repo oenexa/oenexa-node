@@ -9,7 +9,7 @@
 [![Privacy: Dual-Pool](https://img.shields.io/badge/Privacy-Dual--Pool%20Shielded-8A2BE2)](internal/shielded)
 [![Smart Contracts](https://img.shields.io/badge/WASM%20VM-Wazero%20(Pure--Go)-00C7B7)](internal/vm)
 [![AI Grid](https://img.shields.io/badge/Cortex-AI%20Data%20Center%20Grid-00E676)](internal/contracts/cortex)
-[![D-Commerce](https://img.shields.io/badge/Escrow-Zero--Trust%20D--Commerce-FFB300)](internal/contracts/dcommerce)
+[![
 [![Coverage](https://img.shields.io/badge/Coverage-100%25%20Statements-brightgreen)](TASK_RECORD.md)
 [![Architecture](https://img.shields.io/badge/Architecture-Decoupled%20Backend-00C7B7)](internal/web)
 [![Frontend](https://img.shields.io/badge/Frontend-oenexa--frontend-61DAFB?logo=react&logoColor=black)](https://github.com/oenexa/oenexa-frontend)
@@ -25,7 +25,7 @@
 5. [PBFT Consensus & Equivocation Slashing](#5-pbft-consensus--equivocation-slashing)
 6. [High-Performance Sparse Merkle Trie (SMT)](#6-high-performance-sparse-merkle-trie-smt)
 7. [Oenexa Cortex: Green Data Center AI Grid](#7-oenexa-cortex-green-data-center-ai-grid)
-8. [Decentralized Everyday Commerce (D-Commerce)](#8-decentralized-everyday-commerce-d-commerce)
+8. [Decentralized Everyday Commerce (
 9. [OenexaVM WebAssembly Execution Runtime](#9-oenexavm-webassembly-execution-runtime)
 10. [Layer-2 Rollups & Scalability](#10-layer-2-rollups--scalability)
 11. [Currency, Gas & Tokenomics (EIP-1559)](#11-currency-gas--tokenomics-eip-1559)
@@ -48,7 +48,7 @@
 **OENEXA (OEN)** (*Open Economy, Next Generation Exchange & Assets*) is a Generation-6, post-quantum, privacy-preserving Layer-1 blockchain ecosystem written in pure Go (`CGO_ENABLED=0`). Engineered to endure for the next half-century, OENEXA replaces classical vulnerable algorithms with **NIST Post-Quantum Cryptography (PQC)** standards, while unifying:
 
 - **AI & Hyperscale Infrastructure**: Tokenizing and funding Tier-4 green data centers via **Oenexa Cortex**, providing on-chain Compute-as-a-Service (CaaS) leasing and autonomous yield distribution.
-- **Zero-Trust D-Commerce**: Dismantling extractive Web2 delivery platforms (which levy up to 30% fees) through two-party, QR-code mediated physical delivery escrow contracts.
+- **Zero-Trust 
 - **Dual-Pool Shielded Privacy**: Zcash-class confidential note commitments and nullifiers with strict turnstile supply conservation guarantees (`TotalSupply == TransparentSupply + ShieldedSupply`) and selective viewing keys.
 - **Instant PBFT Finality**: Sub-second deterministic consensus with byte-for-byte state transition validation and automated equivocation (double-voting) slashing.
 - **Pure-Go WASM Smart Contracts**: Sandboxed, gas-metered execution powered by `wazero`.
@@ -102,7 +102,7 @@
 |    │  │            OenexaVM WebAssembly Runtime (Pure-Go wazero)           │ │                     |
 |    │  │  - Gas Metering & Host Environment Callbacks                       │ │                     |
 |    │  │  - Oenexa Cortex (Data Center Bonds & CaaS Compute Yields)         │ │                     |
-|    │  │  - D-Commerce Zero-Trust QR Delivery Escrow Contracts             │ │                     |
+|    │  │  - 
 |    │  │  - DeFi Hub (OenSwap AMM, Collateralized Lending, RWA)             │ │                     |
 |    │  └────────────────────────────────────────────────────────────────────┘ │                     |
 |    └───────────────────────┬─────────────────────────────────────────────────┘                     |
@@ -230,15 +230,15 @@ The exponential rise of Artificial Intelligence demands sustainable, high-capaci
 
 ---
 
-## 8. Decentralized Everyday Commerce (D-Commerce)
+## 8. Decentralized Everyday Commerce (
 
-To liberate local economies from centralized delivery platforms charging predatory 20–30% commissions, OENEXA deploys a zero-trust physical delivery escrow protocol (`internal/contracts/dcommerce`):
+To liberate local economies from centralized 
 
 ```
 Buyer                         Restaurant                    Courier
   │                               │                            │
   │ 1. Place Order & Escrow OEN   │                            │
-  │    (Food + Delivery Tip)      │                            │
+  │    (
   │    Submits Hash(S_dropoff)    │                            │
   │───────────────────────────────┼───────────────────────────►│
   │                               │ 2. Prepares Order          │
@@ -254,16 +254,16 @@ Buyer                         Restaurant                    Courier
   │    Buyer displays QR dropoff  │                            │
   │ ──► Courier scans QR ─────────┼───────────────────────────►│
   │    Reveals S_dropoff          │                            │
-  │    Calls ConfirmDelivery()    │                            │
+  │    Calls Confirm
   │                               │                            │
   │ 5. Instant Atomic Settlement  │                            │
-  │    Restaurant receives 100% food payment                   │
-  │    Courier receives 100% delivery commission               │
+  │    Restaurant receives 100% 
+  │    Courier receives 100% 
   ▼    ZERO Middleman Fees        ▼                            ▼
 ```
 
-- **Zero Platform Cuts**: 100% of food cost settles to the restaurant; 100% of the delivery fee settles to the courier.
-- **Two-Factor Cryptographic Handoff**: Secret preimage verification ($S_{\text{pickup}}$ and $S_{\text{dropoff}}$) ensures couriers cannot claim delivery without the customer physically scanning their code.
+- **Zero Platform Cuts**: 100% of 
+- **Two-Factor Cryptographic Handoff**: Secret preimage verification ($S_{\text{pickup}}$ and $S_{\text{dropoff}}$) ensures couriers cannot claim 
 - **Micro-Merchant POS**: Street vendors and retail shops accept OEN instantly via mobile wallets with sub-second finality and zero chargebacks.
 
 ---
@@ -280,7 +280,7 @@ Smart contracts in OENEXA are compiled to standard WebAssembly (WASM) and execut
 
 ## 10. Layer-2 Rollups & Scalability
 
-To support planetary-scale transaction volume (millions of concurrent micro-transactions across D-Commerce and SaaS subscriptions), OENEXA incorporates an integrated Layer-2 Rollup engine (`internal/rollup`):
+To support planetary-scale transaction volume (millions of concurrent micro-transactions across 
 
 - **L2 Sequencer**: Ingests high-throughput transactions off-chain, verifies state transitions, and produces compact batches.
 - **L1 Bridge Anchor**: Periodically posts aggregated `RollupTx` batches and cryptographic root assertions to Layer-1.
@@ -334,7 +334,7 @@ oenexa-node/
 │   │   ├── compute/            # Decentralized compute task matching and settlement
 │   │   ├── cortex/             # Oenexa Cortex AI data center bonds & CaaS yield streaming
 │   │   ├── custody/            # Institutional multi-tier cold custody & timelocks
-│   │   ├── dcommerce/          # Zero-trust QR-code mediated physical delivery escrow
+│   │   ├── dcommerce/          # Zero-trust QR-code mediated physical 
 │   │   ├── dex/                # OenSwap AMM pools (x * y = k) & confidential liquidity
 │   │   ├── energyx/            # P2P renewable energy grid trading & settlement
 │   │   ├── esgmarket/          # Certified ESG marketplace & compliance registry
@@ -573,7 +573,7 @@ OENEXA is intentionally organized as an open educational curriculum. Students, a
 
 - **Consensus & State Verification**: Read [`DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) for the PBFT voting textbook and equivocation slashing walk-through.
 - **Architectural & Design Notes**: Explore [`developer_notes/`](developer_notes/README.md) for deep dives into zero-allocation state mapping, memory safety, and PQC key encapsulation.
-- **Master Whitepaper (v2.0)**: Review [`OENEXA_Whitepaper.md`](OENEXA_Whitepaper.md) for the unified vision of AI Data Center Grids, SaaS Subscriptions, and Everyday D-Commerce.
+- **Master Whitepaper (v2.0)**: Review [`OENEXA_Whitepaper.md`](OENEXA_Whitepaper.md) for the unified vision of AI Data Center Grids, SaaS Subscriptions, and Everyday 
 - **Runbooks & Quickstart**: Review [`DEVELOPER_QUICKSTART.md`](DEVELOPER_QUICKSTART.md) and [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
 ---
