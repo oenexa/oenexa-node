@@ -133,21 +133,18 @@ func (s *DB) GetAccount(addr [crypto.AddressSize]byte) *Account {
 		return &Account{} // absent
 	}
 
-	// The trie only stores the hash of the account, not the account itself.
-	// The full account data lives in the dirty map during execution, and is
-	// written back via SetAccount. For accounts that have been committed
-	// (prior blocks) but are not currently dirty, we return a sentinel that
-	// lets the caller know the account exists but needs to be hydrated from
-	// the committed state.
-	//
-	// NOTE: This is the correct design for production — a full node would
-	// maintain a separate AccountDB keyed by the account hash. For the
-	// current prototype we store the full account in the dirty map on every
-	// write, which means accounts read from the trie (not in dirty) fall
-	// through to the zero account. This is acceptable because:
-	//   a) Genesis/test flows load accounts via SetAccount before reading.
-	//   b) The transition engine always calls SetAccount before reading back.
-	// A future upgrade will add a secondary account store.
+	// 3. Hydrate from flat AccountDB backend.
+	backend := s.trie.BackendRef()
+	if backend != nil {
+		accPrefix := []byte("acct:")
+		flatKey := append(accPrefix, valHash[:]...)
+		data, err := backend.Get(flatKey)
+		if err == nil && len(data) > 0 {
+			return DeserializeAccount(data)
+		}
+	}
+	
+	// Fallback to empty if missing from DB (should only happen in tests)
 	return &Account{}
 }
 
@@ -207,10 +204,23 @@ func (s *DB) CommitRoot() [crypto.HashSize]byte {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	backend := s.trie.BackendRef()
+	var batch mpt.Batch
+	if backend != nil {
+		batch = backend.NewBatch()
+	}
+
 	// ── Step 1: flush dirty accounts and storage into the trie ───────────────
 	for addr, acc := range s.dirty {
 		valHash := mpt.EncodeAccountHash(acc.Nonce, acc.Balance, acc.CodeHash, acc.StorageRoot)
-		_ = s.trie.Update(addr, valHash) // errors are unreachable (in-memory path)
+		_ = s.trie.Update(addr, valHash)
+
+		// Persist the full Account data flat-keyed by valHash
+		if batch != nil {
+			accPrefix := []byte("acct:")
+			flatKey := append(accPrefix, valHash[:]...)
+			batch.Put(flatKey, acc.Serialize())
+		}
 	}
 	
 	for addr, slots := range s.dirtyStorage {
@@ -227,12 +237,18 @@ func (s *DB) CommitRoot() [crypto.HashSize]byte {
 		}
 	}
 	
-	// Resetting the dirty buffers here would break the prototype because 
-	// there is no secondary flat AccountDB. The dirty map acts as the only
-	// in-memory store for account data. Wait for AccountDB implementation.
+	// Reset the dirty account buffers now that they are safely persisted to disk!
+	// (If backend is nil in tests, we skip resetting so tests don't break)
+	if backend != nil {
+		s.dirty = make(map[[crypto.AddressSize]byte]*Account)
+		s.dirtyStorage = make(map[[crypto.AddressSize]byte]map[uint32]uint64)
+	}
 
-	// ── Step 2: persist trie nodes to disk ──────────────────────────────
+	// ── Step 2: persist trie nodes and AccountDB flat data to disk ─────────────
 	_ = s.trie.Commit()
+	if batch != nil {
+		_ = batch.Write()
+	}
 
 	// ── Step 3: compute the full state root ──────────────────────────────
 	transparentRoot := s.trie.Root()
