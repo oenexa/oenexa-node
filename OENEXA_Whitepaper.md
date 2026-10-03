@@ -17,10 +17,10 @@ OENEXA (OEN) is a Generation-6, Layer-1 blockchain ecosystem engineered to bridg
 Many blockchain initiatives falter by attempting to deliver high-capital, speculative infrastructure—such as massive physical data centers, AI compute clouds, and disjointed software platforms—all at once on day one. OENEXA adopts a far more grounded and disciplined startup trajectory:
 
 ```
-┌──────────────────┐      ┌──────────┐      ┌─────────────────────┐      ┌─────────────┐      ┌────────────────────┐
+┌──────────────────┐      ┌──────────┐      ┌─────────────────────┐      ┌──────────────┐      ┌────────────────────┐
 │ OENEXA           │ ───► │ OEN      │ ───► │ Food Delivery       │ ───► │ Decentralized│ ───► │ Comprehensive      │
-│ Blockchain (L1)  │      │ Coin     │      │ Platform (App)      │      │ Marketplace │      │ Commerce Ecosystem │
-└──────────────────┘      └──────────┘      └─────────────────────┘      └─────────────┘      └────────────────────┘
+│ Blockchain (L1)  │      │ Coin     │      │ Platform (App)      │      │ Marketplace  │      │ Commerce Ecosystem │
+└──────────────────┘      └──────────┘      └─────────────────────┘      └──────────────┘      └────────────────────┘
 ```
 
 This progressive path provides a far more realistic and resilient startup foundation. Rather than relying on speculative demand, the **Food Delivery Platform** becomes the first real-world utility application that drives daily organic circulation of OEN, onboards everyday consumers and local merchants, and generates actual, recurring revenue for the startup. As adoption, merchant relationships, and token liquidity mature, this consumer beachhead expands organically into a decentralized marketplace and a full-scale commerce ecosystem.
@@ -121,7 +121,7 @@ Once the consumer commerce loop is self-sustaining and generating real startup r
 The Cortex operates via a suite of native OenexaVM smart contracts (`internal/contracts/cortex`):
 1. **Infrastructure Bonds (Fractionalization):** Physical data center assets are instantiated as `CortexAsset` contracts, enabling fractional community ownership.
 2. **Oracle Telemetry Ingest:** Decentralized Oracles feed operational metrics (GPU uptime, kWh consumed) into Cortex contracts.
-3. **Automated Yield Streaming:** Leased compute fees collect in a `RevenuePool` and distribute automatically to asset share holders:
+3. **Automated Yield Streaming:** Leased compute fees collect in a `RevenuePool` and distribute automatically to asset shareholders:
    $$\text{InvestorYield} = \frac{\text{SharesHeld}}{\text{TotalShares}} \times \text{RevenuePool} - \text{PreviouslyClaimed}$$
 
 ---
@@ -165,7 +165,7 @@ A foundational architectural principle of OENEXA is the strict **Separation of C
 |   TIER 1 & 2: CORE L1 BLOCKCHAIN PROTOCOL (Pure-Go Backend Daemon: oenexa-node)         |
 |   ┌─────────────────────────────────────────────────────────────────────────────────┐   |
 |   │  - Consensus Engine (PBFT Proof-of-Stake with Equivocation Slashing)            │   |
-|   │  - Cryptography Stack (ML-DSA-65 FIPS 204, ML-KEM-768 FIPS 203, SHA-3-256)     │   |
+|   │  - Cryptography Stack (ML-DSA-65 FIPS 204, ML-KEM-768 FIPS 203, SHA-3-256)      │   |
 |   │  - State Storage Engine (256-Bit Sparse Merkle Trie - SMT)                      │   |
 |   │  - Smart Contract VM (OenexaVM powered by Wazero, Pure-Go, CGO_ENABLED=0)       │   |
 |   │  - Shielded Privacy Pool (Note Commitments, Nullifiers & Turnstile Invariant)   │   |

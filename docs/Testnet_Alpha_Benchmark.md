@@ -23,11 +23,11 @@ This benchmark report details the execution latency, memory allocation, throughp
 
 OENEXA implements NIST FIPS 204 (ML-DSA-65 / Dilithium3) as its native post-quantum signature scheme, securing all account addresses, transaction authorizations, and validator block proposals.
 
-| Benchmark Target | Latency | Memory / Op | Allocations | Details |
-|------------------|---------|-------------|-------------|---------|
-| `BenchmarkMLDSASign` | **291 µs/op** | 4,444 B/op | 9 allocs/op | Generates 3,309-byte post-quantum digital signature |
-| `BenchmarkMLDSAVerify` | **78 µs/op** | 1,344 B/op | 6 allocs/op | Cryptographic signature verification over message hash |
-| `EncodeAccountHash` | **302 ns/op** | 0 B/op | 0 allocs/op | In-place SHA-3 (Keccak-256) serialization of account state |
+| Benchmark Target       | Latency       | Memory / Op | Allocations | Details                                                    |
+|------------------------|---------------|-------------|-------------|------------------------------------------------------------|
+| `BenchmarkMLDSASign`   | **291 µs/op** | 4,444 B/op  | 9 allocs/op | Generates 3,309-byte post-quantum digital signature        |
+| `BenchmarkMLDSAVerify` | **78 µs/op**  | 1,344 B/op  | 6 allocs/op | Cryptographic signature verification over message hash     |
+| `EncodeAccountHash`    | **302 ns/op** | 0 B/op      | 0 allocs/op | In-place SHA-3 (Keccak-256) serialization of account state |
 
 ### Cryptographic Observations
 - **Signature Size**: At 3,309 bytes, ML-DSA-65 signatures are substantially larger than classical ECDSA (64 bytes) or Ed25519 (64 bytes), requiring careful optimization in mempool buffering and network serialization.
@@ -40,13 +40,13 @@ OENEXA implements NIST FIPS 204 (ML-DSA-65 / Dilithium3) as its native post-quan
 
 OENEXA utilizes a high-performance 256-bit Sparse Merkle Trie (SMT) with dirty-account write buffers to decouple transaction execution from disk writes.
 
-| Benchmark Target | Latency | Memory / Op | Allocations | Complexity / Description |
-|------------------|---------|-------------|-------------|--------------------------|
-| `BenchmarkStateDBSetGet` | **91 ns/op** | 0 B/op | 0 allocs/op | Dirty-buffer $O(1)$ write and immediate in-memory read |
-| `BenchmarkMPTUpdate` | **22 µs/op** | ~1.8 KB/op | 12 allocs/op | Single leaf insertion/update into 256-bit SMT |
-| `BenchmarkMPTGet` (cold) | **3.9 µs/op** | 384 B/op | 4 allocs/op | Trie descent and node lookup from disk/cache |
-| `Old CommitRoot_100k` | **~59 ms** | ~14 MB/op | Multi-alloc | Legacy flat-map commit with $O(N \log N)$ sorting |
-| `New MPT CommitRoot` | **$O(\text{dirty} \times \log N)$** | Minimal | Proportional | Selective flush of dirty accounts per block |
+| Benchmark Target         | Latency                             | Memory / Op | Allocations  | Complexity / Description                               |
+|--------------------------|-------------------------------------|-------------|--------------|--------------------------------------------------------|
+| `BenchmarkStateDBSetGet` | **91 ns/op**                        | 0 B/op      | 0 allocs/op  | Dirty-buffer $O(1)$ write and immediate in-memory read |
+| `BenchmarkMPTUpdate`     | **22 µs/op**                        | ~1.8 KB/op  | 12 allocs/op | Single leaf insertion/update into 256-bit SMT          |
+| `BenchmarkMPTGet` (cold) | **3.9 µs/op**                       | 384 B/op    | 4 allocs/op  | Trie descent and node lookup from disk/cache           |
+| `Old CommitRoot_100k`    | **~59 ms**                          | ~14 MB/op   | Multi-alloc  | Legacy flat-map commit with $O(N \log N)$ sorting      |
+| `New MPT CommitRoot`     | **$O(\text{dirty} \times \log N)$** | Minimal     | Proportional | Selective flush of dirty accounts per block            |
 
 ### State Engine Architectural Improvements
 - **Selective Flushing**: Under the legacy flat-map model, committing state required iterating over all 100,000 accounts and sorting their hashes, resulting in a ~59 ms commit pause per block. The Sparse Merkle Trie flushes only mutated (dirty) leaves, reducing block commitment latency to sub-millisecond ranges for typical transactional blocks ($< 1,000$ modified accounts).
@@ -58,10 +58,10 @@ OENEXA utilizes a high-performance 256-bit Sparse Merkle Trie (SMT) with dirty-a
 
 Cryptographic inclusion proofs allow light clients, decentralized bridges, and Layer-2 rollups to verify account balances and storage slots without maintaining the full state database.
 
-| Benchmark Target | Latency | Memory / Op | Allocations | Description |
-|------------------|---------|-------------|-------------|-------------|
-| `BenchmarkMPTProve` | **2.7 µs/op** | 2,112 B/op | 8 allocs/op | Generates full 256-step Merkle inclusion proof path |
-| `BenchmarkVerifyProof` | **1.0 µs/op** | 0 B/op | 0 allocs/op | Light client verification against state root |
+| Benchmark Target       | Latency       | Memory / Op | Allocations | Description                                         |
+|------------------------|---------------|-------------|-------------|-----------------------------------------------------|
+| `BenchmarkMPTProve`    | **2.7 µs/op** | 2,112 B/op  | 8 allocs/op | Generates full 256-step Merkle inclusion proof path |
+| `BenchmarkVerifyProof` | **1.0 µs/op** | 0 B/op      | 0 allocs/op | Light client verification against state root        |
 
 ### Light Client Implications
 - Verification takes exactly 1.0 µs with zero allocations, allowing mobile clients, IoT devices, and smart-contract bridges to verify OENEXA state proofs at a rate of 1,000,000 proofs per second per core.

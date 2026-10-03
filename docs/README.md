@@ -9,7 +9,7 @@ Welcome to the official documentation repository for **OENEXA (OEN)** — a high
 - **Version**: `v0.9.0` (Testnet Alpha)
 - **Signature Scheme**: Post-Quantum ML-DSA-65 (NIST FIPS 204 / Dilithium3 standard) providing 128-bit quantum security level
 - **State Engine**: High-performance 256-bit Sparse Merkle Trie (SMT) with dirty-account buffer caching and O(1) in-memory account access
-- **Throughput**: ~4,500 TPS raw RPC ingestion on single-node testnet alpha
+- **Throughput**: ~4,500 TPS raw RPC ingestion on single-node Testnet alpha
 - **Smart Contracts**: WASM runtime powered by `wazero` sandbox environment
 - **Consensus**: Quantum-resistant Proof-of-Stake with verifiable random selection
 

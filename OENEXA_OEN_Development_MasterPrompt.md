@@ -44,14 +44,14 @@
 **Objective:** Finalize the public-facing whitepaper and a rigorously modeled token-economic design.
 
 **Key Tasks:**
-- Expand the architecture whitepaper into the full Whitepaper, Litepaper, and Yellow Paper (formal spec) deliverables
+- Expand the architecture whitepaper into the full Whitepaper, Lite paper, and Yellow Paper (formal spec) deliverables
 - Build a quantitative tokenomics model: emission schedule, vesting cliffs/lockups for team and strategic partners, staking-reward decay curve, burn/buyback triggers
 - Stress-test the economic model against bear-market, low-participation, and validator-collusion scenarios
 - Draft the Economic Model deliverable with sensitivity analysis
 
 **Dependencies:** Phase 0 feasibility outputs
 
-**Deliverables:** Whitepaper, Litepaper, Yellow Paper, Tokenomics Design, Economic Model (with stress-test results)
+**Deliverables:** Whitepaper, Lite paper, Yellow Paper, Tokenomics Design, Economic Model (with stress-test results)
 
 **Exit Criteria:** Tokenomics model independently reviewed by a token-economics specialist; vesting/lockup terms legally reviewed in target jurisdictions.
 
