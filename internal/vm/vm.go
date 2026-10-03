@@ -21,7 +21,9 @@ var newRuntime = wazero.NewRuntime
 
 // NewVM creates a new VM and registers the OEN host module.
 func NewVM(ctx context.Context) (*VM, error) {
-	rt := newRuntime(ctx)
+	// Enable CloseOnContextDone to protect against infinite loops (Gas Exhaustion)
+	cfg := wazero.NewRuntimeConfig().WithCloseOnContextDone(true)
+	rt := wazero.NewRuntimeWithConfig(ctx, cfg)
 	v := &VM{
 		rt:      rt,
 		modules: make(map[string]wazero.CompiledModule),

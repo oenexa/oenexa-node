@@ -27,3 +27,9 @@ This document tracks all security implementations, vulnerability resolutions, an
 * **Domain:** Client Security
 * **Vulnerability:** The frontend dashboard allowed unrestricted switching of the RPC endpoint without origin verification, potentially allowing a malicious user to phish or misdirect node traffic.
 * **Resolution:** Implemented origin detection in `App.tsx` (`initialEndpoint`). It safely defaults to the originating host network rather than blindly falling back to public endpoints, mitigating cross-origin RPC misdirection for node operators.
+
+### SEC-005: Smart Contract VM Gas Exhaustion (Infinite Loop) Mitigation
+* **Date:** 2026-10-04
+* **Domain:** Smart Contract VM (Wazero)
+* **Vulnerability:** The node's WebAssembly execution environment (wazero) was instantiated without CPU bounds or timeout interrupts. A malicious contract containing a `(loop br 0)` instruction could cause the node to lock up indefinitely, executing an infinite loop and resulting in a total Denial of Service for the node.
+* **Resolution:** Reconfigured `vm.NewVM` to inject `wazero.NewRuntimeConfig().WithCloseOnContextDone(true)`. Added a context timeout boundary before WebAssembly execution (`Call`). The VM now guarantees execution will be violently aborted via a `context deadline exceeded` panic if the execution breaches the node's block-time gas limits, preserving node availability.
