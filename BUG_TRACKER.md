@@ -20,8 +20,8 @@ This document records the core protocol bugs, logic errors, and state machine is
 * **Component:** `internal/state/statedb.go`
 * **Symptoms:** After the first block was minted, all user account balances dropped to 0. Subsequent transactions failed with `Insufficient funds`.
 * **Root Cause:** The `CommitRoot()` function aggressively reset the `s.dirty` map (`s.dirty = make(map[string]*Account)`) after computing the state root. Because the secondary persistent database layer (AccountDB) is not yet fully implemented, wiping the in-memory map effectively deleted the entire ledger state.
-* **Resolution:** Removed the aggressive map reset from `CommitRoot()`. The node now successfully persists state across blocks in memory.
-* **Follow-up Required:** Must implement true persistent backend (LevelDB/BadgerDB) flushing before mainnet.
+* **Resolution:** Initially removed the aggressive map reset. Followed up by implementing a true persistent flat `AccountDB` store leveraging the `mpt.Backend` (LevelDB). `CommitRoot()` now serializes all dirty `Account` objects into flat byte slices and atomically flushes them to disk alongside the MPT nodes in a single LevelDB `Batch.Write()`. `GetAccount` was updated to hydrate missing dirty cache entries directly from disk.
+* **Follow-up Required:** None. State persistence across restarts is fully functional.
 
 ---
 
