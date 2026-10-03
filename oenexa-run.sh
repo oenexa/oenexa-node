@@ -4,6 +4,7 @@
 # Clones latest main branch of backend and frontend, builds, and runs via Docker.
 # ─────────────────────────────────────────────────────────────────────────────
 set -e
+export GIT_TERMINAL_PROMPT=0
 
 # Terminal colors
 RED='\033[0;31m'
@@ -195,13 +196,16 @@ echo -e "\n${BLUE}[3/5] Cloning latest '$BRANCH' branch from GitHub...${NC}"
 if [ -d "oenexa-node/.git" ]; then
     echo "      Updating existing oenexa-node repository..."
     cd oenexa-node
-    git fetch origin "$BRANCH"
-    git checkout "$BRANCH"
-    git pull origin "$BRANCH"
+    git fetch origin "$BRANCH" 2>/dev/null || true
+    git checkout "$BRANCH" 2>/dev/null || true
+    git pull origin "$BRANCH" 2>/dev/null || true
     cd "$DEPLOY_ROOT"
 else
     echo "      Cloning oenexa-node ($NODE_REPO) branch $BRANCH..."
-    git clone -b "$BRANCH" --depth 1 "$NODE_REPO" oenexa-node
+    if ! git clone -b "$BRANCH" --depth 1 "$NODE_REPO" oenexa-node 2>/dev/null; then
+        echo -e "      ${YELLOW}oenexa/oenexa-node not yet public; cloning from local workspace as fallback...${NC}"
+        git clone -b "$BRANCH" --depth 1 ../ oenexa-node
+    fi
 fi
 echo "      ✓ Backend oenexa-node ready."
 

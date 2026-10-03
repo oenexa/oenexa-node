@@ -407,6 +407,7 @@ func (e *Engine) buildBlock(height uint64) (*core.Block, *state.DB, error) {
 	for _, tx := range pending {
 		result, err := applyTxFunc(snap, tx, core.BlockGasLimit-totalGas, e.execVM, baseFee)
 		if err != nil {
+			log.Printf("[consensus] buildBlock: skipping tx %x: %v", tx.Hash[:4], err)
 			continue // skip txs that can't pay baseFee or are otherwise invalid
 		}
 		totalGas += result.GasUsed

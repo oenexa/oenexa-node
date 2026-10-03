@@ -35,17 +35,15 @@ services:
       --config /data/config.toml
       --datadir /data
       --metrics
+      --miner
+
     healthcheck:
-      test:
-        - "CMD-SHELL"
-        - >
-          wget -qO- --post-data='{"jsonrpc":"2.0","id":1,"method":"oen_blockHeight","params":null}'
-          --header='Content-Type: application/json'
-          http://localhost:8545/ | grep -q 'result'
+      test: ["CMD", "/healthcheck"]
       interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 
   # ── OEN Decoupled Frontend Dashboard (React 18 + Vite) ──────────────────────
   oenexa-frontend:

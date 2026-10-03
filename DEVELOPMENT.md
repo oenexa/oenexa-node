@@ -85,3 +85,4 @@ The Mempool buffers and orders unconfirmed transactions broadcast across the P2P
 3. **Deterministic State:** Always sort map keys before hashing to guarantee consensus across all node implementations.
 4. **Decoupled Boundary:** Never introduce JavaScript, HTML, or npm dependencies into the core node repository.
 5. **Educational Curriculum:** Reference [`DEVELOPMENT_PROCESS.md`](DEVELOPMENT_PROCESS.md) and [`developer_notes/`](developer_notes/README.md) for deep conceptual and architectural notes.
+

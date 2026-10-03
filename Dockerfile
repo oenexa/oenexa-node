@@ -24,6 +24,13 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
       -o /out/oenexa-node \
       ./cmd/node
 
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build \
+      -ldflags="-s -w" \
+      -trimpath \
+      -o /out/healthcheck \
+      ./cmd/healthcheck
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2 — Runtime (scratch + CA certs for TLS to GitHub Releases API)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -32,8 +39,9 @@ FROM scratch
 # Bring in CA certificates for HTTPS.
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-# Bring in the node binary.
+# Bring in the node binary and healthcheck utility.
 COPY --from=builder /out/oenexa-node /oenexa-node
+COPY --from=builder /out/healthcheck /healthcheck
 
 # Default config directory.
 VOLUME ["/data"]

@@ -227,9 +227,9 @@ func (s *DB) CommitRoot() [crypto.HashSize]byte {
 		}
 	}
 	
-	// Reset the dirty buffers.
-	s.dirty = make(map[[crypto.AddressSize]byte]*Account)
-	s.dirtyStorage = make(map[[crypto.AddressSize]byte]map[uint32]uint64)
+	// Resetting the dirty buffers here would break the prototype because 
+	// there is no secondary flat AccountDB. The dirty map acts as the only
+	// in-memory store for account data. Wait for AccountDB implementation.
 
 	// ── Step 2: persist trie nodes to disk ──────────────────────────────
 	_ = s.trie.Commit()

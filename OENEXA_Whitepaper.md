@@ -18,12 +18,12 @@ Many blockchain initiatives falter by attempting to deliver high-capital, specul
 
 ```
 ┌──────────────────┐      ┌──────────┐      ┌─────────────────────┐      ┌──────────────┐      ┌────────────────────┐
-│ OENEXA           │ ───► │ OEN      │ ───► │ Food Delivery       │ ───► │ Decentralized│ ───► │ Comprehensive      │
+│ OENEXA           │ ───► │ OEN      │ ───► │ Decentralized Commerce       │ ───► │ Decentralized│ ───► │ Comprehensive      │
 │ Blockchain (L1)  │      │ Coin     │      │ Platform (App)      │      │ Marketplace  │      │ Commerce Ecosystem │
 └──────────────────┘      └──────────┘      └─────────────────────┘      └──────────────┘      └────────────────────┘
 ```
 
-This progressive path provides a far more realistic and resilient startup foundation. Rather than relying on speculative demand, the **Food Delivery Platform** becomes the first real-world utility application that drives daily organic circulation of OEN, onboards everyday consumers and local merchants, and generates actual, recurring revenue for the startup. As adoption, merchant relationships, and token liquidity mature, this consumer beachhead expands organically into a decentralized marketplace and a full-scale commerce ecosystem.
+This progressive path provides a far more realistic and resilient startup foundation. Rather than relying on speculative demand, the **Decentralized Commerce Platform** becomes the first real-world utility application that drives daily organic circulation of OEN, onboards everyday consumers and local merchants, and generates actual, recurring revenue for the startup. As adoption, merchant relationships, and token liquidity mature, this consumer beachhead expands organically into a decentralized marketplace and a full-scale commerce ecosystem.
 
 ---
 
@@ -40,8 +40,8 @@ By contrast, the **OENEXA adoption trajectory** creates a much stronger, de-risk
 2. **OEN Coin (The Velocity Engine):**  
    The native medium of exchange engineered for high-velocity everyday settlement, featuring transparent and shielded privacy pools with mathematical turnstile conservation.
 
-3. **Food Delivery App (First Real-World Utility & Revenue Driver):**  
-   The flagship utility application. Food delivery is a high-frequency, daily transactional market. By connecting local restaurants, couriers, and consumers directly via smart escrow, the app provides instant real-world utility for OEN, eliminates the 25–35% extractive cuts taken by legacy delivery giants, and generates actual, recurring revenue for the startup from day one.
+3. **Decentralized Commerce App (First Real-World Utility & Revenue Driver):**  
+   The flagship utility application. Decentralized Commerce is a high-frequency, daily transactional market. By connecting local restaurants, couriers, and consumers directly via smart escrow, the app provides instant real-world utility for OEN, eliminates the 25–35% extractive cuts taken by legacy delivery giants, and generates actual, recurring revenue for the startup from day one.
 
 4. **Decentralized Marketplace (Horizontal Expansion):**  
    With an established network of active digital wallets, verified couriers, and trusted local merchants, the platform broadens into an open marketplace for local retail, apparel, electronics, and consumer services.
@@ -85,25 +85,25 @@ Oenexa believes privacy is a fundamental human right. Inheriting the most powerf
 
 ---
 
-## 5. Flagship Real-World Utility: Food Delivery & Everyday Commerce
+## 5. Flagship Real-World Utility: Decentralized Commerce & Everyday Commerce
 
 While many blockchain projects exist in an insular financial vacuum, OEN's velocity is grounded in daily transactional commerce. OEN is a seamless, high-speed currency for Real-World Scenarios—powering direct Peer-to-Peer (P2P), Business-to-Peer (B2P), and Business-to-Business (B2B) transactions.
 
-### 5.1. The Food Delivery Platform (Phase 1 Wedge)
-The food delivery market represents the ideal launchpad for the OENEXA ecosystem:
+### 5.1. The Decentralized Commerce Platform (Phase 1 Wedge)
+The Decentralized Commerce market represents the ideal launchpad for the OENEXA ecosystem:
 - **High Transaction Frequency:** Daily recurring orders create steady transactional velocity and genuine utility for OEN.
-- **Immediate Value Proposition:** Traditional food delivery platforms extract 20% to 35% in commissions from restaurants while paying low margins to delivery drivers. OENEXA's smart contracts reduce transaction fees to fractions of a cent.
+- **Immediate Value Proposition:** Traditional Decentralized Commerce platforms extract 20% to 35% in commissions from restaurants while paying low margins to delivery drivers. OENEXA's smart contracts reduce transaction fees to fractions of a cent.
 - **Direct Startup Revenue:** The platform generates tangible revenue through minimal application facilitation fees, proving business viability before expanding to complex enterprise solutions.
 
 ### 5.2. QR-Code Mediated Smart Escrow (`internal/contracts/dcommerce`)
-The food delivery application utilizes a zero-trust delivery mechanism managed by OenexaVM smart contracts to replace extractive centralized delivery intermediaries:
+The Decentralized Commerce application utilizes a zero-trust delivery mechanism managed by OenexaVM smart contracts to replace extractive centralized delivery intermediaries:
 1. **Order & Escrow:** A buyer places an order, locking the total OEN (cost of food + delivery commission) securely into the network's smart contract along with $H(S_{\text{dropoff}})$.
 2. **Pickup via Barcode/QR:** The delivery mediator (courier) arrives at the restaurant, scans the restaurant's physical QR code revealing $S_{\text{pickup}}$, and calls `ConfirmPickup(orderID, S_{\text{pickup}})`.
 3. **Delivery & Final Confirmation:** Upon arriving at the destination, the buyer presents their secure QR code. The courier scans it, revealing $S_{\text{dropoff}}$, and calls `ConfirmDelivery(orderID, S_{\text{dropoff}})`.
 4. **Instant Settlement:** Immediately upon this final QR confirmation, the smart contract automatically releases the reserved OEN: 100% of food cost to the restaurant, and 100% of delivery fee to the courier. Zero middleman cuts, zero chargebacks, and instant liquidity.
 
 ### 5.3. Horizontal Expansion: Open Marketplace & Retail
-Following initial regional density in food delivery, the network scales into general retail:
+Following initial regional density in Decentralized Commerce, the network scales into general retail:
 *   **The Oenexa Open Market:** Suppliers, local boutiques, and retail merchants list physical goods, settling via the same proven escrow contracts.
 *   **Micro-Merchant POS:** Street vendors and independent merchants accept OEN instantly via lightweight mobile point-of-sale interfaces with sub-second finality.
 
@@ -153,7 +153,7 @@ A foundational architectural principle of OENEXA is the strict **Separation of C
 |                                                                                         |
 |   TIER 3: CLIENT APPLICATIONS & FRONTEND ECOSYSTEM (Decoupled Repositories)             |
 |   ┌────────────────────────┐  ┌────────────────────────┐  ┌────────────────────────┐    |
-|   │     oenexa-frontend    │  │   Food Delivery App    │  │   Merchant POS Terminal│    |
+|   │     oenexa-frontend    │  │   Decentralized Commerce App    │  │   Merchant POS Terminal│    |
 |   │ (React 18 / TS / Vite) │  │ (Courier & Buyer Apps) │  │ (Mobile & Web Portals) │    |
 |   └───────────┬────────────┘  └───────────┬────────────┘  └───────────┬────────────┘    |
 |               │                           │                           │                 |
@@ -194,3 +194,4 @@ The entire codebase, architectural rationale, and operational mechanics are tran
 - **Developer Quickstart & Runbooks**: [`DEVELOPER_QUICKSTART.md`](DEVELOPER_QUICKSTART.md) and [`DEVELOPMENT.md`](DEVELOPMENT.md)
 
 Future students, developers, and researchers can study the Oenexa repository to master the working principles of quantum-safe cryptography, robust P2P networking, zero-trust commerce, and resilient distributed state machines. OENEXA is built to be the gold standard textbook for the decentralized engineers of tomorrow.
+

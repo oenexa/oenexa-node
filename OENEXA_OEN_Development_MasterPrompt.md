@@ -244,7 +244,7 @@
 
 ## PHASE 12 — D-Commerce Escrow
 
-**Objective:** Implement native E-Commerce and Food Delivery smart contracts with zero-trust escrow.
+**Objective:** Implement native E-Commerce and Decentralized Commerce smart contracts with zero-trust escrow.
 
 **Key Tasks:**
 - Develop DeliveryEscrow smart contracts supporting P2P and B2P flows.
@@ -626,3 +626,4 @@ Each phase's exit criteria combine **(a)** engineering completion, **(b)** secur
 and **(c)** legal/regulatory clearance where applicable. 
 A program of this scope should track all three dimensions independently per phase, and the Mainnet Launch (Phase 24) gate should require 
 all three dimensions green across every prior phase it depends on.
+

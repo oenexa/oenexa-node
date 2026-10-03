@@ -22,7 +22,7 @@ This document outlines the evolutionary development process used to implement th
 1. **OenexaID (Phase 9)**: W3C-compliant Decentralized Identifier (DID) and Verifiable Credential (VC) registry for merchant accreditation and privacy-preserving KYC.
 2. **Oracle Network (Phase 10)**: Decentralized median-aggregated telemetry feeds for real-world environmental and pricing data.
 3. **DeFi Hub (Phase 11)**: OenexaSwap automated market maker (AMM) and over-collateralized lending protocols.
-4. **D-Commerce Escrow (Phase 12)**: Zero-trust, QR-code mediated physical delivery escrow smart contracts (`internal/contracts/dcommerce`) enabling zero-fee food delivery and open market trade.
+4. **D-Commerce Escrow (Phase 12)**: Zero-trust, QR-code mediated physical delivery escrow smart contracts (`internal/contracts/dcommerce`) enabling zero-fee Decentralized Commerce and open market trade.
 5. **Micro-Merchant Gateway (Phase 13)**: Point-of-Sale (POS) mobile interfaces for street vendors and retail stores to instantly accept OEN with zero chargebacks.
 
 ### Stage 4: Infrastructure, AI, and SaaS (Phases 14 - 21)
@@ -162,11 +162,11 @@ If a Byzantine validator signs two different block hashes for the same height, r
 ### 4. Zero-Trust D-Commerce Escrow (The QR-Code Delivery Protocol)
 To dismantle extractive Web2 delivery platforms (which charge up to 30% merchant commission), OENEXA implements a zero-trust physical delivery escrow (`internal/contracts/dcommerce`):
 
-1. **Buyer Orders**: Buyer deposits OEN (food cost + courier tip) into the smart contract. The buyer's wallet generates a random secret $S_{\text{dropoff}}$ and submits its hash $H(S_{\text{dropoff}})$ on-chain.
-2. **Restaurant Prepares**: Restaurant accepts the order and submits $H(S_{\text{pickup}})$ on-chain.
-3. **Courier Pickup**: The courier arrives at the restaurant and scans the restaurant's physical barcode/QR code, revealing $S_{\text{pickup}}$. The courier calls `ConfirmPickup(orderID, S_{\text{pickup}})`. The contract computes $\text{SHA256}(S_{\text{pickup}})$ and verifies it matches $H(S_{\text{pickup}})$. The state transitions to `PICKED_UP`.
+1. **Buyer Orders**: Buyer deposits OEN (goods cost + courier tip) into the smart contract. The buyer's wallet generates a random secret $S_{\text{dropoff}}$ and submits its hash $H(S_{\text{dropoff}})$ on-chain.
+2. **merchant Prepares**: merchant accepts the order and submits $H(S_{\text{pickup}})$ on-chain.
+3. **Courier Pickup**: The courier arrives at the merchant and scans the merchant's physical barcode/QR code, revealing $S_{\text{pickup}}$. The courier calls `ConfirmPickup(orderID, S_{\text{pickup}})`. The contract computes $\text{SHA256}(S_{\text{pickup}})$ and verifies it matches $H(S_{\text{pickup}})$. The state transitions to `PICKED_UP`.
 4. **Customer Drop-off**: The courier arrives at the buyer's home. The buyer displays their QR code, revealing $S_{\text{dropoff}}$. The courier scans it and calls `ConfirmDelivery(orderID, S_{\text{dropoff}})`.
-5. **Instant Two-Party Settlement**: The contract verifies the hash and atomically releases the funds: 100% of food cost to the restaurant, and 100% of delivery fee to the courier. No middleman, zero platform cuts.
+5. **Instant Two-Party Settlement**: The contract verifies the hash and atomically releases the funds: 100% of goods cost to the merchant, and 100% of delivery fee to the courier. No middleman, zero platform cuts.
 
 ---
 
@@ -216,3 +216,4 @@ A premier lesson in distributed systems design is **Separation of Concerns**:
 | `internal/rpc/` | Web3 JSON-RPC 2.0 API server | `server.go`, `api.go` |
 | `internal/web/` | REST API provider (/api/status) with CORS | `server.go` |
 | `test/bdd/` | Ginkgo v2 & Gomega BDD test suites | `bdd_test.go` |
+

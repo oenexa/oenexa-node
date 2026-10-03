@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	DefaultMaxSize    = 10_000
+	DefaultMaxSize    = 100_000
 	MaxTxDataSize     = 1 << 20 // 1 MiB
-	MaxSenderQueueLen = 64
+	MaxSenderQueueLen = 10_000
 )
 
 // Mempool is a thread-safe priority queue of unconfirmed transactions.

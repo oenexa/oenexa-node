@@ -51,12 +51,14 @@ func main() {
 	var (
 		txSent     uint64
 		txFailed   uint64
+		printedErr uint32
 		totalLatMs uint64
 		wg         sync.WaitGroup
 	)
 
 	// Since we are sending from one wallet, we must strictly assign nonces
 	var currentNonce uint64 = nonce
+	var baseTimestamp int64 = time.Now().UnixNano()
 
 	ctx, cancel := context.WithTimeout(context.Background(), *duration)
 	defer cancel()
@@ -74,8 +76,13 @@ func main() {
 				default:
 					n := atomic.AddUint64(&currentNonce, 1) - 1
 
+					// Assign a strictly increasing timestamp
+					timestamp := atomic.AddInt64(&baseTimestamp, 1)
+					
 					// Just send to ourselves to avoid needing another address
 					tx := core.NewTransfer(w.Address, w.Address, w.PublicKey, n, 1, core.InitialBaseFee)
+					tx.Timestamp = timestamp
+					
 					if err := tx.Sign(w.PrivateKey); err != nil {
 						atomic.AddUint64(&txFailed, 1)
 						continue
@@ -91,6 +98,9 @@ func main() {
 
 					if err != nil {
 						atomic.AddUint64(&txFailed, 1)
+						if atomic.AddUint32(&printedErr, 1) <= 5 {
+							log.Printf("TX Error: %v", err)
+						}
 					} else {
 						atomic.AddUint64(&txSent, 1)
 					}
@@ -149,6 +159,14 @@ type rpcResp struct {
 	} `json:"error,omitempty"`
 }
 
+var globalClient = &http.Client{
+	Transport: &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
+		IdleConnTimeout:     90 * time.Second,
+	},
+}
+
 func rpcCall(endpoint, method string, params interface{}) (map[string]interface{}, error) {
 	body, err := json.Marshal(rpcReq{
 		JSONRPC: "2.0",
@@ -160,7 +178,7 @@ func rpcCall(endpoint, method string, params interface{}) (map[string]interface{
 		return nil, err
 	}
 
-	httpResp, err := http.Post(endpoint, "application/json", bytes.NewReader(body))
+	httpResp, err := globalClient.Post(endpoint, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
