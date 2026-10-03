@@ -38,28 +38,4 @@ The original `docker-compose.yml` healthcheck was using `wget -qO- http://localh
 
 ---
 
-## Issue 3: Mempool Dropping Concurrent Transactions (Nonce Race Condition)
-
-**Symptoms:**
-During high-load TPS (Transactions Per Second) stress testing, the node logs showed transactions being violently rejected with errors like `Nonce mismatch`.
-
-**Root Cause:**
-The mempool priority queue (`txHeap`) sorts transactions globally by `GasPrice` (descending) and `Timestamp` (ascending). When the stress test worker blasted 10,000 transactions at once, the system time generated identical timestamps (down to the millisecond) for thousands of transactions. Because the timestamps were identical, the heap sort order became non-deterministic. The node popped transactions out of order, meaning `Nonce 5` might be processed before `Nonce 4`, causing the node's strict sequential nonce check to reject them.
-
-**Resolution / How to Fix:**
-1. **Implement an atomic pseudo-timestamp counter:** In the load tester (`cmd/loadtest/main.go`), introduced an atomic counter (`atomic.AddInt64`) applied to a base timestamp.
-2. **Guarantee strict chronological ordering:** This ensures that even if 10,000 transactions are generated in the same millisecond, `Nonce 2` will definitively have a timestamp that is precisely 1 unit larger than `Nonce 1`, guaranteeing the heap sorts them in the exact order they must be processed.
-
----
-
-## Issue 4: Zero Balance Errors & State Wiping (StateDB Bug)
-
-**Symptoms:**
-After the first block was minted, all user account balances dropped to 0 and subsequent transactions failed with `Insufficient funds`.
-
-**Root Cause:**
-In `internal/state/statedb.go`, the `CommitRoot()` function was aggressively resetting the `s.dirty` map back to an empty state `make(map[string]*Account)` after every block. Since the secondary persistence layer (AccountDB) was not yet fully implemented, the `dirty` map was acting as the sole source of truth in memory. Wiping it deleted the entire state of the blockchain.
-
-**Resolution / How to Fix:**
-1. **Remove aggressive reset:** Removed the `s.dirty = make(map[string]*Account)` line from the `CommitRoot()` function.
-2. **Result:** The node now successfully persists state across block minting cycles in memory. (Note: A true persistent LevelDB/BadgerDB backend must be implemented prior to mainnet launch).
+*Note: For Core Protocol Bugs (Mempool, StateDB, etc.), please refer to `BUG_TRACKER.md`. For Security Hardening logs, please refer to `SECURITY_AUDIT_LOG.md`.*
