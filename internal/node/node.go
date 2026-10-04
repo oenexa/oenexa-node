@@ -246,7 +246,7 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 		if n.p2pNode != nil {
 			peersFn = n.p2pNode.PeerCount
 		}
-		api := rpc.NewAPI(n.engine, n.st, n.pool, peersFn, upgrade.Current().String())
+		api := rpc.NewAPI(n.engine, n.st, n.pool, n.execVM, peersFn, upgrade.Current().String())
 		if n.p2pNode != nil {
 			api.SetBroadcastTx(func(tx *core.Transaction) {
 				_ = n.p2pNode.BroadcastTx(context.Background(), tx)

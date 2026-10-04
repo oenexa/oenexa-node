@@ -6,19 +6,22 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/oenexa/oenexa/internal/consensus"
 	"github.com/oenexa/oenexa/internal/core"
 	"github.com/oenexa/oenexa/internal/crypto"
 	"github.com/oenexa/oenexa/internal/mempool"
 	"github.com/oenexa/oenexa/internal/state"
+	"github.com/oenexa/oenexa/internal/vm"
 )
 
 // API holds references to node subsystems and handles JSON-RPC method calls.
 type API struct {
-	engine  *consensus.Engine
+	engine        *consensus.Engine
 	st            *state.DB
 	pool          *mempool.Mempool
+	execVM        *vm.VM
 	peersFn       func() int // returns current peer count
 	broadcastTxFn func(*core.Transaction)
 	version       string
@@ -30,13 +33,14 @@ func NewAPI(
 	engine *consensus.Engine,
 	st *state.DB,
 	pool *mempool.Mempool,
+	execVM *vm.VM,
 	peersFn func() int,
 	ver string,
 ) *API {
 	if peersFn == nil {
 		peersFn = func() int { return 0 }
 	}
-	return &API{engine: engine, st: st, pool: pool, peersFn: peersFn, version: ver}
+	return &API{engine: engine, st: st, pool: pool, execVM: execVM, peersFn: peersFn, version: ver}
 }
 
 // SetBroadcastTx sets the hook used to broadcast locally submitted transactions over P2P.
@@ -77,6 +81,8 @@ func (a *API) Dispatch(req *Request) *Response {
 	// ── Transactions ───────────────────────────────────────────────────────
 	case "oen_sendRawTransaction", "eth_sendRawTransaction":
 		return a.sendRawTransaction(req)
+	case "oen_call", "eth_call":
+		return a.call(req)
 
 	// ── Fees ───────────────────────────────────────────────────────────────
 	case "oen_feeEstimate":
@@ -345,3 +351,76 @@ func GobEncodeTx(tx *core.Transaction) ([]byte, error) {
 	_ = gob.NewEncoder(&buf).Encode(tx)
 	return buf.Bytes(), nil
 }
+
+type callArgs struct {
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Value string `json:"value"`
+	Data  string `json:"data"`
+}
+
+// call executes a smart contract query locally without broadcasting a transaction.
+func (a *API) call(req *Request) *Response {
+	var params []json.RawMessage
+	if err := json.Unmarshal(req.Params, &params); err != nil || len(params) == 0 {
+		return errResponse(req.ID, CodeInvalidParams, "params: [call_obj, block_num]")
+	}
+	var args callArgs
+	if err := json.Unmarshal(params[0], &args); err != nil {
+		return errResponse(req.ID, CodeInvalidParams, "invalid call object")
+	}
+
+	tx := &core.Transaction{
+		Type:     core.TxCall,
+		GasLimit: 10_000_000,
+		GasPrice: 0,
+	}
+
+	if args.From != "" {
+		addr, err := crypto.HexToAddress(args.From)
+		if err == nil {
+			tx.From = addr
+		}
+	}
+	if args.To != "" {
+		addr, err := crypto.HexToAddress(args.To)
+		if err == nil {
+			tx.To = addr
+		}
+	}
+	if args.Value != "" {
+		valStr := args.Value
+		if len(valStr) >= 2 && (valStr[:2] == "0x" || valStr[:2] == "0X") {
+			v, err := strconv.ParseUint(valStr[2:], 16, 64)
+			if err == nil {
+				tx.Amount = v
+			}
+		} else {
+			v, err := strconv.ParseUint(valStr, 10, 64)
+			if err == nil {
+				tx.Amount = v
+			}
+		}
+	}
+	if args.Data != "" {
+		dataStr := args.Data
+		if len(dataStr) >= 2 && (dataStr[:2] == "0x" || dataStr[:2] == "0X") {
+			dataStr = dataStr[2:]
+		}
+		data, err := hex.DecodeString(dataStr)
+		if err == nil {
+			tx.Data = data
+		}
+	}
+
+	// Create a snapshot to ensure the read-only call does not mutate the node state
+	snap := a.st.Snapshot()
+
+	res, err := state.ApplyTransaction(snap, tx, 10_000_000, a.execVM, 0)
+	if err != nil {
+		return errResponse(req.ID, CodeInternalError, fmt.Sprintf("execution reverted: %v", err))
+	}
+
+	return okResponse(req.ID, "0x"+hex.EncodeToString(res.ReturnData))
+}
+
