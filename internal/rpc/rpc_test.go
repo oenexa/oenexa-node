@@ -48,7 +48,7 @@ func buildTestServer(t *testing.T) (*httptest.Server, *crypto.Wallet) {
 		vs, st, pool, genesis, nil, nil,
 	)
 
-	api := rpc.NewAPI(engine, st, pool, nil, "test")
+	api := rpc.NewAPI(engine, st, pool, nil, nil, "test")
 	srv := rpc.NewServer("", api, 5*time.Second, 5*time.Second)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -133,7 +133,7 @@ func buildTestHandler(t *testing.T) (*httptest.Server, *crypto.Wallet) {
 	validator := &consensus.Validator{Address: w.Address, PublicKey: w.PublicKey, VotingPower: 1}
 	vs, _ := consensus.NewValidatorSet([]*consensus.Validator{validator})
 	engine := consensus.NewEngine(w.Address, w.PublicKey, w.PrivateKey, vs, st, pool, genesis, nil, nil)
-	api := rpc.NewAPI(engine, st, pool, nil, "test")
+	api := rpc.NewAPI(engine, st, pool, nil, nil, "test")
 	srv := rpc.NewServer("127.0.0.1:0", api, 5*time.Second, 5*time.Second)
 	ts := httptest.NewServer(srv)
 	t.Cleanup(ts.Close)

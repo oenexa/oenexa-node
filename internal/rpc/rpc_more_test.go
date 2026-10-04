@@ -33,7 +33,7 @@ func buildRealServer(t *testing.T) (*httptest.Server, *rpc.Server) {
 	vs, _ := consensus.NewValidatorSet([]*consensus.Validator{validator})
 	engine := consensus.NewEngine(w.Address, w.PublicKey, w.PrivateKey, vs, st, pool, genesis, nil, nil)
 
-	api := rpc.NewAPI(engine, st, pool, nil, "test")
+	api := rpc.NewAPI(engine, st, pool, nil, nil, "test")
 	srv := rpc.NewServer("127.0.0.1:0", api, 5*time.Second, 5*time.Second)
 
 	ts := httptest.NewServer(srv)
