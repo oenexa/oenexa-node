@@ -63,14 +63,19 @@ type Node struct {
 	seenBlocks map[[oenexaCrypto.HashSize]byte]time.Time
 
 	// Worker pool for parallel transaction processing
-	txChan chan *core.Transaction
+	txChan chan struct{
+		pid peer.ID
+		tx  *core.Transaction
+	}
 
 	// Hooks
-	OnTxReceived    func(*core.Transaction)
-	OnBlockReceived func(*core.Block)
+	OnTxReceived    func(peer.ID, *core.Transaction) error
+	OnBlockReceived func(peer.ID, *core.Block) error
 	OnVoteReceived  func([]byte)
 	OnSyncReq       func(SyncReq)
 	OnSyncRes       func(SyncRes)
+	
+	rm *ReputationManager
 }
 
 // mdnsNotifee handles mDNS peer discovery events.
@@ -121,14 +126,19 @@ func NewNode(local *Identity, listenPort int) (*Node, error) {
 		return nil, fmt.Errorf("pubsub.NewGossipSub: %w", err)
 	}
 
-	return &Node{
+	n := &Node{
 		host:       h,
 		pubsub:     ps,
 		identity:   local,
 		seenTxs:    make(map[[oenexaCrypto.HashSize]byte]time.Time),
 		seenBlocks: make(map[[oenexaCrypto.HashSize]byte]time.Time),
-		txChan:     make(chan *core.Transaction, 2048),
-	}, nil
+		txChan: make(chan struct{
+			pid peer.ID
+			tx  *core.Transaction
+		}, 2048),
+	}
+	n.rm = NewReputationManager(n)
+	return n, nil
 }
 
 // Start begins gossiping and listening for incoming pubsub messages.
@@ -145,12 +155,17 @@ func (n *Node) Start(ctx context.Context) error {
 				select {
 				case <-ctx.Done():
 					return
-				case tx, ok := <-n.txChan:
+				case item, ok := <-n.txChan:
 					if !ok {
 						return
 					}
 					if n.OnTxReceived != nil {
-						n.OnTxReceived(tx)
+						err := n.OnTxReceived(item.pid, item.tx)
+						if err != nil && n.rm != nil {
+							n.rm.Penalize(item.pid, PenaltyInvalidSignature, err.Error())
+						} else if err == nil && n.rm != nil {
+							n.rm.Reward(item.pid, RewardValidTx)
+						}
 					}
 				}
 			}
@@ -369,14 +384,24 @@ func (n *Node) handleTxSub(ctx context.Context) {
 			continue
 		}
 
+		if n.rm != nil && n.rm.IsBanned(msg.ReceivedFrom) {
+			continue
+		}
+
 		// Security: reject packets larger than 2 MiB
 		if len(msg.Data) > 2*1024*1024 {
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltySpam, "tx packet too large")
+			}
 			continue
 		}
 
 		var tx core.Transaction
 		if err := json.Unmarshal(msg.Data, &tx); err != nil {
 			log.Printf("[p2p] failed to unmarshal tx: %v", err)
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltyInvalidTxFormat, "invalid json tx format")
+			}
 			continue
 		}
 
@@ -392,7 +417,7 @@ func (n *Node) handleTxSub(ctx context.Context) {
 
 		// Non-blocking dispatch to parallel verification workers
 		select {
-		case n.txChan <- &tx:
+		case n.txChan <- struct{pid peer.ID; tx *core.Transaction}{pid: msg.ReceivedFrom, tx: &tx}:
 		default:
 			// Under extreme overload, log warning
 			log.Printf("[p2p] warning: tx worker queue full, dropped tx %x", tx.Hash[:4])
@@ -410,14 +435,24 @@ func (n *Node) handleBlockSub(ctx context.Context) {
 			continue
 		}
 
+		if n.rm != nil && n.rm.IsBanned(msg.ReceivedFrom) {
+			continue
+		}
+
 		// Security: reject block packets larger than 16 MiB
 		if len(msg.Data) > 16*1024*1024 {
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltySpam, "block packet too large")
+			}
 			continue
 		}
 
 		var block core.Block
 		if err := json.Unmarshal(msg.Data, &block); err != nil {
 			log.Printf("[p2p] failed to unmarshal block: %v", err)
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltyInvalidTxFormat, "invalid json block format")
+			}
 			continue
 		}
 
@@ -427,7 +462,12 @@ func (n *Node) handleBlockSub(ctx context.Context) {
 		n.markSeenBlock(block.Hash)
 
 		if n.OnBlockReceived != nil {
-			n.OnBlockReceived(&block)
+			err := n.OnBlockReceived(msg.ReceivedFrom, &block)
+			if err != nil && n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltyInvalidBlock, err.Error())
+			} else if err == nil && n.rm != nil {
+				n.rm.Reward(msg.ReceivedFrom, RewardValidBlock)
+			}
 		}
 	}
 }

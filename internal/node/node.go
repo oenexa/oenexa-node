@@ -23,6 +23,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/libp2p/go-libp2p/core/peer"
 	"strconv"
 	"strings"
 	"time"
@@ -195,16 +197,19 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 				_ = n.p2pNode.BroadcastBlock(context.Background(), blk)
 			}
 		}
-		n.p2pNode.OnTxReceived = func(tx *core.Transaction) {
-			_ = n.pool.Add(tx)
+		n.p2pNode.OnTxReceived = func(pid peer.ID, tx *core.Transaction) error {
+			return n.pool.Add(tx)
 		}
-		n.p2pNode.OnBlockReceived = func(blk *core.Block) {
+		n.p2pNode.OnBlockReceived = func(pid peer.ID, blk *core.Block) error {
 			if n.engine != nil {
-				_ = n.engine.ProcessProposal(blk)
+				if err := n.engine.ProcessProposal(blk); err != nil {
+					return err
+				}
 			}
 			if n.syncer != nil {
 				n.syncer.ApplyBlocks([]*core.Block{blk})
 			}
+			return nil
 		}
 		n.p2pNode.OnVoteReceived = func(data []byte) {
 			if n.engine != nil {

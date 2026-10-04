@@ -41,8 +41,8 @@ func TestNodeStartupShutdown(t *testing.T) {
 
 	// Call P2P handlers for coverage
 	if n.p2pNode != nil {
-		n.p2pNode.OnTxReceived(&core.Transaction{})
-		n.p2pNode.OnBlockReceived(&core.Block{})
+		n.p2pNode.OnTxReceived("", &core.Transaction{})
+		n.p2pNode.OnBlockReceived("", &core.Block{})
 	}
 
 	_ = n.StatusReport()

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/oenexa/oenexa/internal/core"
 	"github.com/oenexa/oenexa/internal/crypto"
 	"github.com/oenexa/oenexa/internal/p2p"
@@ -34,8 +35,9 @@ func TestLibp2pNode_TxGossip(t *testing.T) {
 
 	// 3. Setup hooks
 	txChan := make(chan *core.Transaction, 1)
-	node2.OnTxReceived = func(tx *core.Transaction) {
+	node2.OnTxReceived = func(pid peer.ID, tx *core.Transaction) error {
 		txChan <- tx
+		return nil
 	}
 
 	if err := node1.Start(ctx); err != nil {
