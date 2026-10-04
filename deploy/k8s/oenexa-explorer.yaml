@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: oenexa-frontend
+  name: oenexa-explorer
   namespace: oenexa-network
   labels:
-    app: oenexa-frontend
+    app: oenexa-explorer
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: oenexa-frontend
+      app: oenexa-explorer
   template:
     metadata:
       labels:
-        app: oenexa-frontend
+        app: oenexa-explorer
     spec:
       containers:
-        - name: frontend
-          image: oenexa-frontend:latest
+        - name: explorer
+          image: oenexa-explorer:latest
           imagePullPolicy: IfNotPresent # For local use
           ports:
             - containerPort: 80
@@ -26,12 +26,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: oenexa-frontend-svc
+  name: oenexa-explorer-svc
   namespace: oenexa-network
 spec:
-  type: LoadBalancer # Exposes the frontend outside the cluster
+  type: LoadBalancer # Exposes the explorer outside the cluster
   selector:
-    app: oenexa-frontend
+    app: oenexa-explorer
   ports:
     - name: http
       protocol: TCP

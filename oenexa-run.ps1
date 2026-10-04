@@ -37,8 +37,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $NodeRepo = "https://github.com/oenexa/oenexa-node.git"
-$FrontendRepo = "https://github.com/oenexa/oenexa-frontend.git"
-$FrontendFallbackRepo = "https://github.com/qbc-qubitscoin/oenexa-frontend.git"
+$ExplorerRepo = "https://github.com/oenexa/oenexa-explorer.git"
 
 if ($Stop) {
     Write-Host "Stopping OENEXA Docker containers..." -ForegroundColor Yellow
@@ -134,39 +133,31 @@ if (Test-Path "oenexa-node/.git") {
 }
 Write-Host "      ✓ Backend oenexa-node ready."
 
-if (Test-Path "oenexa-frontend/.git") {
-    Write-Host "      Updating existing oenexa-frontend repository..."
-    Set-Location oenexa-frontend
+if (Test-Path "oenexa-explorer/.git") {
+    Write-Host "      Updating existing oenexa-explorer repository..."
+    Set-Location oenexa-explorer
     git fetch origin $Branch 2>$null
     git checkout $Branch 2>$null
     git pull origin $Branch 2>$null
     Set-Location $deployRoot
 } else {
-    Write-Host "      Cloning oenexa-frontend ($FrontendRepo) branch $Branch..."
+    Write-Host "      Cloning oenexa-explorer ($ExplorerRepo) branch $Branch..."
     $cloneOk = $false
     try {
-        git clone -b $Branch --depth 1 $FrontendRepo oenexa-frontend 2>$null
+        git clone -b $Branch --depth 1 $ExplorerRepo oenexa-explorer 2>$null
         if ($LASTEXITCODE -eq 0) { $cloneOk = $true }
     } catch {}
 
     if (-not $cloneOk) {
-        Write-Host "      oenexa/oenexa-frontend not yet public; attempting fallback ($FrontendFallbackRepo)..." -ForegroundColor Yellow
-        try {
-            git clone -b $Branch --depth 1 $FrontendFallbackRepo oenexa-frontend 2>$null
-            if ($LASTEXITCODE -eq 0) { $cloneOk = $true }
-        } catch {}
-    }
-
-    if (-not $cloneOk) {
         Write-Host "      Cloning from local repository workspace as fallback..." -ForegroundColor Yellow
-        if (Test-Path "../../oenexa-frontend") {
-            Copy-Item -Recurse "../../oenexa-frontend" "./oenexa-frontend"
-        } elseif (Test-Path "../oenexa-frontend") {
-            Copy-Item -Recurse "../oenexa-frontend" "./oenexa-frontend"
+        if (Test-Path "../../oenexa-explorer") {
+            Copy-Item -Recurse "../../oenexa-explorer" "./oenexa-explorer"
+        } elseif (Test-Path "../oenexa-explorer") {
+            Copy-Item -Recurse "../oenexa-explorer" "./oenexa-explorer"
         }
     }
 }
-Write-Host "      ✓ Frontend oenexa-frontend ready."
+Write-Host "      ✓ Explorer oenexa-explorer ready."
 
 # 4. Generate docker-compose.yml
 Write-Host "`n[4/5] Generating Docker orchestration manifests..." -ForegroundColor Blue
@@ -198,12 +189,12 @@ services:
     networks:
       - oenexa-net
 
-  oenexa-frontend:
+  oenexa-explorer:
     build:
-      context: ./oenexa-frontend
+      context: ./oenexa-explorer
       dockerfile: Dockerfile
-    image: oenexa-frontend:latest
-    container_name: oenexa-frontend
+    image: oenexa-explorer:latest
+    container_name: oenexa-explorer
     restart: unless-stopped
     ports:
       - "${Port}:80"

@@ -17,8 +17,7 @@ NC='\033[0m' # No Color
 
 # Default parameters
 NODE_REPO="https://github.com/oenexa/oenexa-node.git"
-FRONTEND_REPO="https://github.com/oenexa/oenexa-frontend.git"
-FRONTEND_FALLBACK_REPO="https://github.com/qbc-qubitscoin/oenexa-frontend.git"
+EXPLORER_REPO="https://github.com/oenexa/oenexa-explorer.git"
 BRANCH="main"
 FRONTEND_PORT=3000
 RPC_PORT=8545
@@ -209,25 +208,22 @@ else
 fi
 echo "      ✓ Backend oenexa-node ready."
 
-# Frontend clone / pull with fallback
-if [ -d "oenexa-frontend/.git" ]; then
-    echo "      Updating existing oenexa-frontend repository..."
-    cd oenexa-frontend
+# Explorer clone / pull with fallback
+if [ -d "oenexa-explorer/.git" ]; then
+    echo "      Updating existing oenexa-explorer repository..."
+    cd oenexa-explorer
     git fetch origin "$BRANCH" 2>/dev/null || true
     git checkout "$BRANCH" 2>/dev/null || true
     git pull origin "$BRANCH" 2>/dev/null || true
     cd "$DEPLOY_ROOT"
 else
-    echo "      Cloning oenexa-frontend ($FRONTEND_REPO) branch $BRANCH..."
-    if ! git clone -b "$BRANCH" --depth 1 "$FRONTEND_REPO" oenexa-frontend 2>/dev/null; then
-        echo -e "      ${YELLOW}oenexa/oenexa-frontend not yet public; attempting fallback ($FRONTEND_FALLBACK_REPO)...${NC}"
-        if ! git clone -b "$BRANCH" --depth 1 "$FRONTEND_FALLBACK_REPO" oenexa-frontend 2>/dev/null; then
-            echo -e "      ${YELLOW}Cloning from local repository workspace as fallback...${NC}"
-            cp -r ../../oenexa-frontend ./oenexa-frontend 2>/dev/null || cp -r ../oenexa-frontend ./oenexa-frontend
-        fi
+    echo "      Cloning oenexa-explorer ($EXPLORER_REPO) branch $BRANCH..."
+    if ! git clone -b "$BRANCH" --depth 1 "$EXPLORER_REPO" oenexa-explorer 2>/dev/null; then
+        echo -e "      ${YELLOW}Cloning from local repository workspace as fallback...${NC}"
+        cp -r ../../oenexa-explorer ./oenexa-explorer 2>/dev/null || cp -r ../oenexa-explorer ./oenexa-explorer
     fi
 fi
-echo "      ✓ Frontend oenexa-frontend ready."
+echo "      ✓ Explorer oenexa-explorer ready."
 
 # Step 4: Generate unified docker-compose configuration
 echo -e "\n${BLUE}[4/5] Generating Docker orchestration manifests...${NC}"
@@ -259,12 +255,12 @@ services:
     networks:
       - oenexa-net
 
-  oenexa-frontend:
+  oenexa-explorer:
     build:
-      context: ./oenexa-frontend
+      context: ./oenexa-explorer
       dockerfile: Dockerfile
-    image: oenexa-frontend:latest
-    container_name: oenexa-frontend
+    image: oenexa-explorer:latest
+    container_name: oenexa-explorer
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT}:80"

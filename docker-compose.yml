@@ -45,13 +45,13 @@ services:
       start_period: 10s
 
 
-  # ── OEN Decoupled Frontend Dashboard (React 18 + Vite) ──────────────────────
-  oenexa-frontend:
+  # ── OEN Decoupled Explorer Dashboard (React 18 + Vite) ──────────────────────
+  oenexa-explorer:
     build:
-      context: ../oenexa-frontend
+      context: ../oenexa-explorer
       dockerfile: Dockerfile
-    image: oenexa-frontend:latest
-    container_name: oenexa-frontend
+    image: oenexa-explorer:latest
+    container_name: oenexa-explorer
     restart: unless-stopped
     ports:
       - "8080:80/tcp"
