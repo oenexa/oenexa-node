@@ -22,7 +22,7 @@ import (
 func buildRealServer(t *testing.T) (*httptest.Server, *rpc.Server) {
 	t.Helper()
 	w, _ := crypto.NewWallet()
-	genCfg := core.DefaultGenesisConfig(w.Address)
+	genCfg := core.DefaultGenesisConfig([][crypto.AddressSize]byte{w.Address})
 	genesis := genCfg.Build()
 	st := state.NewStateDB()
 	for addr, bal := range genCfg.Allocations {

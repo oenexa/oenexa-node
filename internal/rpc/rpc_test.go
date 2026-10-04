@@ -28,7 +28,7 @@ func buildTestServer(t *testing.T) (*httptest.Server, *crypto.Wallet) {
 	}
 
 	// Bootstrap genesis.
-	genCfg := core.DefaultGenesisConfig(w.Address)
+	genCfg := core.DefaultGenesisConfig([][crypto.AddressSize]byte{w.Address})
 	genesis := genCfg.Build()
 
 	st := state.NewStateDB()
@@ -123,7 +123,7 @@ func (h *serveHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func buildTestHandler(t *testing.T) (*httptest.Server, *crypto.Wallet) {
 	t.Helper()
 	w, _ := crypto.NewWallet()
-	genCfg := core.DefaultGenesisConfig(w.Address)
+	genCfg := core.DefaultGenesisConfig([][crypto.AddressSize]byte{w.Address})
 	genesis := genCfg.Build()
 	st := state.NewStateDB()
 	for addr, bal := range genCfg.Allocations {

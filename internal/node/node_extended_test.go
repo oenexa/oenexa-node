@@ -154,7 +154,7 @@ func TestNodeLoadChain(t *testing.T) {
 	}
 	defer n.shutdown()
 
-	genesis := core.DefaultGenesisConfig([crypto.AddressSize]byte{}).Build()
+	genesis := core.DefaultGenesisConfig([][crypto.AddressSize]byte{{}}).Build()
 	chain, err := n.loadChain(genesis, 0)
 	if err != nil {
 		t.Fatal(err)

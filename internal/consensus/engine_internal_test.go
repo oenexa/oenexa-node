@@ -16,7 +16,7 @@ import (
 
 func newTestGenesis(valAddr [crypto.AddressSize]byte) (*core.Block, *state.DB) {
 	st := state.NewStateDB()
-	cfg := core.DefaultGenesisConfig(valAddr)
+	cfg := core.DefaultGenesisConfig([][crypto.AddressSize]byte{valAddr})
 	cfg.Allocations = map[[crypto.AddressSize]byte]uint64{
 		valAddr: 1_000_000 * core.OneOEN,
 	}
@@ -36,7 +36,7 @@ func TestEngine_ProduceBlock_Internal(t *testing.T) {
 		Nonce:   0,
 	})
 
-	cfg := core.DefaultGenesisConfig(w.Address)
+	cfg := core.DefaultGenesisConfig([][crypto.AddressSize]byte{w.Address})
 	cfg.Allocations = map[[crypto.AddressSize]byte]uint64{
 		w.Address: 1_000_000 * core.OneOEN,
 	}

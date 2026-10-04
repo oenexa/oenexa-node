@@ -136,7 +136,7 @@ func TestCore_FeeComparisonTable(t *testing.T) {
 
 func TestCore_GenesisConfig(t *testing.T) {
 	var valAddr [crypto.AddressSize]byte
-	cfg := DefaultGenesisConfig(valAddr)
+	cfg := DefaultGenesisConfig([][crypto.AddressSize]byte{valAddr})
 	if cfg.ChainID != ChainID {
 		t.Errorf("expected ChainID %d, got %d", ChainID, cfg.ChainID)
 	}

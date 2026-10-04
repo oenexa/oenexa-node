@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -52,5 +53,42 @@ func FuzzNextBaseFee(f *testing.F) {
 		if next < MinBaseFee {
 			t.Errorf("NextBaseFee %d is less than MinBaseFee %d", next, MinBaseFee)
 		}
+	})
+}
+
+
+
+
+
+// FuzzTransactionUnmarshalJSON ensures malformed or malicious JSON
+// payloads from the P2P layer do not cause panics or out-of-memory.
+func FuzzTransactionUnmarshalJSON(f *testing.F) {
+	validTx := &Transaction{Version: 1, Type: TxTransfer, Amount: 100}
+	validBytes, _ := json.Marshal(validTx)
+	
+	f.Add(validBytes)
+	f.Add([]byte("{}"))
+	f.Add([]byte(`{"version":1}`))
+	f.Add([]byte("[1,2,3]"))
+	
+	f.Fuzz(func(t *testing.T, payload []byte) {
+		var tx Transaction
+		_ = json.Unmarshal(payload, &tx) // Should not panic
+	})
+}
+
+// FuzzBlockUnmarshalJSON ensures malformed JSON block payloads
+// do not cause panics.
+func FuzzBlockUnmarshalJSON(f *testing.F) {
+	validBlock := &Block{Header: BlockHeader{Height: 1}}
+	validBytes, _ := json.Marshal(validBlock)
+	
+	f.Add(validBytes)
+	f.Add([]byte("{}"))
+	f.Add([]byte(`{"header":{"height":1}}`))
+	
+	f.Fuzz(func(t *testing.T, payload []byte) {
+		var blk Block
+		_ = json.Unmarshal(payload, &blk) // Should not panic
 	})
 }
