@@ -83,6 +83,10 @@ func (a *API) Dispatch(req *Request) *Response {
 		return a.sendRawTransaction(req)
 	case "oen_call", "eth_call":
 		return a.call(req)
+	case "oen_getTransactionReceipt", "eth_getTransactionReceipt":
+		return a.getTransactionReceipt(req)
+	case "oen_getTransactionByHash", "eth_getTransactionByHash":
+		return a.getTransactionByHash(req)
 
 	// ── Fees ───────────────────────────────────────────────────────────────
 	case "oen_feeEstimate":
@@ -424,3 +428,79 @@ func (a *API) call(req *Request) *Response {
 	return okResponse(req.ID, "0x"+hex.EncodeToString(res.ReturnData))
 }
 
+func (a *API) getTransactionReceipt(req *Request) *Response {
+	var params []string
+	if err := json.Unmarshal(req.Params, &params); err != nil || len(params) == 0 {
+		return errResponse(req.ID, CodeInvalidParams, "params: [tx_hash hex-string]")
+	}
+	hashStr := params[0]
+	if len(hashStr) >= 2 && (hashStr[:2] == "0x" || hashStr[:2] == "0X") {
+		hashStr = hashStr[2:]
+	}
+	hash, err := crypto.HexToHash(hashStr)
+	if err != nil {
+		return errResponse(req.ID, CodeInvalidParams, "invalid hash: "+err.Error())
+	}
+	
+	// Linear scan (for testing)
+	height := a.engine.Height()
+	for h := uint64(0); h < height; h++ {
+		blk := a.engine.BlockByHeight(h)
+		for i, tx := range blk.Txs {
+			if tx.Hash == hash {
+				return okResponse(req.ID, &TxReceipt{
+					TransactionHash:   "0x" + crypto.ToHex(tx.Hash),
+					TransactionIndex:  fmt.Sprintf("0x%x", i),
+					BlockHash:         "0x" + crypto.ToHex(blk.Hash),
+					BlockNumber:       fmt.Sprintf("0x%x", blk.Header.Height),
+					From:              "0x" + crypto.AddressToHex(tx.From),
+					To:                "0x" + crypto.AddressToHex(tx.To),
+					GasUsed:           fmt.Sprintf("0x%x", tx.GasLimit), // Approx
+					EffectiveGasPrice: fmt.Sprintf("0x%x", blk.Header.BaseFee),
+					Status:            "0x1", // 1 = success
+				})
+			}
+		}
+	}
+	
+	return okResponse(req.ID, nil) // not found
+}
+
+func (a *API) getTransactionByHash(req *Request) *Response {
+	var params []string
+	if err := json.Unmarshal(req.Params, &params); err != nil || len(params) == 0 {
+		return errResponse(req.ID, CodeInvalidParams, "params: [tx_hash hex-string]")
+	}
+	hashStr := params[0]
+	if len(hashStr) >= 2 && (hashStr[:2] == "0x" || hashStr[:2] == "0X") {
+		hashStr = hashStr[2:]
+	}
+	hash, err := crypto.HexToHash(hashStr)
+	if err != nil {
+		return errResponse(req.ID, CodeInvalidParams, "invalid hash: "+err.Error())
+	}
+	
+	height := a.engine.Height()
+	for h := uint64(0); h < height; h++ {
+		blk := a.engine.BlockByHeight(h)
+		for _, tx := range blk.Txs {
+			if tx.Hash == hash {
+				return okResponse(req.ID, &TxInfo{
+					Hash:      "0x" + crypto.ToHex(tx.Hash),
+					Type:      uint8(tx.Type),
+					Version:   tx.Version,
+					Nonce:     tx.Nonce,
+					From:      "0x" + crypto.AddressToHex(tx.From),
+					To:        "0x" + crypto.AddressToHex(tx.To),
+					Amount:    tx.Amount,
+					GasLimit:  tx.GasLimit,
+					GasPrice:  tx.GasPrice,
+					Timestamp: blk.Header.Timestamp,
+					DataHex:   "0x" + hex.EncodeToString(tx.Data),
+				})
+			}
+		}
+	}
+	
+	return okResponse(req.ID, nil)
+}

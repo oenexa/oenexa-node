@@ -123,3 +123,17 @@ type FeeEstimateResult struct {
 	TransferStandard uint64 `json:"transfer_standard_oenexa"`
 	TransferFast     uint64 `json:"transfer_fast_oenexa"`
 }
+
+// TxReceipt is the JSON representation of a transaction receipt.
+type TxReceipt struct {
+	TransactionHash   string `json:"transactionHash"`
+	TransactionIndex  string `json:"transactionIndex"`
+	BlockHash         string `json:"blockHash"`
+	BlockNumber       string `json:"blockNumber"`
+	From              string `json:"from"`
+	To                string `json:"to,omitempty"`
+	GasUsed           string `json:"gasUsed"`
+	EffectiveGasPrice string `json:"effectiveGasPrice"`
+	Status            string `json:"status"`
+}
+
