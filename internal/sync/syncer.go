@@ -171,13 +171,28 @@ func (s *Syncer) ApplyBlocks(blocks []*core.Block) {
 			result.BurnedFees,
 			result.BlockReward,
 		)
-		// Persist block and state.
+
+		// ── VITAL: Flush the new state changes to the persistence layer!
+		if s.st != nil {
+			_, err := s.st.CommitAndFlush()
+			if err != nil {
+				log.Printf("[sync] failed to flush state db h=%d: %v", blk.Header.Height, err)
+				continue
+			}
+		}
+
+		// Persist block in block store
 		if s.store != nil {
 			if err := s.store.PutBlock(blk); err != nil {
 				log.Printf("[sync] store block h=%d: %v", blk.Header.Height, err)
 			} else {
 				_ = s.store.UpdateTip(blk.Header.Height, blk.Hash)
 			}
+		}
+
+		// Inject block into the consensus engine so it knows the local height advanced
+		if s.engine != nil {
+			s.engine.InjectBlock(blk)
 		}
 	}
 }
