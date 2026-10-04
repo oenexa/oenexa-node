@@ -72,10 +72,10 @@ Cryptographic inclusion proofs allow light clients, decentralized bridges, and L
 
 The transaction pool orchestrates incoming transactions, prioritizes gas fees, validates nonces, and drops invalid or expired transactions.
 
-| Benchmark Target | Latency | Memory / Op | Allocations | Description |
-|------------------|---------|-------------|-------------|-------------|
-| `BenchmarkMempoolAdd` | **161 ns/op** | 0 B/op | 0 allocs/op | Ingestion, nonce validation, and priority insertion |
-| `BenchmarkMempoolPurgeCommitted` | **8.1 µs/op** | 0 B/op | 0 allocs/op | Batch eviction of committed block transactions |
+| Benchmark Target                 | Latency       | Memory / Op | Allocations | Description                                         |
+|----------------------------------|---------------|-------------|-------------|-----------------------------------------------------|
+| `BenchmarkMempoolAdd`            | **161 ns/op** | 0 B/op      | 0 allocs/op | Ingestion, nonce validation, and priority insertion |
+| `BenchmarkMempoolPurgeCommitted` | **8.1 µs/op** | 0 B/op      | 0 allocs/op | Batch eviction of committed block transactions      |
 
 ### Mempool Highlights
 - Zero memory allocation during transaction insertion maintains low GC overhead under high-volume flooding.

@@ -30,7 +30,7 @@ func setupTestBFT(t *testing.T) (*Engine, *Engine, *crypto.Wallet, *crypto.Walle
 	st2.SetAccount(val1Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneOEN})
 	st2.SetAccount(val2Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneOEN})
 
-	cfg := core.DefaultGenesisConfig(val1Wallet.Address)
+	cfg := core.DefaultGenesisConfig([][crypto.AddressSize]byte{val1Wallet.Address})
 	cfg.Allocations = map[[crypto.AddressSize]byte]uint64{
 		val1Wallet.Address: 1_000_000 * core.OneOEN,
 		val2Wallet.Address: 1_000_000 * core.OneOEN,
