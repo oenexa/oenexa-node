@@ -26,6 +26,8 @@ type ChainConfig struct {
 	NetworkID uint32 `toml:"network_id"`
 	// Name is a human-readable label displayed in logs.
 	Name string `toml:"name"`
+	// Validators is a list of initial PBFT validator addresses (hex strings)
+	Validators []string `toml:"validators"`
 }
 
 // NodeConfig holds validator and key-management settings.

@@ -63,6 +63,7 @@ Hard cap: 100,000,000 OEN`,
 var (
 	flagConfig   string
 	flagDataDir  string
+	flagKeystore string
 	flagPassword string
 	flagRPCAddr  string
 )
@@ -70,6 +71,7 @@ var (
 func init() {
 	rootCmd.PersistentFlags().StringVar(&flagConfig, "config", "", "path to a TOML config file")
 	rootCmd.PersistentFlags().StringVar(&flagDataDir, "datadir", "", "override data directory (default: ~/.oen)")
+	rootCmd.PersistentFlags().StringVar(&flagKeystore, "keystore", "", "override keystore file path")
 	rootCmd.PersistentFlags().StringVar(&flagPassword, "password", "", "keystore password (avoid using on CLI; prefer OEN_PASSWORD env var)")
 	rootCmd.PersistentFlags().StringVar(&flagRPCAddr, "rpc", "http://127.0.0.1:8545", "RPC endpoint for query/tx commands")
 
@@ -529,13 +531,25 @@ func main() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 func loadConfig() (*config.Config, error) {
+	var cfg *config.Config
+	var err error
 	if flagConfig != "" {
-		return config.Load(flagConfig)
+		cfg, err = config.Load(flagConfig)
+	} else if flagTestnet {
+		cfg = config.TestnetDefault()
+	} else {
+		cfg = config.Default()
 	}
-	if flagTestnet {
-		return config.TestnetDefault(), nil
+	if err != nil {
+		return nil, err
 	}
-	return config.Default(), nil
+	if flagDataDir != "" {
+		cfg.Node.DataDir = flagDataDir
+	}
+	if flagKeystore != "" {
+		cfg.Node.KeystoreFile = flagKeystore
+	}
+	return cfg, nil
 }
 
 func resolvePassword() string {

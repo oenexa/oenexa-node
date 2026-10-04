@@ -1,0 +1,78 @@
+services:
+  node0:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: oenexa-node:testnet
+    container_name: oenexa-node0
+    restart: unless-stopped
+    environment:
+      OEN_PASSWORD: "testnet-password"
+    ports:
+      - "8545:8545" # RPC for node0
+    volumes:
+      - node0-data:/data
+      - ./deploy/k8s/testnet-config.toml:/data/config.toml:ro
+      - ./deploy/k8s/testnet-keys/oenexa-node-0/keystore.json:/data/keystore.json:ro
+    command: >
+      start --config /data/config.toml --keystore /data/keystore.json
+
+  node1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: oenexa-node:testnet
+    container_name: oenexa-node1
+    restart: unless-stopped
+    environment:
+      OEN_PASSWORD: "testnet-password"
+    ports:
+      - "8546:8545"
+    volumes:
+      - node1-data:/data
+      - ./deploy/k8s/testnet-config.toml:/data/config.toml:ro
+      - ./deploy/k8s/testnet-keys/oenexa-node-1/keystore.json:/data/keystore.json:ro
+    command: >
+      start --config /data/config.toml --keystore /data/keystore.json
+
+  node2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: oenexa-node:testnet
+    container_name: oenexa-node2
+    restart: unless-stopped
+    environment:
+      OEN_PASSWORD: "testnet-password"
+    ports:
+      - "8547:8545"
+    volumes:
+      - node2-data:/data
+      - ./deploy/k8s/testnet-config.toml:/data/config.toml:ro
+      - ./deploy/k8s/testnet-keys/node2/keystore.json:/data/keystore.json:ro
+    command: >
+      start --config /data/config.toml --keystore /data/keystore.json
+
+  node3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: oenexa-node:testnet
+    container_name: oenexa-node3
+    restart: unless-stopped
+    environment:
+      OEN_PASSWORD: "testnet-password"
+    ports:
+      - "8548:8545"
+    volumes:
+      - node3-data:/data
+      - ./deploy/k8s/testnet-config.toml:/data/config.toml:ro
+      - ./deploy/k8s/testnet-keys/node3/keystore.json:/data/keystore.json:ro
+    command: >
+      start --config /data/config.toml --keystore /data/keystore.json
+
+volumes:
+  node0-data:
+  node1-data:
+  node2-data:
+  node3-data:

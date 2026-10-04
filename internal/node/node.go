@@ -100,7 +100,20 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 	n.stateStore = storage.NewStateStore(sdb)
 
 	// ── 3. Genesis / chain bootstrap ──────────────────────────────────────
-	genesisCfg := core.DefaultGenesisConfig(wallet.Address)
+	var initialValidators [][crypto.AddressSize]byte
+	if len(cfg.Chain.Validators) > 0 {
+		for _, vHex := range cfg.Chain.Validators {
+			addr, err := crypto.HexToAddress(vHex)
+			if err != nil {
+				return nil, fmt.Errorf("invalid validator address in config: %v", err)
+			}
+			initialValidators = append(initialValidators, addr)
+		}
+	} else {
+		initialValidators = append(initialValidators, wallet.Address)
+	}
+
+	genesisCfg := core.DefaultGenesisConfig(initialValidators)
 	genesisBlock := genesisCfg.Build()
 
 	storedTip, _, tipErr := n.blockStore.GetTip()
@@ -143,12 +156,19 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 	// Rebuild the in-memory chain from the block store.
 	chain, err := n.loadChain(genesisBlock, storedTip)
 
-	validator := &consensus.Validator{
-		Address:     wallet.Address,
-		PublicKey:   wallet.PublicKey,
-		VotingPower: 1,
+	var validators []*consensus.Validator
+	for _, addr := range initialValidators {
+		val := &consensus.Validator{
+			Address:     addr,
+			VotingPower: 1,
+		}
+		// Attach public key for local validator
+		if addr == wallet.Address {
+			val.PublicKey = wallet.PublicKey
+		}
+		validators = append(validators, val)
 	}
-	vs, err := consensus.NewValidatorSet([]*consensus.Validator{validator})
+	vs, err := consensus.NewValidatorSet(validators)
 
 	scheduler := upgrade.NewScheduler(1, nil)
 	n.upgradeMgr = upgrade.NewManager(upgrade.Config{

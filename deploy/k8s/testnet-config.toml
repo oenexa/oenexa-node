@@ -1,0 +1,43 @@
+[chain]
+network_id = 2
+name = "Oenexa Local Testnet"
+validators = [
+  "4ea5612584d9ddf73994531ee13c4daedca062c9ca50e18ff75ed3d4ebb72803",
+  "bfbd0eae0130a0a38c6cf9145146348227fdf9a3d084f71e51dfa5e50a79eeee",
+  "b9981f876ff89ac2620b49d19c4928a3f252ebce88741de55815ded0f66b3a55",
+  "eab918c3f73ad9f4c815d0ebb27ede7913c262247466416132339fb4c8c818a1",
+]
+
+[node]
+data_dir = "/data"
+keystore_file = "keystore.json"
+miner_enabled = true
+log_level = "info"
+
+[p2p]
+listen_addr = "0.0.0.0:8765"
+bootstrap_peers = [
+  "/dns4/oenexa-node-0.oenexa-p2p.oenexa-testnet.svc.cluster.local/tcp/8765/p2p/12D3KooWCCJX4qVLL3sUWXpZyG4vXQqX3CyUwjJDUNGvMviiYgRb",
+  "/dns4/oenexa-node-1.oenexa-p2p.oenexa-testnet.svc.cluster.local/tcp/8765/p2p/12D3KooWCHAMnJnqxc9tH3snMXyR7EdKAFfBo93xsnrmCc9txrmt",
+  "/dns4/oenexa-node-2.oenexa-p2p.oenexa-testnet.svc.cluster.local/tcp/8765/p2p/12D3KooWLnSWguxACmXNzW9abSoogPX7ZkMYR6McpaxZ8k4rYYUm",
+  "/dns4/oenexa-node-3.oenexa-p2p.oenexa-testnet.svc.cluster.local/tcp/8765/p2p/12D3KooWNuNMSPVz2WRzvUVeayd4xe3ijm13QGupD6omBq1xHQyi",
+]
+max_peers = 50
+
+[rpc]
+enabled = true
+listen_addr = "0.0.0.0:8545"
+cors_allowed_origins = ["*"]
+
+[storage]
+backend = "leveldb"
+cache_size_mb = 256
+
+[metrics]
+enabled = true
+listen_addr = "0.0.0.0:9090"
+
+[upgrade]
+release_url = ""
+check_interval = "24h"
+auto_apply = false

@@ -17,15 +17,21 @@ type GenesisConfig struct {
 	Allocations   map[[crypto.AddressSize]byte]uint64
 }
 
-// DefaultGenesisConfig returns a sensible genesis config for a single-validator testnet.
-func DefaultGenesisConfig(validatorAddr [crypto.AddressSize]byte) *GenesisConfig {
-	alloc := map[[crypto.AddressSize]byte]uint64{
-		validatorAddr: 10_000_000 * OneOEN, // 10M OEN pre-mine to validator
+// DefaultGenesisConfig returns a sensible genesis config for a testnet.
+func DefaultGenesisConfig(validators [][crypto.AddressSize]byte) *GenesisConfig {
+	alloc := make(map[[crypto.AddressSize]byte]uint64)
+	for _, v := range validators {
+		alloc[v] = 10_000_000 * OneOEN // 10M OEN pre-mine to each validator
+	}
+	// The first validator acts as the nominal proposer of the genesis block
+	proposer := [crypto.AddressSize]byte{}
+	if len(validators) > 0 {
+		proposer = validators[0]
 	}
 	return &GenesisConfig{
 		ChainID:       ChainID,
 		Timestamp:     time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).UnixNano(),
-		ValidatorAddr: validatorAddr,
+		ValidatorAddr: proposer,
 		Allocations:   alloc,
 	}
 }
