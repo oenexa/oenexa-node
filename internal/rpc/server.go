@@ -76,6 +76,11 @@ func (s *Server) handleRPC(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
 
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
 		return
