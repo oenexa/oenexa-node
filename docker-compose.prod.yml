@@ -59,7 +59,7 @@ services:
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY:-}"
       GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
-      OLLAMA_HOST: "${OLLAMA_HOST:-http://host.docker.internal:11434}"
+      OLLAMA_HOST: "${OLLAMA_HOST:-http://oenexa-ollama:11434}"
     expose:
       - "8080"
     healthcheck:
@@ -153,6 +153,21 @@ services:
     networks:
       - oenexa-net
 
+  # ── 8. OENEXA Local Sovereign Ollama LLM Service ───────────────────────────
+  oenexa-ollama:
+    image: ollama/ollama:latest
+    container_name: oenexa-ollama
+    restart: unless-stopped
+    volumes:
+      - oenexa-ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_NUM_PARALLEL=2
+    expose:
+      - "11434"
+    networks:
+      - oenexa-net
+
 volumes:
   oen-chain-data:
     name: oen-chain-data
@@ -160,6 +175,8 @@ volumes:
     name: oenexa-postgres-data
   oenexa-redis-data:
     name: oenexa-redis-data
+  oenexa-ollama-data:
+    name: oenexa-ollama-data
   caddy-data:
     name: caddy-data
   caddy-config:
