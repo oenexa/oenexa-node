@@ -1,0 +1,42 @@
+oenexa.com, www.oenexa.com {
+    # 1. Web3 Blockchain JSON-RPC 2.0 Engine
+    handle_path /rpc* {
+        reverse_proxy oenexa-node:8545
+    }
+
+    # 2. OENEXA AI Backend REST & SSE Swarm Streams
+    handle /api/* {
+        reverse_proxy oenexa-ai-core:8080
+    }
+    handle /actuator/* {
+        reverse_proxy oenexa-ai-core:8080
+    }
+
+    # 3. OENEXA AI Cockpit Web UI
+    handle /ai* {
+        reverse_proxy oenexa-ai-web:80
+    }
+
+    # 4. Default Route: OENEXA Layer-1 Blockchain Explorer
+    handle {
+        reverse_proxy oenexa-explorer:80
+    }
+}
+
+http://62.210.92.60 {
+    handle_path /rpc* {
+        reverse_proxy oenexa-node:8545
+    }
+    handle /api/* {
+        reverse_proxy oenexa-ai-core:8080
+    }
+    handle /actuator/* {
+        reverse_proxy oenexa-ai-core:8080
+    }
+    handle /ai* {
+        reverse_proxy oenexa-ai-web:80
+    }
+    handle {
+        reverse_proxy oenexa-explorer:80
+    }
+}
