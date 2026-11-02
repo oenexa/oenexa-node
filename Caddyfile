@@ -17,9 +17,14 @@ oenexa.com, www.oenexa.com {
         reverse_proxy oenexa-ai-web:80
     }
 
-    # 4. Default Route: OENEXA Layer-1 Blockchain Explorer
-    handle {
+    # 4. OENEXA Layer-1 Blockchain Explorer
+    handle /explorer* {
         reverse_proxy oenexa-explorer:80
+    }
+
+    # 5. Default Route: OENEXA Main UI (Exchange, Trading, Landing)
+    handle {
+        reverse_proxy oenexa-ui:80
     }
 }
 
@@ -36,7 +41,10 @@ http://62.210.92.60 {
     handle /ai* {
         reverse_proxy oenexa-ai-web:80
     }
-    handle {
+    handle /explorer* {
         reverse_proxy oenexa-explorer:80
+    }
+    handle {
+        reverse_proxy oenexa-ui:80
     }
 }

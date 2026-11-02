@@ -119,7 +119,20 @@ services:
     networks:
       - oenexa-net
 
-  # ── 6. OENEXA Decoupled Blockchain Explorer (React 18 + Vite on /) ──────────
+  # ── 6. OENEXA Main Web UI (React 19 + Tailwind + Vite on /) ─────────────────
+  oenexa-ui:
+    build:
+      context: ./src/oenexa-ui
+      dockerfile: Dockerfile
+    image: oenexa-ui:latest
+    container_name: oenexa-ui
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - oenexa-net
+
+  # ── 7. OENEXA Decoupled Blockchain Explorer (React 18 + Vite on /explorer) ──
   oenexa-explorer:
     build:
       context: ./src/oenexa-explorer
@@ -135,7 +148,7 @@ services:
     networks:
       - oenexa-net
 
-  # ── 7. Caddy Universal SSL/TLS Reverse Proxy Gateway ────────────────────────
+  # ── 8. Caddy Universal SSL/TLS Reverse Proxy Gateway ────────────────────────
   caddy:
     image: caddy:2-alpine
     container_name: oenexa-caddy
@@ -148,12 +161,13 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
+      - oenexa-ui
       - oenexa-explorer
       - oenexa-ai-web
     networks:
       - oenexa-net
 
-  # ── 8. OENEXA Local Sovereign Ollama LLM Service ───────────────────────────
+  # ── 9. OENEXA Local Sovereign Ollama LLM Service ───────────────────────────
   oenexa-ollama:
     image: ollama/ollama:latest
     container_name: oenexa-ollama
