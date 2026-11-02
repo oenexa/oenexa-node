@@ -39,7 +39,7 @@ services:
     build:
       context: ./src/oenexa-ai-core
       dockerfile: Dockerfile
-    image: oenexa-ai-core:latest
+    image: ghcr.io/oenexa/oenexa-ai-core:latest
     container_name: oenexa-ai-core
     restart: unless-stopped
     depends_on:
@@ -76,7 +76,7 @@ services:
     build:
       context: ./src/oenexa-ai-web
       dockerfile: Dockerfile
-    image: oenexa-ai-web:latest
+    image: ghcr.io/oenexa/oenexa-ai-web:latest
     container_name: oenexa-ai-web
     restart: unless-stopped
     depends_on:
@@ -92,7 +92,7 @@ services:
     build:
       context: ./src/oenexa-node
       dockerfile: Dockerfile
-    image: oenexa-node:latest
+    image: ghcr.io/oenexa/oenexa-node:latest
     container_name: oenexa-node
     restart: unless-stopped
     environment:
@@ -124,7 +124,7 @@ services:
     build:
       context: ./src/oenexa-ui
       dockerfile: Dockerfile
-    image: oenexa-ui:latest
+    image: ghcr.io/oenexa/oenexa-ui:latest
     container_name: oenexa-ui
     restart: unless-stopped
     expose:
@@ -137,7 +137,7 @@ services:
     build:
       context: ./src/oenexa-explorer
       dockerfile: Dockerfile
-    image: oenexa-explorer:latest
+    image: ghcr.io/oenexa/oenexa-explorer:latest
     container_name: oenexa-explorer
     restart: unless-stopped
     expose:
