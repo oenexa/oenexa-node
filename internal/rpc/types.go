@@ -71,7 +71,8 @@ type BlockInfo struct {
 	GasLimit      uint64 `json:"gas_limit"`
 	BaseFee       uint64 `json:"base_fee"`
 	BurnedFees    uint64 `json:"burned_fees"`
-	TxCount       int    `json:"tx_count"`
+	TxCount       int       `json:"tx_count"`
+	Transactions  []*TxInfo `json:"transactions,omitempty"`
 }
 
 // TxInfo is the JSON representation of a transaction returned by the API.

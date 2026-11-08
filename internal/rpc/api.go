@@ -65,7 +65,7 @@ func (a *API) Dispatch(req *Request) *Response {
 	// ── Blocks ─────────────────────────────────────────────────────────────
 	case "oen_recentBlocks", "oen_getLatestBlocks":
 		return a.recentBlocks(req)
-	case "oen_blockByHeight":
+	case "oen_blockByHeight", "eth_getBlockByNumber":
 		return a.blockByHeight(req)
 	case "oen_blockByHash":
 		return a.blockByHash(req)
@@ -176,11 +176,38 @@ func (a *API) recentBlocks(req *Request) *Response {
 }
 
 func (a *API) blockByHeight(req *Request) *Response {
-	var params []uint64
-	if err := json.Unmarshal(req.Params, &params); err != nil || len(params) == 0 {
-		return errResponse(req.ID, CodeInvalidParams, "params: [height uint64]")
+	var height uint64
+	var intParams []uint64
+	if err := json.Unmarshal(req.Params, &intParams); err == nil && len(intParams) > 0 {
+		height = intParams[0]
+	} else {
+		var rawParams []interface{}
+		if err := json.Unmarshal(req.Params, &rawParams); err == nil && len(rawParams) > 0 {
+			switch v := rawParams[0].(type) {
+			case float64:
+				height = uint64(v)
+			case string:
+				if len(v) >= 2 && (v[:2] == "0x" || v[:2] == "0X") {
+					parsed, err := strconv.ParseUint(v[2:], 16, 64)
+					if err != nil {
+						return errResponse(req.ID, CodeInvalidParams, "invalid hex height: "+err.Error())
+					}
+					height = parsed
+				} else {
+					parsed, err := strconv.ParseUint(v, 10, 64)
+					if err != nil {
+						return errResponse(req.ID, CodeInvalidParams, "invalid height string: "+err.Error())
+					}
+					height = parsed
+				}
+			default:
+				return errResponse(req.ID, CodeInvalidParams, "params: [height uint64|string]")
+			}
+		} else {
+			return errResponse(req.ID, CodeInvalidParams, "params: [height uint64]")
+		}
 	}
-	blk := a.engine.BlockByHeight(params[0])
+	blk := a.engine.BlockByHeight(height)
 	if blk == nil {
 		return errResponse(req.ID, CodeInternalError, "block not found")
 	}
@@ -322,6 +349,22 @@ func (a *API) gasPrice(req *Request) *Response {
 func blockToInfo(blk *core.Block) *BlockInfo {
 	prevHash := crypto.ToHex(blk.Header.PrevHash)
 	validatorAddr := crypto.AddressToHex(blk.Header.ValidatorAddr)
+	txs := make([]*TxInfo, 0, len(blk.Txs))
+	for _, tx := range blk.Txs {
+		txs = append(txs, &TxInfo{
+			Hash:      "0x" + crypto.ToHex(tx.Hash),
+			Type:      uint8(tx.Type),
+			Version:   tx.Version,
+			Nonce:     tx.Nonce,
+			From:      "0x" + crypto.AddressToHex(tx.From),
+			To:        "0x" + crypto.AddressToHex(tx.To),
+			Amount:    tx.Amount,
+			GasLimit:  tx.GasLimit,
+			GasPrice:  tx.GasPrice,
+			Timestamp: blk.Header.Timestamp,
+			DataHex:   "0x" + hex.EncodeToString(tx.Data),
+		})
+	}
 	return &BlockInfo{
 		Height:        blk.Header.Height,
 		Hash:          crypto.ToHex(blk.Hash),
@@ -337,6 +380,7 @@ func blockToInfo(blk *core.Block) *BlockInfo {
 		BaseFee:       blk.Header.BaseFee,
 		BurnedFees:    blk.Header.BurnedFees,
 		TxCount:       len(blk.Txs),
+		Transactions:  txs,
 	}
 }
 
