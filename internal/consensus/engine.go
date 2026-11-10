@@ -406,9 +406,13 @@ func (e *Engine) buildBlock(height uint64) (*core.Block, *state.DB, error) {
 
 	for _, tx := range pending {
 		result, err := applyTxFunc(snap, tx, core.BlockGasLimit-totalGas, e.execVM, baseFee)
-		if err != nil {
-			log.Printf("[consensus] buildBlock: skipping tx %x: %v", tx.Hash[:4], err)
-			continue // skip txs that can't pay baseFee or are otherwise invalid
+		if err != nil || (result != nil && !result.Success && tx.Type != core.TxCall) {
+			var rErr error
+			if result != nil {
+				rErr = result.Error
+			}
+			log.Printf("[consensus] buildBlock: skipping invalid/reverted tx %x: err=%v, resErr=%v", tx.Hash[:4], err, rErr)
+			continue
 		}
 		totalGas += result.GasUsed
 		totalBurned += result.BurnedFee
@@ -509,19 +513,29 @@ func (e *Engine) Height() uint64 {
 }
 
 // AcceptVote processes an incoming vote received from a peer validator.
-// Extension point: not exercised in single-validator mode; called by the
-// P2P layer when vote messages arrive from other validators.
+// Called by the P2P layer when vote messages arrive from other validators.
+// Fully processes the vote through the BFT state machine (verify, store,
+// check quorum) — identical to ProcessVote but accessible as a named
+// API for the P2P integration layer.
 func (e *Engine) AcceptVote(v *Vote) error {
-	if err := v.Verify(); err != nil {
-		return err
-	}
-	if !e.validatorSet.Contains(v.Voter) {
-		return fmt.Errorf("unknown voter: %s", crypto.ToHex(v.Voter))
-	}
-	return nil
+	return e.ProcessVote(v)
 }
 
 // ValidatorAddr returns the engine's local validator address.
 func (e *Engine) ValidatorAddr() [crypto.AddressSize]byte {
 	return e.validatorAddr
+}
+
+// BuildBlock assembles a new block on a state snapshot. Exported for tests and tooling.
+func (e *Engine) BuildBlock(height uint64) (*core.Block, *state.DB, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.buildBlock(height)
+}
+
+// Commit finalizes a block: applies state, purges mempool, appends to chain. Exported for tests and tooling.
+func (e *Engine) Commit(blk *core.Block, snap *state.DB) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.commit(blk, snap)
 }

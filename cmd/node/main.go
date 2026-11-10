@@ -572,7 +572,7 @@ func resolvePath(dataDir, rel string) string {
 
 func printBanner() {
 	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
-	fmt.Printf(" ║  OENEXA (OEN) %-47s 										    ║"+"\n", upgrade.Current())
+	fmt.Printf("║  OENEXA (OEN) %-49s║\n", upgrade.Current())
 	fmt.Println("║  ML-DSA-65 / ML-KEM-768 / SHA-3-256 | EIP-1559 Ultra-Low Fees    ║")
 	fmt.Println("╚══════════════════════════════════════════════════════════════════╝")
 }

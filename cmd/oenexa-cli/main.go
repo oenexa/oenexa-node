@@ -117,13 +117,28 @@ func handleBalance(addrStr, rpcURL string) {
 		return
 	}
 
-	var data map[string]uint64
+	var data map[string]interface{}
 	if err := json.Unmarshal(res, &data); err != nil {
 		fmt.Printf("Error decoding balance: %v\n", err)
 		return
 	}
 
-	balNano := data["balance_nano_oen"]
+	var balNano uint64
+	if v, ok := data["balance_nano_oen"]; ok {
+		switch n := v.(type) {
+		case float64:
+			balNano = uint64(n)
+		case uint64:
+			balNano = n
+		}
+	} else if v, ok := data["balance_oenexa"]; ok {
+		switch n := v.(type) {
+		case float64:
+			balNano = uint64(n)
+		case uint64:
+			balNano = n
+		}
+	}
 	balOEN := float64(balNano) / float64(core.OneOEN)
 
 	fmt.Println("=== OENEXA Balance ===")
@@ -165,18 +180,35 @@ func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 		fmt.Printf("Error querying account nonce: %v\n", err)
 		return
 	}
-	var nonceData map[string]uint64
+	var nonceData map[string]interface{}
 	_ = json.Unmarshal(nonceRes, &nonceData)
-	nonce := nonceData["nonce"]
+	var nonce uint64
+	if v, ok := nonceData["nonce"]; ok {
+		switch n := v.(type) {
+		case float64:
+			nonce = uint64(n)
+		case uint64:
+			nonce = n
+		}
+	}
 
 	// 2. Fetch current gas price / base fee from node
 	gasRes, err := callRPC(rpcURL, "oen_gasPrice", nil)
 	gasPrice := uint64(core.MinGasPrice + 10)
 	if err == nil {
-		var gasData map[string]uint64
+		var gasData map[string]interface{}
 		_ = json.Unmarshal(gasRes, &gasData)
-		if bf, ok := gasData["base_fee"]; ok && bf >= core.MinGasPrice {
-			gasPrice = bf + 5 // base fee + priority tip
+		if v, ok := gasData["base_fee"]; ok {
+			var bf uint64
+			switch n := v.(type) {
+			case float64:
+				bf = uint64(n)
+			case uint64:
+				bf = n
+			}
+			if bf >= core.MinGasPrice {
+				gasPrice = bf + 5 // base fee + priority tip
+			}
 		}
 	}
 

@@ -227,6 +227,9 @@ func (a *API) blockByHash(req *Request) *Response {
 	height := a.engine.Height()
 	for h := uint64(0); h < height; h++ {
 		blk := a.engine.BlockByHeight(h)
+		if blk == nil {
+			continue
+		}
 		if blk.Hash == hash {
 			return okResponse(req.ID, blockToInfo(blk))
 		}
@@ -318,7 +321,13 @@ func (a *API) sendRawTransaction(req *Request) *Response {
 
 func (a *API) feeEstimate(req *Request) *Response {
 	height := a.engine.Height()
+	if height == 0 {
+		return errResponse(req.ID, CodeInternalError, "no blocks committed yet")
+	}
 	blk := a.engine.BlockByHeight(height - 1)
+	if blk == nil {
+		return errResponse(req.ID, CodeInternalError, "tip block not found")
+	}
 	baseFee := blk.Header.BaseFee
 
 	_, ulTip := core.FeeEstimate(baseFee, core.FeeTierUltraLow)
@@ -338,7 +347,13 @@ func (a *API) feeEstimate(req *Request) *Response {
 
 func (a *API) gasPrice(req *Request) *Response {
 	height := a.engine.Height()
+	if height == 0 {
+		return okResponse(req.ID, map[string]uint64{"base_fee": core.InitialBaseFee})
+	}
 	blk := a.engine.BlockByHeight(height - 1)
+	if blk == nil {
+		return okResponse(req.ID, map[string]uint64{"base_fee": core.InitialBaseFee})
+	}
 	return okResponse(req.ID, map[string]uint64{"base_fee": blk.Header.BaseFee})
 }
 
