@@ -50,6 +50,11 @@ func (tx *Transaction) signingPayload() []byte {
 	return buf
 }
 
+// SigningPayload returns the canonical bytes that are signed.
+func (tx *Transaction) SigningPayload() []byte {
+	return tx.signingPayload()
+}
+
 // Sign signs the transaction with the given ML-DSA-65 private key bytes.
 func (tx *Transaction) Sign(privKeyBytes []byte) error {
 	sig, err := crypto.Sign(privKeyBytes, tx.signingPayload())

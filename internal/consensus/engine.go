@@ -37,6 +37,7 @@ type Engine struct {
 	validatorAddr [crypto.AddressSize]byte
 	validatorPub  []byte
 	validatorPriv []byte
+	signer        ValidatorSigner
 
 	validatorSet *ValidatorSet
 	state        *state.DB
@@ -72,10 +73,12 @@ func NewEngine(
 	execVM *vm.VM,
 	upgradeMgr *upgrade.Manager,
 ) *Engine {
+	signer := NewLocalSigner(addr, pubKey, privKey)
 	return &Engine{
 		validatorAddr: addr,
 		validatorPub:  pubKey,
 		validatorPriv: privKey,
+		signer:        signer,
 		validatorSet:  vs,
 		state:         st,
 		pool:          pool,
@@ -86,6 +89,52 @@ func NewEngine(
 		prevotes:      make(map[[crypto.HashSize]byte]map[string]*Vote),
 		precommits:    make(map[[crypto.HashSize]byte]map[string]*Vote),
 	}
+}
+
+// NewEngineWithSigner creates a consensus engine using a custom ValidatorSigner (e.g. KMS/HSM).
+func NewEngineWithSigner(
+	signer ValidatorSigner,
+	vs *ValidatorSet,
+	st *state.DB,
+	pool *mempool.Mempool,
+	genesis *core.Block,
+	execVM *vm.VM,
+	upgradeMgr *upgrade.Manager,
+) *Engine {
+	addr := signer.Address()
+	pub := signer.PublicKey()
+	return &Engine{
+		validatorAddr: addr,
+		validatorPub:  pub,
+		signer:        signer,
+		validatorSet:  vs,
+		state:         st,
+		pool:          pool,
+		execVM:        execVM,
+		upgradeMgr:    upgradeMgr,
+		chain:         []*core.Block{genesis},
+		commitCh:      make(chan *core.Block, 64),
+		prevotes:      make(map[[crypto.HashSize]byte]map[string]*Vote),
+		precommits:    make(map[[crypto.HashSize]byte]map[string]*Vote),
+	}
+}
+
+// SetSigner updates the active validator signer interface.
+func (e *Engine) SetSigner(s ValidatorSigner) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.signer = s
+	if s != nil {
+		e.validatorAddr = s.Address()
+		e.validatorPub = s.PublicKey()
+	}
+}
+
+// Signer returns the active validator signer.
+func (e *Engine) Signer() ValidatorSigner {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.signer
 }
 
 var (
@@ -319,7 +368,15 @@ func (e *Engine) castVoteLocked(voteType uint8, height uint64, hash [crypto.Hash
 		Voter:     e.validatorAddr,
 		PublicKey: e.validatorPub,
 	}
-	_ = v.Sign(e.validatorPriv)
+
+	if e.signer != nil {
+		if err := e.signer.SignVote(v); err != nil {
+			log.Printf("[consensus] signer error: %v", err)
+			return
+		}
+	} else {
+		_ = v.Sign(e.validatorPriv)
+	}
 
 	if voteType == VotePrevote {
 		if e.prevotes[hash] == nil {
@@ -370,11 +427,8 @@ func (e *Engine) checkPrecommitQuorumLocked(height uint64, hash [crypto.HashSize
 		e.step = StepCommit
 		log.Printf("[consensus] Quorum reached for block %d. Committing.", height)
 		
-		// If we are a follower, we might not have `e.proposalState`. We'd apply it here.
-		// For prototype simplicity, if we lack it, we build it.
 		stateToCommit := e.proposalState
 		if stateToCommit == nil && e.proposal != nil {
-			// Fast forward validation build
 			_, stateToCommit, _ = e.buildBlock(height)
 		}
 
@@ -445,8 +499,15 @@ func (e *Engine) buildBlock(height uint64) (*core.Block, *state.DB, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := blk.SignHeader(e.validatorPriv); err != nil {
-		return nil, nil, err
+
+	if e.signer != nil {
+		if err := e.signer.SignBlock(blk); err != nil {
+			return nil, nil, err
+		}
+	} else {
+		if err := blk.SignHeader(e.validatorPriv); err != nil {
+			return nil, nil, err
+		}
 	}
 	return blk, snap, nil
 }
@@ -503,6 +564,18 @@ func (e *Engine) BlockByHeight(h uint64) *core.Block {
 		return nil
 	}
 	return e.chain[h]
+}
+
+// BlockByHash returns the block with the matching hash or nil.
+func (e *Engine) BlockByHash(hash [crypto.HashSize]byte) *core.Block {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	for _, blk := range e.chain {
+		if blk != nil && blk.Hash == hash {
+			return blk
+		}
+	}
+	return nil
 }
 
 // Height returns the current chain height (number of blocks including genesis).

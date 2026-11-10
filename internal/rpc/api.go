@@ -22,9 +22,15 @@ type API struct {
 	st            *state.DB
 	pool          *mempool.Mempool
 	execVM        *vm.VM
+	delegationMgr *consensus.DelegationManager
 	peersFn       func() int // returns current peer count
 	broadcastTxFn func(*core.Transaction)
 	version       string
+}
+
+// SetDelegationManager sets the optional staking delegation manager for the API.
+func (a *API) SetDelegationManager(dm *consensus.DelegationManager) {
+	a.delegationMgr = dm
 }
 
 // NewAPI constructs an API handler.
@@ -96,6 +102,12 @@ func (a *API) Dispatch(req *Request) *Response {
 		return a.getTransactionReceipt(req)
 	case "oen_getTransactionByHash", "eth_getTransactionByHash":
 		return a.getTransactionByHash(req)
+
+	// ── Staking Delegation ────────────────────────────────────────────────
+	case "oen_getDelegations":
+		return a.getDelegations(req)
+	case "oen_getTotalDelegated":
+		return a.getTotalDelegated(req)
 
 	// ── Fees ───────────────────────────────────────────────────────────────
 	case "oen_feeEstimate":
@@ -633,5 +645,32 @@ func (a *API) getStakingInfo(req *Request) *Response {
 		"estimated_apy_at_80pct":  core.StakingYieldEstimate(h, 0.80),
 		"active_validators":       1,
 		"unbonding_period_blocks": 43200, // ~24h at 2s/block
+	})
+}
+
+func (a *API) getDelegations(req *Request) *Response {
+	if a.delegationMgr == nil {
+		return okResponse(req.ID, []interface{}{})
+	}
+	var params []string
+	if err := json.Unmarshal(req.Params, &params); err != nil || len(params) == 0 {
+		return errResponse(req.ID, CodeInvalidParams, "params: [account_address hex-string]")
+	}
+	addr, err := crypto.HexToAddress(params[0])
+	if err != nil {
+		return errResponse(req.ID, CodeInvalidParams, "invalid address: "+err.Error())
+	}
+	dels := a.delegationMgr.GetDelegations(addr)
+	return okResponse(req.ID, dels)
+}
+
+func (a *API) getTotalDelegated(req *Request) *Response {
+	if a.delegationMgr == nil {
+		return okResponse(req.ID, map[string]interface{}{"total_delegated": 0, "total_delegated_oen": 0.0})
+	}
+	total := a.delegationMgr.TotalDelegatedStake()
+	return okResponse(req.ID, map[string]interface{}{
+		"total_delegated":     total,
+		"total_delegated_oen": float64(total) / float64(core.OneOEN),
 	})
 }

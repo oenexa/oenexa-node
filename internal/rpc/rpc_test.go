@@ -375,3 +375,38 @@ func rpcCallString(t *testing.T, ts *httptest.Server, method string, params inte
 	return res
 }
 
+func TestRPC_DelegationEndpoints(t *testing.T) {
+	w, _ := crypto.NewWallet()
+	genCfg := core.DefaultGenesisConfig([][crypto.AddressSize]byte{w.Address})
+	genesis := genCfg.Build()
+	st := state.NewStateDB()
+	pool := mempool.New(0)
+	validator := &consensus.Validator{Address: w.Address, PublicKey: w.PublicKey, VotingPower: 1}
+	vs, _ := consensus.NewValidatorSet([]*consensus.Validator{validator})
+	engine := consensus.NewEngine(w.Address, w.PublicKey, w.PrivateKey, vs, st, pool, genesis, nil, nil)
+	api := rpc.NewAPI(engine, st, pool, nil, nil, "test")
+	srv := rpc.NewServer("127.0.0.1:0", api, 5*time.Second, 5*time.Second)
+	ts := httptest.NewServer(srv)
+	t.Cleanup(ts.Close)
+
+	// Without delegation manager attached
+	res := rpcCall(t, ts, "oen_getTotalDelegated", []interface{}{})
+	if res["total_delegated"] != float64(0) {
+		t.Fatalf("expected 0 total delegated, got %v", res["total_delegated"])
+	}
+
+	// Attached delegation manager
+	dm := consensus.NewDelegationManager(vs, 100)
+	api.SetDelegationManager(dm)
+
+	res = rpcCall(t, ts, "oen_getTotalDelegated", []interface{}{})
+	if res["total_delegated"] != float64(0) {
+		t.Fatalf("expected 0 total delegated, got %v", res["total_delegated"])
+	}
+
+	// Test valid query with no delegations
+	addrHex := crypto.ToHex([crypto.AddressSize]byte{2})
+	delsResp := rpcCall(t, ts, "oen_getDelegations", []string{addrHex})
+	_ = delsResp
+}
+

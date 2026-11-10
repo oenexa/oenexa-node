@@ -480,7 +480,7 @@ func TestRealScenario_UnshieldAndDoubleSpendPrevention(t *testing.T) {
 	if len(blk2.Txs) != 0 {
 		t.Errorf("double-spend tx was incorrectly included in block 2!")
 	}
-	_ = snap2
+	_ = engine.Commit(blk2, snap2)
 	// Purge the rejected double spend from mempool
 	pool.PurgeCommitted([]*core.Transaction{txDoubleSpend})
 
@@ -496,10 +496,14 @@ func TestRealScenario_UnshieldAndDoubleSpendPrevention(t *testing.T) {
 	_ = txReplay.Sign(userWallet.PrivateKey)
 	if err := pool.Add(txReplay); err == nil {
 		// Even if mempool accepted, block builder must skip it
-		blk3, _, _ := engine.BuildBlock(2)
+		blk3, snap3, err := engine.BuildBlock(3)
+		if err != nil {
+			t.Fatalf("build block 3 failed: %v", err)
+		}
 		if len(blk3.Txs) != 0 {
 			t.Errorf("replayed nonce tx was incorrectly included in block!")
 		}
+		_ = engine.Commit(blk3, snap3)
 	}
 
 	// 4. Tampered Signature attack: Tamper with transaction amount

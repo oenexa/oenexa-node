@@ -11,11 +11,12 @@ import (
 	"time"
 
 	"github.com/oenexa/oenexa/internal/metrics"
+	"github.com/oenexa/oenexa/internal/rosetta"
 )
 
 const maxRequestBody = 4 << 20 // 4 MiB
 
-// Server is the JSON-RPC 2.0 HTTP server.
+// Server is the JSON-RPC 2.0 and Rosetta HTTP server.
 type Server struct {
 	api  *API
 	http *http.Server
@@ -39,6 +40,12 @@ func NewServer(addr string, api *API, readTimeout, writeTimeout time.Duration) *
 		_, _ = w.Write([]byte("ok"))
 	})
 	mux.HandleFunc("/api/status", s.handleStatus)
+
+	// Mount Coinbase Rosetta v1.4.14 Data & Construction API endpoints
+	if api != nil {
+		rosettaHandler := rosetta.NewHandler(api.engine, api.st, api.pool, api.peersFn, api.broadcastTxFn)
+		rosettaHandler.RegisterRoutes(mux)
+	}
 
 	s.http = &http.Server{
 		Addr:         addr,
@@ -217,4 +224,3 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 	_ = json.NewEncoder(w).Encode(resp)
 }
-
