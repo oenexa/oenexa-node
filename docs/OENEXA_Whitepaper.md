@@ -53,7 +53,7 @@ By contrast, the **OENEXA adoption trajectory** creates a much stronger, de-risk
 
 ## 3. Core Architecture & Quantum-Safe Security
 
-To ensure longevity in the era of quantum computing, OENEXA abandons classical elliptic-curve cryptography (like ECDSA used in Bitcoin and Ethereum).
+To ensure longevity in the era of quantum computing, OENEXA abandons classical elliptic-curve cryptography (like ECDSA used in Legacy classical blockchains).
 
 *   **Post-Quantum Signatures (ML-DSA-65):** Every transaction and consensus vote on the Oenexa network is signed using NIST FIPS 204 (Dilithium3) post-quantum cryptography, making the network entirely immune to Shor's Algorithm.
 *   **Key Encapsulation (ML-KEM-768):** P2P communication channels establish ephemeral session encryption using NIST FIPS 203 (Kyber768) to defeat *"Harvest Now, Decrypt Later"* surveillance.

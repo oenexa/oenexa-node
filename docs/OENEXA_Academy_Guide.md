@@ -12,7 +12,7 @@ By reading this, you will learn how we engineered the system to be both the **mo
 *Code location: `internal/crypto/`*
 
 ### The Problem with Legacy Blockchains
-Bitcoin and Ethereum use Elliptic Curve Cryptography (ECDSA or Ed25519) for digital signatures. While secure today, these algorithms are completely broken by **Shor's Algorithm** running on a sufficiently powerful quantum computer.
+Legacy classical blockchains use Elliptic Curve Cryptography (ECDSA or Ed25519) for digital signatures. While secure today, these algorithms are completely broken by **Shor's Algorithm** running on a sufficiently powerful quantum computer.
 
 ### The OENEXA Solution
 OENEXA is designed for the post-quantum era. We use **ML-DSA-65** (formerly CRYSTALS-Dilithium), which is the official NIST standard for post-quantum digital signatures.

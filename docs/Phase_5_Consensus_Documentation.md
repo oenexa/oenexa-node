@@ -9,7 +9,7 @@ This document serves as an educational guide to how consensus works in Oenexa, t
 
 ## 1. The PBFT State Machine
 
-Instead of nodes blindly accepting the longest chain (like Proof-of-Work in Bitcoin), Oenexa validators actively vote on block proposals. A block is only committed to the blockchain when a supermajority (>2/3 of total voting power) of validators explicitly sign off on it.
+Instead of nodes blindly accepting the longest chain (like Classical Proof-of-Work), Oenexa validators actively vote on block proposals. A block is only committed to the blockchain when a supermajority (>2/3 of total voting power) of validators explicitly sign off on it.
 
 The state machine for each consensus height is divided into four main steps:
 

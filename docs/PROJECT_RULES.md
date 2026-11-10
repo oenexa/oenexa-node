@@ -61,7 +61,7 @@
   - `*.out`, `*.prof`, `coverage*`, `cover*`, `*.html`
   - `*.exe`, `*.dll`, `*.so`, `*.dylib`
   - Temporary scratch files (`test_*.go`, `*.tmp`, `*.bak`, `*.wasm` in the root)
-  - Unrelated or third-party explanatory documents (e.g., `bitcoin-explained.md`)
+  - Unrelated or third-party explanatory documents (e.g., `external-chain-guide.md`)
 - Ensure `.gitignore` is strictly enforced.
 - Run `git status` before committing to verify zero untracked garbage files.
 

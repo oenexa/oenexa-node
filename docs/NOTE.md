@@ -342,8 +342,8 @@ TransferCostOenexa(baseFee, tip) → uint64
 ```
 FeeComparisonTable() → []FeeComparison
 ```
-- Returns benchmark data: ETH ($1.50), BNB ($0.05), Avalanche ($0.02),
-  Polygon ($0.002), Solana ($0.00025), Sui ($0.00002), **OEN ($0.00000021)**.
+- Returns architectural benchmark data across consensus archetypes: PoW ($1.50), Legacy PoS ($0.05),
+  DAG ($0.02), Sidechain ($0.002), Single-Shard ($0.00025), Move-VM ($0.00002), **OEN ($0.00000021)**.
 
 ---
 
@@ -492,7 +492,7 @@ EmptyMerkleRoot() → [32]byte
 ```
 
 - **Algorithm**: Binary tree, leaves are tx hashes. If an odd number of
-  leaves, the last leaf is duplicated (standard Bitcoin-style).
+  leaves, the last leaf is duplicated (standard duplicate-leaf format).
 - Each parent = `SHA-3-256(leftChild ‖ rightChild)`.
 - Empty tree returns `SHA-3-256([]byte{})`.
 - Used in `NewBlock()` to create the block's `MerkleRoot` field.
@@ -1312,7 +1312,7 @@ Manager.applyRelease(ctx, rel)
 | 1    | Generate two ML-DSA-65 wallets (validator + deployer)                           |
 | 2    | Build genesis block with 10M + 1M OEN pre-mine                                  |
 | 3    | Bootstrap StateDB from genesis allocations; create mempool and P2P node         |
-| 4    | Print fee comparison table (OEN vs ETH/Solana/etc.)                             |
+| 4    | Print fee comparison table (OEN vs Consensus Archetypes)                             |
 | 5    | Print halving emission schedule (6 eras)                                        |
 | 5b   | Print `BlockReward()` spot-checks at key heights                                |
 | 6    | Deploy `CounterContract` WASM via `ApplyTransaction`                            |

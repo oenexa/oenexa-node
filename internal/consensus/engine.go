@@ -1,3 +1,59 @@
+// Package consensus implements the Byzantine Fault Tolerant (BFT) consensus engine for OENEXA Layer-1.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// BFT CONSENSUS SAFETY, LIVELINESS & EQUIVOCATION SLASHING SPECIFICATION
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// PURPOSE:
+//   Orchestrates round-robin block proposals, two-phase voting (Prevote -> Precommit),
+//   instant finality, validator slashing, and post-quantum header validation.
+//
+// WHY (ARCHITECTURAL RATIONALE):
+//   1. Instant Finality: Once a block reaches 2/3+ precommit quorum, it is finalized
+//      immediately. Unlike probabilistic Proof-of-Work, OENEXA has zero chain reorganizations.
+//   2. High Throughput: 2.0-second block intervals allow sustained high TPS with bounded latency.
+//   3. Economic Slashing: Any validator that signs two conflicting votes at the same height/round
+//      (equivocation) is penalized: 10% of their staked balance is slashed and voting power is revoked.
+//   4. Post-Quantum Cryptography: Block headers and BFT votes are signed using NIST ML-DSA-65.
+//
+// HOW (MECHANICAL EXECUTION FLOW):
+//   1. StepPropose: The designated proposer for height `h` (where proposer = h % |Validators|)
+//      assembles transactions from the mempool, computes state transitions, burns the base fee,
+//      and signs the block header.
+//   2. StepPrevote: Validators verify proposer signature, parent hash linkage, transaction Merkle root,
+//      and state root. If valid, each validator signs and broadcasts a Prevote for the block hash.
+//   3. StepPrecommit: Upon receiving > 2/3 voting power in Prevotes, the node transitions to
+//      Precommit and broadcasts a Precommit vote.
+//   4. StepCommit: Upon receiving > 2/3 voting power in Precommits, the block is committed to the
+//      canonical chain, state transitions are applied, and mempool transactions are purged.
+//
+// FORMAL PROOF OF BFT CONSENSUS SAFETY (NO-FORK GUARANTEE):
+//   Let N be the total voting power across all active validators.
+//   Let f be the maximum Byzantine (malicious or faulty) voting power, such that N >= 3f + 1.
+//   The consensus quorum threshold is Q = floor(2N/3) + 1 >= 2f + 1.
+//
+//   Theorem: Two conflicting blocks B1 != B2 cannot both be committed at the same height h.
+//
+//   Proof by Contradiction:
+//     1. Assume for contradiction that two distinct blocks B1 and B2 are both committed at height h.
+//     2. By definition of StepCommit, block B1 received a set of precommits S1 with total power |S1| >= Q.
+//     3. Similarly, block B2 received a set of precommits S2 with total power |S2| >= Q.
+//     4. The intersection of these two precommit quorums must contain:
+//          |S1 \cap S2| = |S1| + |S2| - |S1 \cup S2|
+//                       >= 2Q - N
+//                       >= 2(2f + 1) - (3f + 1)
+//                       = 4f + 2 - 3f - 1
+//                       = f + 1.
+//     5. Since there are at most f Byzantine validators in the entire network, the intersection
+//        S1 \cap S2 must contain at least (f + 1) - f = 1 honest validator.
+//     6. For this honest validator to be in S1 \cap S2, it must have signed a precommit for B1
+//        AND a precommit for B2 at the same height h and round r.
+//     7. However, honest validators strictly enforce the Anti-Slashing High-Water Mark rule
+//        (LocalSigner.SignVote), which rejects signing a second vote for a conflicting block hash
+//        at the same height and round.
+//     8. This contradicts the definition of an honest validator.
+//     9. Therefore, two conflicting blocks cannot both attain quorum at the same height. Q.E.D.
+// ─────────────────────────────────────────────────────────────────────────────
 package consensus
 
 import (

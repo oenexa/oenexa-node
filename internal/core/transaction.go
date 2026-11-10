@@ -8,6 +8,75 @@ import (
 	"github.com/oenexa/oenexa/internal/crypto"
 )
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Transaction — Quantum-Resistant Atomic State Transition
+//
+// PURPOSE:
+//   1. Represents an indivisible state-transition directive executed on the
+//      OENEXA Layer-1 sovereign blockchain.
+//   2. Authenticates sovereign ownership, transacts native OEN value, executes
+//      smart contract calls, manages validator staking, and processes zero-knowledge
+//      shielded privacy commitments.
+//   3. Guarantees deterministic, tamper-proof execution semantics across all
+//      participating network nodes.
+//
+// WHY:
+//   - Without strict canonical serialization and unforgeable digital signatures,
+//     adversaries could alter transaction amounts, reroute recipient destinations,
+//     or replay previously executed transfers.
+//   - Standard ECDSA/Ed25519 signatures are vulnerable to Shor's quantum algorithm.
+//     OENEXA mandates FIPS 204 ML-DSA-65 post-quantum digital signatures on every
+//     single transaction from genesis.
+//   - Nonce-based replay protection eliminates duplicate transaction execution
+//     across all forks and temporal epochs.
+//
+// HOW:
+//   - Binary canonical payload construction: All fields (Version, Type, Nonce,
+//     From, To, Amount, GasLimit, GasPrice, Timestamp, Data, PublicKey) are serialized
+//     using strictly defined big-endian byte layouts.
+//   - Signature verification: The node derives the public address from PublicKey via
+//     SHA-3-256 and validates that it matches From. It then executes ML-DSA-65
+//     verification over the canonical signing payload.
+//   - Atomic state application: Mempool and block execution engines verify that
+//     tx.Nonce == account.Nonce before applying balance deductions and state updates.
+//
+// FORMAL CRYPTOGRAPHIC PROOF OF INTEGRITY & NON-REPLAYABILITY:
+//   Let:
+//     tx = (v, \tau, n, from, to, a, g, p, t, D, pk, \sigma)
+//     m = signingPayload(tx)
+//     H = SHA-3-256
+//
+//   1. Address Binding Invariant:
+//      from = H(pk)
+//      Because H is collision-resistant (pre-image and second pre-image resistance
+//      bounded by O(2^256) classical / O(2^128) quantum operations), an adversary
+//      cannot find pk' != pk such that H(pk') = from. Therefore, a valid transaction
+//      cannot be forged using an alternate keypair for an existing address.
+//
+//   2. Existential Unforgeability under Chosen Message Attacks (EUF-CMA):
+//      Under the hardness of the Module Learning With Errors (M-LWE) and Module Short
+//      Integer Solution (M-SIS) problems on lattice dimension (6, 5) with ring
+//      Z_q[X]/(X^256 + 1) and modulus q = 8,380,417 (FIPS 204 ML-DSA-65):
+//      For all PPT adversaries A having access to a signing oracle O_sign:
+//        Pr[ Verify(pk, m*, sigma*) = 1  AND  m* not in Queries(O_sign) ] <= negl(lambda)
+//      where security parameter lambda = 192 bits (NIST Post-Quantum Category 3).
+//      No adversary can alter any field in m (amount, to, nonce, gas) without invalidating sigma*.
+//
+//   3. Nonce Monotonicity Replay-Prevention Theorem:
+//      Let state sigma_h be the account state at height h with account nonce N_A.
+//      A transaction tx from account A is valid for inclusion in block h+1 iff:
+//        tx.Nonce == N_A
+//      Upon successful execution:
+//        N_A' = N_A + 1
+//      Proof of Non-Replayability:
+//        Suppose an adversary attempts to replay tx at any subsequent height h' > h.
+//        At height h', account nonce N_A' >= N_A + 1 > tx.Nonce.
+//        The state transition rule rejects any tx with tx.Nonce != N_A'.
+//        Because nonce increments are strictly monotonic and irreversible,
+//        tx can be executed at most once in the entire blockchain history.
+//      Q.E.D.
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Transaction represents a signed OENEXA transaction.
 type Transaction struct {
 	Version   uint8

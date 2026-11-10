@@ -19,7 +19,7 @@ This document tracks all security implementations, vulnerability resolutions, an
 ### SEC-003: Post-Quantum Cryptography Enforcement (NIST FIPS 204/203)
 * **Date:** 2026-10-01
 * **Domain:** Core Cryptography
-* **Vulnerability:** Shor's algorithm running on sufficiently powerful quantum computers will break standard ECDSA (secp256k1) signatures used by legacy blockchains (Bitcoin/Ethereum).
+* **Vulnerability:** Shor's algorithm running on sufficiently powerful quantum computers will break standard ECDSA (secp256k1) signatures used by legacy blockchains (Legacy classical blockchains).
 * **Resolution:** Integrated the final NIST standards for Post-Quantum Cryptography. Replaced ECDSA with **ML-DSA-65** for transaction signatures and **ML-KEM-768** for key encapsulation. The frontend and backend now actively verify quantum-resistant signatures, effectively future-proofing the ledger.
 
 ### SEC-004: Frontend RPC Endpoint Verification

@@ -2,7 +2,7 @@
 
 ## 1. Why Post-Quantum Cryptography Matters
 
-Most modern blockchains (Bitcoin, Ethereum, Solana) rely on elliptic curve cryptography:
+Most modern blockchains (Legacy Classical Blockchains) rely on elliptic curve cryptography:
 - **ECDSA (secp256k1)** or **Ed25519**.
 - Shor's algorithm running on a quantum computer of sufficient oenexa can calculate private keys from public keys in polynomial time:
   $$\mathcal{O}(n^3)$$

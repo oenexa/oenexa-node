@@ -111,14 +111,13 @@ func TestTransferCostOenexa_AtGenesis(t *testing.T) {
 	}
 }
 
-func TestTransferCostOenexa_CheaperThanSolana(t *testing.T) {
-	// At $1/OEN, Solana ~$0.00025.
-	// OEN transfer at genesis base fee = GasTransfer * InitialBaseFee oenexa.
-	// Convert to USD assuming $1/OEN.
+func TestTransferCostOenexa_SubMicroDollar(t *testing.T) {
+	// At $1/OEN, cost of transfer at genesis base fee = 210 oenexa = $0.00000021.
+	// Verify it is strictly sub-micro-dollar (< $0.00001).
 	costOEN := float64(TransferCostOenexa(InitialBaseFee, 0)) / float64(OneOEN)
-	solanaUSD := 0.00025
-	if costOEN >= solanaUSD {
-		t.Errorf("OEN fee $%.10f should be cheaper than Solana $%.5f", costOEN, solanaUSD)
+	subMicroThreshold := 0.00001
+	if costOEN >= subMicroThreshold {
+		t.Errorf("OEN fee $%.10f should be strictly sub-micro-dollar < $%.5f", costOEN, subMicroThreshold)
 	}
 }
 
@@ -154,9 +153,9 @@ func TestFeeComparisonTable_HasExpectedChains(t *testing.T) {
 	for _, r := range table {
 		names[r.Chain] = true
 	}
-	for _, want := range []string{"Ethereum (L1)", "Solana"} {
+	for _, want := range []string{"Proof-of-Work Distributed Layer-1", "Single-Shard High-Speed PoS Archetype"} {
 		if !names[want] {
-			t.Errorf("comparison table missing a chain: %s", want)
+			t.Errorf("comparison table missing archetype: %s", want)
 		}
 	}
 }

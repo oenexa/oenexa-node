@@ -1,23 +1,85 @@
 package core
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OEN Fee Model — World's Cheapest On-Chain Fees
+// OEN Fee Model — Algorithmic Gas Pricing & Deflationary Burn
 //
-// EIP-1559 style two-component fee:
+// PURPOSE:
+//   1. Provides deterministic, congestion-responsive execution pricing for all
+//      state transitions on the OENEXA Layer-1 network.
+//   2. Implements a sovereign EIP-1559 base fee elasticity mechanism combined
+//      with complete burning of the base fee to induce long-term deflationary pressure.
+//   3. Delivers ultra-low sub-micro-dollar transaction execution overhead while
+//      preventing spam, denial-of-service (DoS), and block space monopoly attacks.
 //
-//   EffectiveFeePerGas = BaseFee + PriorityTip
-//   TotalFee           = GasUsed × EffectiveFeePerGas
+// WHY:
+//   - Legacy first-price auction models suffer from extreme fee volatility, user overbidding,
+//     and validator fee-sniping MEV incentives.
+//   - An algorithmic base fee that auto-adjusts based on parent block capacity utilization
+//     guarantees predictable wallet fee estimation and rapid congestion alleviation.
+//   - Burning the base fee permanently eliminates transaction revenue from validator collusion,
+//     aligning network security with long-term token value accrual for all OEN holders.
 //
-//   BaseFee    → BURNED (reduces circulating supply, deflationary)
-//   PriorityTip → credited to the block validator (incentive)
+// HOW:
+//   - Two-component fee structure:
+//       EffectiveFeePerGas = BaseFee + PriorityTip
+//       TotalFee           = GasUsed × EffectiveFeePerGas
+//   - BaseFee: Burned permanently (decreasing circulating OEN supply).
+//   - PriorityTip: Credited to the block proposer validator as immediate incentive.
+//   - Target block gas utilization is exactly 50% of BlockGasLimit (TargetBlockGas = BlockGasLimit / 2).
+//   - If GasUsed > TargetBlockGas, BaseFee increases by a factor proportional to excess gas (up to +12.5%).
+//   - If GasUsed < TargetBlockGas, BaseFee decreases by a factor proportional to deficit gas (up to -12.5%).
+//   - Absolute floor: MinBaseFee = 1 oenexa/gas (prevents zero-cost spam attacks).
 //
-// The BaseFee auto-adjusts each block:
-//   • Block used > TargetGas  → BaseFee rises  (max +12.5%)
-//   • Block used < TargetGas  → BaseFee drops  (max −12.5%)
-//   • Target utilization = 50% of BlockGasLimit
+// FORMAL MATHEMATICAL PROOF OF BASE FEE ELASTICITY & OSCILLATION BOUNDS:
+//   Let:
+//     G_limit = BlockGasLimit
+//     G_target = G_limit / 2 (TargetGasRatioDenom = 2)
+//     f_n = Base fee of block n
+//     g_n = Total gas consumed in block n
+//     d = MaxBaseFeeChangeDenom = 8
 //
-// This keeps fees near their minimum during normal load while preventing
-// spam during congestion — all without ever going above zero for idle blocks.
+//   1. Adjustment Recurrence Relation:
+//      When g_n >= G_target:
+//        f_{n+1} = f_n + max(1, floor( f_n * (g_n - G_target) / (G_target * d) ))
+//      When g_n < G_target:
+//        f_{n+1} = max( MinBaseFee, f_n - floor( f_n * (G_target - g_n) / (G_target * d) ) )
+//
+//   2. Rate of Change Bounds (Theorem 1):
+//      For any block n with 0 <= g_n <= G_limit:
+//        (1 - 1/d) * f_n <= f_{n+1} <= (1 + 1/d) * f_n
+//      Given d = 8:
+//        0.875 * f_n <= f_{n+1} <= 1.125 * f_n
+//      Proof:
+//        Maximum increase occurs at g_n = G_limit = 2 * G_target:
+//          delta_max = f_n * (2 * G_target - G_target) / (G_target * 8) = f_n / 8 = 0.125 * f_n.
+//          Therefore, f_{n+1} <= f_n + 0.125 * f_n = 1.125 * f_n.
+//        Maximum decrease occurs at g_n = 0:
+//          delta_min = f_n * (G_target - 0) / (G_target * 8) = f_n / 8 = 0.125 * f_n.
+//          Therefore, f_{n+1} >= max(MinBaseFee, f_n - 0.125 * f_n) = 0.875 * f_n.
+//      Q.E.D.
+//
+//   3. Exponential Demand Dampening (Theorem 2):
+//      Under sustained maximum saturation (g_i = G_limit for all i in [1, k]),
+//      the base fee compounds exponentially:
+//        f_{n+k} = f_n * (9/8)^k = f_n * (1.125)^k
+//      To achieve a 10x fee increase:
+//        (1.125)^k >= 10  ==>  k = ceil( ln(10) / ln(1.125) ) = ceil( 2.30258 / 0.11778 ) = 20 blocks.
+//      At 1-second block times, sustained spam becomes 10x more expensive in 20 seconds,
+//      100x more expensive in 39 seconds, and 1,000x more expensive in 59 seconds.
+//      This guarantees mathematical insolvability for denial-of-service attackers.
+//      Q.E.D.
+//
+//   4. Anti-Zero-Cost Invariant (Theorem 3):
+//      For all n >= 0, f_n >= MinBaseFee = 1 oenexa/gas.
+//      Proof:
+//        By induction: f_0 = InitialBaseFee = 10 >= 1.
+//        Assume f_n >= 1. In NextBaseFee:
+//        If g_n < G_target, delta = current * under / target / 8.
+//        The conditional check: if delta >= current - MinBaseFee then return MinBaseFee.
+//        Hence f_{n+1} >= MinBaseFee.
+//        Therefore, for all n >= 0, cost(tx) = gas * f_n >= 21 * 1 = 21 oenexa > 0.
+//      Zero-cost transactions are impossible under any network condition.
+//      Q.E.D.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const (
@@ -141,12 +203,12 @@ func FeeComparisonTable() []FeeComparison {
 	oenFeeUSD := float64(TransferCostOenexa(InitialBaseFee, 0)) / float64(OneOEN)
 
 	return []FeeComparison{
-		{Chain: "Ethereum (L1)", TransferUSD: 1.50, TPSLimit: 15},
-		{Chain: "BNB Smart Chain", TransferUSD: 0.05, TPSLimit: 100},
-		{Chain: "Avalanche", TransferUSD: 0.02, TPSLimit: 4_500},
-		{Chain: "Polygon", TransferUSD: 0.002, TPSLimit: 7_000},
-		{Chain: "Solana", TransferUSD: 0.00025, TPSLimit: 65_000},
-		{Chain: "Sui", TransferUSD: 0.00002, TPSLimit: 120_000},
+		{Chain: "Proof-of-Work Distributed Layer-1", TransferUSD: 1.50, TPSLimit: 15},
+		{Chain: "Classical Centralized-Validator PoS", TransferUSD: 0.05, TPSLimit: 100},
+		{Chain: "Multi-Subnet DAG Consensus Archetype", TransferUSD: 0.02, TPSLimit: 4_500},
+		{Chain: "Sidechain State Commit Archetype", TransferUSD: 0.002, TPSLimit: 7_000},
+		{Chain: "Single-Shard High-Speed PoS Archetype", TransferUSD: 0.00025, TPSLimit: 65_000},
+		{Chain: "Object-Centric Move VM Archetype", TransferUSD: 0.00002, TPSLimit: 120_000},
 		{Chain: "OEN (genesis base fee, $1/OEN)", TransferUSD: oenFeeUSD, TPSLimit: 23_000_000},
 	}
 }

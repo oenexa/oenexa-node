@@ -9,6 +9,86 @@ import (
 	"github.com/oenexa/oenexa/internal/state"
 )
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Delegation & Pooled Staking Architecture
+//
+// PURPOSE:
+//   1. Enables decentralized Proof-of-Stake participation by allowing any sovereign
+//      OEN holder to delegate stake to registered network validators.
+//   2. Orchestrates proportional reward distribution, validator commission accounting,
+//      timelocked unbonding queues, and Byzantine fault slashing propagation.
+//   3. Maximizes total Byzantine fault tolerance capital security by aggregating
+//      distributed token weight into the active validator consensus set.
+//
+// WHY:
+//   - Requiring full validator hardware and infrastructure excludes standard users,
+//     leading to concentrated validator cartels. Pooled delegation democratizes
+//     staking rewards and decentralizes voting power.
+//   - Unbonding delay prevents "long-range" attacks and rapid capital withdrawal
+//     following malicious double-signing attempts.
+//   - Proportional slashing propagation ensures delegators conduct due diligence
+//     on validator operational reliability, creating market incentives for high uptime.
+//
+// HOW:
+//   - Delegation: Token holders bond OEN (minimum MinDelegationAmount = 0.001 OEN).
+//     The staked balance is locked from general transfer and added to the validator's pool.
+//   - Reward Accrual: When a validator proposes or votes on a block, gross rewards
+//     are collected. The validator's configured commission (e.g. 5% / 500 bps) is
+//     allocated to the validator operator, and the net reward is distributed pro-rata
+//     to delegators based on their share of the total pool.
+//   - Unbonding Queue: Undelegation moves funds into an unbonding queue requiring
+//     DefaultUnbondingDelayBlocks before maturation and release to spendable balance.
+//   - Slashing: When a validator is slashed for downtime or double-signing, the
+//     slashing penalty is applied uniformly across the validator's self-stake and all delegators.
+//
+// FORMAL MATHEMATICAL PROOFS:
+//
+//   1. Stake Conservation Invariant (Theorem 1):
+//      Let S_v be the total delegated stake for validator v, and s_{d, v} be the stake
+//      delegated by delegator d to validator v.
+//      Invariant:
+//        S_v = \sum_{d \in D_v} s_{d, v}
+//      Proof by Structural Induction:
+//        - Base Case: Initially, S_v = 0 and D_v = \emptyset. Equation holds (0 = 0).
+//        - Delegation Step: When delegator d adds \Delta s > 0, S_v' = S_v + \Delta s
+//          and s'_{d, v} = s_{d, v} + \Delta s.
+//          S_v' = (\sum_{k \neq d} s_{k, v}) + (s_{d, v} + \Delta s) = \sum s'_{k, v}.
+//        - Undelegation Step: When delegator d withdraws \Delta s > 0, S_v' = S_v - \Delta s
+//          and s'_{d, v} = s_{d, v} - \Delta s.
+//          S_v' = (\sum_{k \neq d} s_{k, v}) + (s_{d, v} - \Delta s) = \sum s'_{k, v}.
+//      Therefore, stake conservation holds strictly across all state transitions.
+//      Q.E.D.
+//
+//   2. Reward Solvency & Non-Inflationary Distribution (Theorem 2):
+//      Let R_total be the gross block reward allocated to pool v.
+//      Let c = CommissionBps / 10,000 (0 <= c <= 1).
+//      The validator commission is:
+//        R_val = floor( R_total * CommissionBps / 10000 )
+//      The net pool reward is:
+//        R_net = R_total - R_val
+//      For each delegator d with share s_d in pool S_v:
+//        R_d = floor( R_net * s_d / S_v )
+//      Theorem:
+//        R_val + \sum_{d \in D_v} R_d <= R_total
+//      Proof:
+//        \sum_{d \in D_v} R_d = \sum_{d \in D_v} floor( R_net * s_d / S_v )
+//                             <= \sum_{d \in D_v} ( R_net * s_d / S_v )
+//                              = R_net * ( \sum s_d ) / S_v = R_net * (S_v / S_v) = R_net.
+//        Therefore:
+//        R_val + \sum R_d <= R_val + R_net = R_val + (R_total - R_val) = R_total.
+//      Any integer truncation remainder (dust) remains unminted or in the reserve,
+//      strictly guaranteeing that reward distribution can never cause unexpected inflation.
+//      Q.E.D.
+//
+//   3. Slashing Proportionality Theorem (Theorem 3):
+//      Let slash fraction be \alpha \in (0, 1]. For all d \in D_v:
+//        s'_{d, v} = s_{d, v} - floor( s_{d, v} * \alpha )
+//      The relative ownership share s'_{d, v} / S'_v is preserved within integer rounding bounds:
+//        s'_{d, v} / S'_v \approx (s_{d, v} * (1 - \alpha)) / (S_v * (1 - \alpha)) = s_{d, v} / S_v
+//      Preventing any advantage or disadvantage among delegators during a slashing event.
+//      Q.E.D.
+// ─────────────────────────────────────────────────────────────────────────────
+
 const (
 	DefaultUnbondingDelayBlocks uint64 = 100 // blocks until unbonding funds mature
 	DefaultCommissionBps        uint64 = 500 // 5% validator commission (500 basis points)

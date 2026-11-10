@@ -3,8 +3,8 @@
 ## 1. Why OENEXA Core Architecture Was Chosen
 
 Traditional blockchains suffer from high gas fees, slow finality, and vulnerability to quantum computers:
-- **Bitcoin/Ethereum 1.0**: High volatility in transaction fees, vulnerable to Shor's algorithm on ECDSA.
-- **Solana**: High throughput but fragile validator consensus and high hardware requirements.
+- **Legacy Classical Blockchains**: High volatility in transaction fees, vulnerable to Shor's algorithm on ECDSA.
+- **Single-Shard High-Speed Networks**: High throughput but fragile validator consensus and high hardware requirements.
 - **OENEXA Core Goal**: Combine sub-cent transaction fees (< \$0.000000021 at genesis), 2-second deterministic block finality, EIP-1559 base fee burning, and post-quantum ML-DSA-65 cryptography into a pure Go blockchain engine.
 
 ---

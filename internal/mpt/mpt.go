@@ -1,29 +1,36 @@
-// Package mpt implements a Sparse Merkle Trie (SMT) for OENEXA account state.
+// Package mpt implements a Sparse Merkle Trie (SMT) for OENEXA sovereign account state.
 //
-// # Architecture
+// ─────────────────────────────────────────────────────────────────────────────
+// SPARSE MERKLE TRIE (SMT) STATE COMMITMENT SPECIFICATION
+// ─────────────────────────────────────────────────────────────────────────────
 //
-// The trie has a fixed depth of 160 bits — one bit per bit of a 20-byte
-// account address. Each internal node stores the hashes of its two children
-// (left = bit 0, right = bit 1). Leaves store the hash of the encoded
-// account value.
+// PURPOSE:
+//   Provides a deterministic, cryptographically authenticated 256-bit Sparse
+//   Merkle Trie to store and verify global account balances, nonces, and storage roots.
 //
-// # Storage Model
+// WHY (ARCHITECTURAL RATIONALE):
+//   1. Deterministic Consensus Roots: Ensures that any node executing the same
+//      sequence of transactions arrives at the exact same 32-byte StateRoot hash.
+//   2. Logarithmic Verification: Enables light clients and cross-chain relays to
+//      verify account balances with O(log2 N) proof size (~32 hashes = 1 KB).
+//   3. Non-Membership Proofs: Unlike classical trie structures requiring full subtree
+//      traversals, SMT allows proving an account does NOT exist via zero-hash sentinels.
 //
-// Nodes are persisted to a LevelDB backend using their content hash as the
-// key. An in-memory dirty cache (nodeCache) holds nodes written during a
-// block but not yet flushed. Calling Commit() atomically writes all dirty
-// nodes to disk in a single LevelDB batch, then resets the cache.
+// HOW (MECHANICAL EXECUTION):
+//   1. Fixed depth of 256 bits — exactly one bit per bit of a 32-byte sovereign address.
+//   2. Branch nodes store left child hash (bit 0) and right child hash (bit 1).
+//   3. Leaves store: 0x01 ++ address[32] ++ valueHash[32].
+//   4. Atomic flush: Dirty in-memory nodes are committed to LevelDB storage in a
+//      single batch transaction during block finalization.
 //
-// For test environments that need no disk I/O, pass nil as the backend; the
-// trie will operate entirely in-memory using a plain map.
-//
-// # Node Encoding
-//
-//	Leaf   node: 0x01 ++ address[20] ++ valueHash[32]  (53 bytes)
-//	Branch node: 0x02 ++ leftHash[32] ++ rightHash[32]  (65 bytes)
-//
-// The zero hash (all-zero 32 bytes) is used as a sentinel for missing/empty
-// subtrees, meaning "nothing is stored here".
+// PROOF OF CRYPTOGRAPHIC INTEGRITY:
+//   1. Preimage & Collision Resistance: State root derivation uses FIPS 202 SHA-3-256.
+//      Finding two distinct states S1 != S2 such that Root(S1) == Root(S2) requires
+//      O(2^128) quantum operations or O(2^256) classical operations, which is infeasible.
+//   2. Deterministic State Equivalence: Because the bit-path traversal is strictly
+//      governed by the bits of the 32-byte address, insertion order does not affect
+//      the final committed state root (order-independent convergence).
+// ─────────────────────────────────────────────────────────────────────────────
 package mpt
 
 import (
