@@ -45,7 +45,7 @@
 
 ## 1. Executive Overview
 
-**OENEXA (OEN)** (*Open Economy, Next Generation Exchange & Assets*) is a Generation-6, post-quantum, privacy-preserving Layer-1 blockchain ecosystem written in pure Go (`CGO_ENABLED=0`). Engineered to endure for the next half-century, OENEXA replaces classical vulnerable algorithms with **NIST Post-Quantum Cryptography (PQC)** standards, while unifying:
+**OENEXA (ONXC)** (*Open Network for the Next Generation Coin*) is a Generation-6, post-quantum, privacy-preserving Layer-1 blockchain ecosystem written in pure Go (`CGO_ENABLED=0`). Engineered to endure for the next half-century, OENEXA replaces classical vulnerable algorithms with **NIST Post-Quantum Cryptography (PQC)** standards, while unifying:
 
 - **AI & Hyperscale Infrastructure**: Tokenizing and funding Tier-4 green data centers via **Oenexa Cortex**, providing on-chain Compute-as-a-Service (CaaS) leasing and autonomous yield distribution.
 - **Zero-Trust 
@@ -208,7 +208,7 @@ The exponential rise of Artificial Intelligence demands sustainable, high-capaci
 |   1. Fractional Bonds       2. Renewable Telemetry      3. CaaS Compute Leasing |
 |   ┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐    |
 |   │ Tier-4 Data Center │    │ Decentralized      │    │ AI Developers pay  │    |
-|   │ tokenized into     │    │ Oracles stream     │    │ OEN for GPU/TPU    │    |
+|   │ tokenized into     │    │ Oracles stream     │    │ ONXC for GPU/TPU    │    |
 |   │ CortexAsset shares │    │ kWh & GPU hours    │    │ cluster compute    │    |
 |   └─────────┬──────────┘    └─────────┬──────────┘    └─────────┬──────────┘    |
 |             │                         │                         │               |
@@ -216,16 +216,16 @@ The exponential rise of Artificial Intelligence demands sustainable, high-capaci
 |   ┌────────────────────────────────────────────────────────────────────────┐    |
 |   │                       Cortex Smart Contract                            │    |
 |   │  - Infrastructure Bond Registry & Stake Tracking                       │    |
-|   │  - RevenuePool Accumulation (100% compute fees in OEN)                 │    |
+|   │  - RevenuePool Accumulation (100% compute fees in ONXC)                 │    |
 |   │  - Proportional Autonomous Yield Streaming to Backers:                 │    |
 |   │      Yield = (Shares / TotalShares) * RevenuePool - Claimed            │    |
 |   └────────────────────────────────────────────────────────────────────────┘    |
 +─────────────────────────────────────────────────────────────────────────────────+
 ```
 
-- **Fractional Infrastructure Bonds**: Hyperscale, 100% renewable-powered data centers are tokenized as `CortexAsset` contracts. Users pool OEN to fund construction and earn fractional ownership.
-- **Compute-as-a-Service (CaaS)**: Decentralized GPU/TPU clusters are leased to developers for LLM training and autonomous AI agent execution, settled natively in OEN.
-- **SaaS Development & Subscriptions**: Software platforms build on the grid with recurring OEN subscription auto-deductions and decentralized crowdfunding.
+- **Fractional Infrastructure Bonds**: Hyperscale, 100% renewable-powered data centers are tokenized as `CortexAsset` contracts. Users pool ONXC to fund construction and earn fractional ownership.
+- **Compute-as-a-Service (CaaS)**: Decentralized GPU/TPU clusters are leased to developers for LLM training and autonomous AI agent execution, settled natively in ONXC.
+- **SaaS Development & Subscriptions**: Software platforms build on the grid with recurring ONXC subscription auto-deductions and decentralized crowdfunding.
 - **Fair Yield Streaming**: 100% of compute leasing fees pool into the contract, allowing backers to claim transparent dividends proportional to their ownership.
 
 ---
@@ -237,7 +237,7 @@ To liberate local economies from centralized
 ```
 Buyer                         Restaurant                    Courier
   │                               │                            │
-  │ 1. Place Order & Escrow OEN   │                            │
+  │ 1. Place Order & Escrow ONXC   │                            │
   │    (
   │    Submits Hash(S_dropoff)    │                            │
   │───────────────────────────────┼───────────────────────────►│
@@ -264,7 +264,7 @@ Buyer                         Restaurant                    Courier
 
 - **Zero Platform Cuts**: 100% of 
 - **Two-Factor Cryptographic Handoff**: Secret preimage verification ($S_{\text{pickup}}$ and $S_{\text{dropoff}}$) ensures couriers cannot claim 
-- **Micro-Merchant POS**: Street vendors and retail shops accept OEN instantly via mobile wallets with sub-second finality and zero chargebacks.
+- **Micro-Merchant POS**: Street vendors and retail shops accept ONXC instantly via mobile wallets with sub-second finality and zero chargebacks.
 
 ---
 
@@ -292,14 +292,16 @@ To support planetary-scale transaction volume (millions of concurrent micro-tran
 
 | Parameter                    | Specification                                                                                                                                  |
 |:-----------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------|
-| **Asset Symbol**             | **OEN** (*Open Economy, Next Generation Exchange & Assets*)                                                                                    |
-| **Atomic Unit**              | **nano-OEN** ($1\ \text{OEN} = 10^9\ \text{nano-OEN}$; 9 decimal places)                                                                       |
-| **Hard Cap**                 | **100,000,000 OEN**                                                                                                                            |
-| **Genesis Allocation**       | 10,000,000 OEN (10% allocated to ecosystem development, grants & community reserve)                                                            |
-| **Mining / Staking Subsidy** | 90,000,000 OEN emitted across 32 halving eras                                                                                                  |
-| **Era 0 Block Reward**       | 45.000000000 OEN per block                                                                                                                     |
+| **Asset Symbol / Ticker**    | **ONXC** (*Open Network for the Next Generation Coin*)                                                                                         |
+| **Coin Name**                | **Open Network for the Next Generation Coin**                                                                                                 |
+| **Legacy Symbol**            | OEN (supported via backward compatibility aliases)                                                                                             |
+| **Atomic Unit**              | **nano-ONXC** ($1\ \text{ONXC} = 10^9\ \text{nano-ONXC}$; 9 decimal places)                                                                    |
+| **Hard Cap**                 | **100,000,000 ONXC**                                                                                                                           |
+| **Genesis Allocation**       | 10,000,000 ONXC (10% allocated: 5M DAO Treasury, 3M Liquidity Reserves, 2M Staking Bootstrap)                                                  |
+| **Mining / Staking Subsidy** | 90,000,000 ONXC emitted across 32 halving eras (exact geometric convergence)                                                                   |
+| **Era 0 Block Reward**       | 45.000000000 ONXC per block                                                                                                                    |
 | **Block Time Target**        | 2.0 seconds                                                                                                                                    |
-| **Block Gas Limit**          | 30,000,000 gas                                                                                                                                 |
+| **Block Gas Limit**          | 500,000,000 gas                                                                                                                                |
 | **Fee Architecture**         | **EIP-1559 Dynamic Fee Mechanism**: Base fee is deterministically adjusted and burned on-chain; priority tip is awarded to the block proposer. |
 
 ---
@@ -477,7 +479,7 @@ The node produces blocks every 2.0 seconds and exposes:
 # 2. Check the balance of any address:
 .\oenexa-cli.exe balance 0x<address_hex> --rpc http://127.0.0.1:8545
 
-# 3. Send a signed transaction in OEN:
+# 3. Send a signed transaction in ONXC:
 .\oenexa-cli.exe transfer <private_key_hex> <recipient_address_hex> 10.5 --rpc http://127.0.0.1:8545
 
 # 4. Inspect node and chain sync info:
@@ -497,7 +499,7 @@ Manage privacy features directly via `oenexa-node`:
 # Display active wallet address:
 .\oenexa-node.exe wallet show
 
-# Shield transparent OEN into a private note:
+# Shield transparent ONXC into a private note:
 .\oenexa-node.exe wallet shield --amount 1000000000 --zaddr 0x...
 
 # Unshield confidential funds back to a transparent account:
@@ -537,7 +539,7 @@ The OENEXA node exposes standard and privacy-enhanced JSON-RPC 2.0 methods over 
 | Method                    | Parameters             | Description                                                                |
 |:--------------------------|:-----------------------|:---------------------------------------------------------------------------|
 | `oen_blockNumber`         | `[]`                   | Returns the current chain block height.                                    |
-| `oen_getBalance`          | `[address, "latest"]`  | Returns transparent balance in nano-OEN.                                   |
+| `oen_getBalance`          | `[address, "latest"]`  | Returns transparent balance in nano-ONXC.                                   |
 | `oen_getTransactionCount` | `[address, "latest"]`  | Returns current nonce for an account.                                      |
 | `oen_sendRawTransaction`  | `[signedTxHex]`        | Ingests, validates, and broadcasts an ML-DSA-65 signed transaction.        |
 | `oen_getBlockByNumber`    | `[height, fullTxBool]` | Returns block header, transactions, and state root.                        |

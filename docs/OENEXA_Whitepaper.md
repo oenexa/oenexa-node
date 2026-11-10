@@ -1,4 +1,4 @@
-# OENEXA (OEN)
+# OENEXA (ONXC)
 ### *The Quantum-Safe Layer-1 for Everyday Commerce, Real-World Utility, and the Decentralized Economy*
 
 **Version 2.1 — Master Architecture & Vision Document**  
@@ -12,18 +12,18 @@
 
 ## 1. Executive Summary
 
-OENEXA (OEN) is a Generation-6, Layer-1 blockchain ecosystem engineered to bridge cutting-edge cryptography with sustainable, real-world economics. It couples post-quantum cryptographic security (NIST FIPS 204/203) and high-throughput PBFT consensus with a practical, revenue-generating commercial adoption strategy.
+OENEXA (ONXC) is a Generation-6, Layer-1 blockchain ecosystem engineered to bridge cutting-edge cryptography with sustainable, real-world economics. It couples post-quantum cryptographic security (NIST FIPS 204/203) and high-throughput PBFT consensus with a practical, revenue-generating commercial adoption strategy.
 
 Many blockchain initiatives falter by attempting to deliver high-capital, speculative infrastructure—such as massive physical data centers, AI compute clouds, and disjointed software platforms—all at once on day one. OENEXA adopts a far more grounded and disciplined startup trajectory:
 
 ```
 ┌──────────────────┐      ┌──────────┐      ┌─────────────────────┐      ┌──────────────┐      ┌────────────────────┐
-│ OENEXA           │ ───► │ OEN      │ ───► │ Decentralized Commerce       │ ───► │ Decentralized│ ───► │ Comprehensive      │
+│ OENEXA           │ ───► │ ONXC      │ ───► │ Decentralized Commerce       │ ───► │ Decentralized│ ───► │ Comprehensive      │
 │ Blockchain (L1)  │      │ Coin     │      │ Platform (App)      │      │ Marketplace  │      │ Commerce Ecosystem │
 └──────────────────┘      └──────────┘      └─────────────────────┘      └──────────────┘      └────────────────────┘
 ```
 
-This progressive path provides a far more realistic and resilient startup foundation. Rather than relying on speculative demand, the **Decentralized Commerce Platform** becomes the first real-world utility application that drives daily organic circulation of OEN, onboards everyday consumers and local merchants, and generates actual, recurring revenue for the startup. As adoption, merchant relationships, and token liquidity mature, this consumer beachhead expands organically into a decentralized marketplace and a full-scale commerce ecosystem.
+This progressive path provides a far more realistic and resilient startup foundation. Rather than relying on speculative demand, the **Decentralized Commerce Platform** becomes the first real-world utility application that drives daily organic circulation of ONXC, onboards everyday consumers and local merchants, and generates actual, recurring revenue for the startup. As adoption, merchant relationships, and token liquidity mature, this consumer beachhead expands organically into a decentralized marketplace and a full-scale commerce ecosystem.
 
 ---
 
@@ -37,11 +37,11 @@ By contrast, the **OENEXA adoption trajectory** creates a much stronger, de-risk
 1. **OENEXA Blockchain (Layer-1 Foundation):**  
    A production-grade, quantum-safe Layer-1 network running pure-Go deterministic PBFT consensus, sub-second finality, and NIST-standardized post-quantum signatures (ML-DSA-65).
 
-2. **OEN Coin (The Velocity Engine):**  
+2. **ONXC Coin (The Velocity Engine):**  
    The native medium of exchange engineered for high-velocity everyday settlement, featuring transparent and shielded privacy pools with mathematical turnstile conservation.
 
 3. **Decentralized Commerce App (First Real-World Utility & Revenue Driver):**  
-   The flagship utility application. Decentralized Commerce is a high-frequency, daily transactional market. By connecting local restaurants, couriers, and consumers directly via smart escrow, the app provides instant real-world utility for OEN, eliminates the 25–35% extractive cuts taken by legacy delivery giants, and generates actual, recurring revenue for the startup from day one.
+   The flagship utility application. Decentralized Commerce is a high-frequency, daily transactional market. By connecting local restaurants, couriers, and consumers directly via smart escrow, the app provides instant real-world utility for ONXC, eliminates the 25–35% extractive cuts taken by legacy delivery giants, and generates actual, recurring revenue for the startup from day one.
 
 4. **Decentralized Marketplace (Horizontal Expansion):**  
    With an established network of active digital wallets, verified couriers, and trusted local merchants, the platform broadens into an open marketplace for local retail, apparel, electronics, and consumer services.
@@ -87,25 +87,25 @@ Oenexa believes privacy is a fundamental human right. Inheriting the most powerf
 
 ## 5. Flagship Real-World Utility: Decentralized Commerce & Everyday Commerce
 
-While many blockchain projects exist in an insular financial vacuum, OEN's velocity is grounded in daily transactional commerce. OEN is a seamless, high-speed currency for Real-World Scenarios—powering direct Peer-to-Peer (P2P), Business-to-Peer (B2P), and Business-to-Business (B2B) transactions.
+While many blockchain projects exist in an insular financial vacuum, ONXC's velocity is grounded in daily transactional commerce. ONXC is a seamless, high-speed currency for Real-World Scenarios—powering direct Peer-to-Peer (P2P), Business-to-Peer (B2P), and Business-to-Business (B2B) transactions.
 
 ### 5.1. The Decentralized Commerce Platform (Phase 1 Wedge)
 The Decentralized Commerce market represents the ideal launchpad for the OENEXA ecosystem:
-- **High Transaction Frequency:** Daily recurring orders create steady transactional velocity and genuine utility for OEN.
+- **High Transaction Frequency:** Daily recurring orders create steady transactional velocity and genuine utility for ONXC.
 - **Immediate Value Proposition:** Traditional Decentralized Commerce platforms extract 20% to 35% in commissions from restaurants while paying low margins to delivery drivers. OENEXA's smart contracts reduce transaction fees to fractions of a cent.
 - **Direct Startup Revenue:** The platform generates tangible revenue through minimal application facilitation fees, proving business viability before expanding to complex enterprise solutions.
 
 ### 5.2. QR-Code Mediated Smart Escrow (`internal/contracts/dcommerce`)
 The Decentralized Commerce application utilizes a zero-trust delivery mechanism managed by OenexaVM smart contracts to replace extractive centralized delivery intermediaries:
-1. **Order & Escrow:** A buyer places an order, locking the total OEN (cost of food + delivery commission) securely into the network's smart contract along with $H(S_{\text{dropoff}})$.
+1. **Order & Escrow:** A buyer places an order, locking the total ONXC (cost of food + delivery commission) securely into the network's smart contract along with $H(S_{\text{dropoff}})$.
 2. **Pickup via Barcode/QR:** The delivery mediator (courier) arrives at the restaurant, scans the restaurant's physical QR code revealing $S_{\text{pickup}}$, and calls `ConfirmPickup(orderID, S_{\text{pickup}})`.
 3. **Delivery & Final Confirmation:** Upon arriving at the destination, the buyer presents their secure QR code. The courier scans it, revealing $S_{\text{dropoff}}$, and calls `ConfirmDelivery(orderID, S_{\text{dropoff}})`.
-4. **Instant Settlement:** Immediately upon this final QR confirmation, the smart contract automatically releases the reserved OEN: 100% of food cost to the restaurant, and 100% of delivery fee to the courier. Zero middleman cuts, zero chargebacks, and instant liquidity.
+4. **Instant Settlement:** Immediately upon this final QR confirmation, the smart contract automatically releases the reserved ONXC: 100% of food cost to the restaurant, and 100% of delivery fee to the courier. Zero middleman cuts, zero chargebacks, and instant liquidity.
 
 ### 5.3. Horizontal Expansion: Open Marketplace & Retail
 Following initial regional density in Decentralized Commerce, the network scales into general retail:
 *   **The Oenexa Open Market:** Suppliers, local boutiques, and retail merchants list physical goods, settling via the same proven escrow contracts.
-*   **Micro-Merchant POS:** Street vendors and independent merchants accept OEN instantly via lightweight mobile point-of-sale interfaces with sub-second finality.
+*   **Micro-Merchant POS:** Street vendors and independent merchants accept ONXC instantly via lightweight mobile point-of-sale interfaces with sub-second finality.
 
 ---
 
@@ -113,9 +113,9 @@ Following initial regional density in Decentralized Commerce, the network scales
 
 Once the consumer commerce loop is self-sustaining and generating real startup revenues, OENEXA can systematically expand into high-capital computing and infrastructure through the **Oenexa Cortex**:
 
-*   **Renewable Data Center Financing:** Staked OEN pools and infrastructure bonds fund regional, energy-efficient micro data centers.
-*   **AI Compute-as-a-Service (CaaS):** These facilities host decentralized AI agents, specialized LLMs, and predictive models, with compute leased via automated OEN micropayments.
-*   **Decentralized SaaS Hosting:** Software developers build, host, and monetize hybrid SaaS applications, receiving monthly recurring subscriptions settled in OEN via native smart contracts.
+*   **Renewable Data Center Financing:** Staked ONXC pools and infrastructure bonds fund regional, energy-efficient micro data centers.
+*   **AI Compute-as-a-Service (CaaS):** These facilities host decentralized AI agents, specialized LLMs, and predictive models, with compute leased via automated ONXC micropayments.
+*   **Decentralized SaaS Hosting:** Software developers build, host, and monetize hybrid SaaS applications, receiving monthly recurring subscriptions settled in ONXC via native smart contracts.
 
 ### 6.1. Cortex Smart Contract Architecture
 The Cortex operates via a suite of native OenexaVM smart contracts (`internal/contracts/cortex`):

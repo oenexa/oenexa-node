@@ -31,4 +31,4 @@ Phase 26 delivers a regulated, transparent on-chain marketplace for verified car
 - Oracle-fed carbon price indexes (EU ETS, CORSIA, VCM)
 - Phase 12 DEX Integration: Automated Market Maker (AMM) pools for liquid credits
 - Forward trading contracts for future vintages
-- Denominated in OEN with fiat reference prices via oracles
+- Denominated in ONXC with fiat reference prices via oracles

@@ -61,7 +61,7 @@ func TestHandleInfo(t *testing.T) {
 				TipHash:    "0xabcdef",
 				PeerCount:  5,
 				MempoolLen: 3,
-				Ticker:     "OEN",
+				Ticker:     "ONXC",
 				Version:    "v1.0.0",
 			},
 		})

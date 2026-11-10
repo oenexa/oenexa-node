@@ -80,8 +80,8 @@ func TestTotalEmissionAt_FullEra0(t *testing.T) {
 }
 
 func TestTotalEmissionAt_NeverExceedsMaxEmission(t *testing.T) {
-	// 90M OEN max emission from mining.
-	maxEmission := uint64(90_000_000) * OneOEN
+	// 90M ONXC max emission from mining.
+	maxEmission := uint64(90_000_000) * OneONXC
 	// Check beyond all halving.
 	for _, h := range []uint64{
 		HalvingInterval, 2 * HalvingInterval, 10 * HalvingInterval, 33 * HalvingInterval,

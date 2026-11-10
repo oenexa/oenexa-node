@@ -28,7 +28,7 @@ import (
 // 6. Alice signs and broadcasts a transfer to Bob via JSON-RPC.
 // 7. Validator produces and commits block 1.
 // 8. Bob receives transparent funds, sender pays base fee + tip.
-// 9. Alice deposits transparent OEN into the shielded privacy pool (Shield transaction).
+// 9. Alice deposits transparent ONXC into the shielded privacy pool (Shield transaction).
 // 10. Validator produces and commits block 2.
 // 11. Turnstile invariant verified: Transparent Supply + Shielded Supply == Total Supply.
 // 12. Complete Web3 and Oenexa JSON-RPC methods queried and validated.
@@ -49,13 +49,13 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 
 	// ── 2. Genesis State Setup ─────────────────────────────────────────────
 	st := state.NewStateDB()
-	initialAliceBal := 5_000 * core.OneOEN
+	initialAliceBal := 5_000 * core.OneONXC
 	st.SetAccount(aliceWallet.Address, &state.Account{
 		Balance: initialAliceBal,
 		Nonce:   0,
 	})
 	st.SetAccount(valWallet.Address, &state.Account{
-		Balance: 1_000 * core.OneOEN,
+		Balance: 1_000 * core.OneONXC,
 		Nonce:   0,
 	})
 
@@ -145,7 +145,7 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 	}
 
 	// ── 6. Create, Sign & Send Alice -> Bob Transfer ───────────────────────
-	transferAmount := 250 * core.OneOEN
+	transferAmount := 250 * core.OneONXC
 	gasPrice := core.InitialBaseFee + 5 // base fee + priority tip
 	tx1 := core.NewTransfer(
 		aliceWallet.Address,
@@ -248,7 +248,7 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 	}
 
 	// ── 9. Shield Operation: Alice Deposits to Shielded Pool ───────────────
-	shieldAmount := 100 * core.OneOEN
+	shieldAmount := 100 * core.OneONXC
 	var noteCommitment [32]byte
 	h := crypto.Hash256([]byte("alice_private_shielded_note_data"))
 	copy(noteCommitment[:], h[:])
@@ -316,21 +316,21 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 		t.Errorf("recent blocks count: want 3, got %d", len(recentBlocks))
 	}
 	// ── 13. Query Tokenomics & Exchange Supply Endpoints ──────────────────
-	circSupplyRes := callRPC(t, ts.URL, "oen_getCirculatingSupply", nil)
+	circSupplyRes := callRPC(t, ts.URL, "onxc_getCirculatingSupply", nil)
 	var circMap map[string]interface{}
 	reencodeJSON(circSupplyRes, &circMap)
-	if circMap["ticker"] != "OEN" {
-		t.Errorf("ticker: want OEN, got %v", circMap["ticker"])
+	if circMap["ticker"] != "ONXC" {
+		t.Errorf("ticker: want ONXC, got %v", circMap["ticker"])
 	}
-	if circMap["circulating_supply_oen"].(float64) <= 0 {
+	if circMap["circulating_supply_onxc"].(float64) <= 0 {
 		t.Errorf("circulating supply should be positive")
 	}
 
-	tokenomicsRes := callRPC(t, ts.URL, "oen_getTokenomics", nil)
+	tokenomicsRes := callRPC(t, ts.URL, "onxc_getTokenomics", nil)
 	var tMap map[string]interface{}
 	reencodeJSON(tokenomicsRes, &tMap)
-	if tMap["max_supply_oen"].(float64) != 100_000_000 {
-		t.Errorf("max supply: want 100M, got %v", tMap["max_supply_oen"])
+	if tMap["max_supply_onxc"].(float64) != 100_000_000 {
+		t.Errorf("max supply: want 100M, got %v", tMap["max_supply_onxc"])
 	}
 
 	stakingRes := callRPC(t, ts.URL, "oen_getStakingInfo", nil)
@@ -398,11 +398,11 @@ func TestRealScenario_UnshieldAndDoubleSpendPrevention(t *testing.T) {
 
 	st := state.NewStateDB()
 	st.SetAccount(userWallet.Address, &state.Account{
-		Balance: 1_000 * core.OneOEN,
+		Balance: 1_000 * core.OneONXC,
 		Nonce:   0,
 	})
-	// Fund shielded pool directly with 500 OEN
-	st.CreditShieldedPool(500 * core.OneOEN)
+	// Fund shielded pool directly with 500 ONXC
+	st.CreditShieldedPool(500 * core.OneONXC)
 
 	vs, err := consensus.NewValidatorSet([]*consensus.Validator{
 		{Address: valWallet.Address, PublicKey: valWallet.PublicKey, VotingPower: 100},
@@ -416,7 +416,7 @@ func TestRealScenario_UnshieldAndDoubleSpendPrevention(t *testing.T) {
 	engine := consensus.NewEngine(valWallet.Address, valWallet.PublicKey, valWallet.PrivateKey, vs, st, pool, genesisBlk, nil, nil)
 
 	// 1. Prepare valid unshield transaction
-	unshieldAmount := 200 * core.OneOEN
+	unshieldAmount := 200 * core.OneONXC
 	var nullifier [crypto.HashSize]byte
 	h := crypto.Hash256([]byte("unique_secret_nullifier_001"))
 	copy(nullifier[:], h[:])
@@ -449,14 +449,14 @@ func TestRealScenario_UnshieldAndDoubleSpendPrevention(t *testing.T) {
 
 	// Verify user received unshielded funds
 	userAcc := st.GetAccount(userWallet.Address)
-	expectedUserBal := 1_000*core.OneOEN + unshieldAmount - (core.GasUnshield * core.InitialBaseFee)
+	expectedUserBal := 1_000*core.OneONXC + unshieldAmount - (core.GasUnshield * core.InitialBaseFee)
 	if userAcc.Balance != expectedUserBal {
 		t.Errorf("user balance mismatch after unshield: want %d, got %d", expectedUserBal, userAcc.Balance)
 	}
 
 	// Verify shielded pool balance decreased by exactly unshieldAmount
-	if st.GetShieldedBalance() != 300*core.OneOEN {
-		t.Errorf("shielded pool balance: want %d, got %d", 300*core.OneOEN, st.GetShieldedBalance())
+	if st.GetShieldedBalance() != 300*core.OneONXC {
+		t.Errorf("shielded pool balance: want %d, got %d", 300*core.OneONXC, st.GetShieldedBalance())
 	}
 
 	// 2. Anti-Double-Spend: Attempt to reuse the exact same nullifier in a new tx
@@ -490,7 +490,7 @@ func TestRealScenario_UnshieldAndDoubleSpendPrevention(t *testing.T) {
 		valWallet.Address,
 		userWallet.PublicKey,
 		0, // Already used nonce 0!
-		10*core.OneOEN,
+		10*core.OneONXC,
 		core.InitialBaseFee,
 	)
 	_ = txReplay.Sign(userWallet.PrivateKey)
@@ -512,11 +512,11 @@ func TestRealScenario_UnshieldAndDoubleSpendPrevention(t *testing.T) {
 		valWallet.Address,
 		userWallet.PublicKey,
 		1,
-		10*core.OneOEN,
+		10*core.OneONXC,
 		core.InitialBaseFee,
 	)
 	_ = txTampered.Sign(userWallet.PrivateKey)
-	txTampered.Amount = 999_999 * core.OneOEN // Tamper after signing!
+	txTampered.Amount = 999_999 * core.OneONXC // Tamper after signing!
 	if err := txTampered.Verify(); err == nil {
 		t.Error("tampered tx should fail cryptographic signature verification")
 	}
@@ -552,7 +552,7 @@ func TestRealScenario_MultiValidatorQuorumAndSlashing(t *testing.T) {
 	st := state.NewStateDB()
 	for _, w := range validators {
 		st.SetAccount(w.Address, &state.Account{
-			Balance: 10_000 * core.OneOEN,
+			Balance: 10_000 * core.OneONXC,
 		})
 	}
 
@@ -642,9 +642,9 @@ func TestRealScenario_MultiValidatorQuorumAndSlashing(t *testing.T) {
 	}
 
 	// Check that Validator 3 was slashed:
-	// Initial balance was 10,000 OEN -> 10% penalty slashed (9,000 OEN remaining)
+	// Initial balance was 10,000 ONXC -> 10% penalty slashed (9,000 ONXC remaining)
 	val3Acc := st.GetAccount(validators[3].Address)
-	expectedVal3Bal := 9_000 * core.OneOEN
+	expectedVal3Bal := 9_000 * core.OneONXC
 	if val3Acc.Balance != expectedVal3Bal {
 		t.Errorf("val3 slashed balance: want %d, got %d", expectedVal3Bal, val3Acc.Balance)
 	}

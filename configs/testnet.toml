@@ -1,14 +1,14 @@
-# OENEXA Testnet Configuration
+# OENEXA Testnet Configuration (Native Coin: ONXC)
 # ────────────────────────────────────────────────────────────────────────────
 # Use this config to join the public testnet.
 # Start with: oenexa-node start --config configs/testnet.toml
 
 [chain]
 network_id = 2
-name       = "OENEXA Testnet"
+name       = "OENEXA Testnet (ONXC)"
 
 [node]
-data_dir      = "~/.oenexa-testnet"
+data_dir      = "~/.onxc-testnet"
 keystore_file = "keystore.json"
 miner_enabled = false
 log_level     = "debug"   # more verbose on testnet

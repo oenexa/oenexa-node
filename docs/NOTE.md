@@ -1,4 +1,4 @@
-# OENEXA (OEN) — Architecture & Code Notes
+# OENEXA (ONXC) — Architecture & Code Notes
 
 > **Purpose of this document**: A complete explanation of every package,
 > file, function, and how they connect — written for any developer who
@@ -31,7 +31,7 @@
 
 ## 1. Project Overview
 
-OENEXA (OEN) is a **quantum-resistant Layer-1 blockchain** written in Go.
+OENEXA (ONXC) is a **quantum-resistant Layer-1 blockchain** written in Go.
 Every cryptographic operation uses **NIST Post-Quantum Cryptography (PQC)**
 standards — no RSA, no ECDSA, no secp256k1.
 
@@ -44,8 +44,8 @@ standards — no RSA, no ECDSA, no secp256k1.
 | Smart Contracts | WASM via wazero (pure-Go, no cgo)               |
 | Block time      | 2 seconds                                       |
 | Fee model       | EIP-1559 (dynamic base fee, burned + tip split) |
-| Currency unit   | 1 OEN = 1,000,000,000 oenexa (9 decimals)       |
-| Hard cap        | 100,000,000 OEN                                 |
+| Currency unit   | 1 ONXC = 1,000,000,000 oenexa (9 decimals)       |
+| Hard cap        | 100,000,000 ONXC                                 |
 
 ---
 
@@ -288,8 +288,8 @@ No I/O, no goroutines, no external dependencies except `internal/crypto`.
 | `GasCall`          | 500                  | Base gas cost of calling a contract      |
 | `BlockGasLimit`    | 500,000,000          | Max gas per block (~23M transfers/block) |
 | `MinGasPrice`      | 1                    | Absolute floor: 1 oenexa/gas              |
-| `OneOEN`           | 1,000,000,000        | Oenexa in one OEN (9 decimal places)     |
-| `MaxSupply`        | 100,000,000 × OneOEN | Hard cap: 100M OEN                       |
+| `OneOEN`           | 1,000,000,000        | Oenexa in one ONXC (9 decimal places)     |
+| `MaxSupply`        | 100,000,000 × OneOEN | Hard cap: 100M ONXC                       |
 | `ProtocolVersion`  | 1                    | Block header version                     |
 | `ChainID`          | 1                    | Mainnet chain identifier                 |
 | `BlockIntervalSec` | 2                    | Target block time in seconds             |
@@ -337,13 +337,13 @@ FeeEstimate(baseFee, tier) → (maxFeePerGas, priorityTip)
 TransferCostOenexa(baseFee, tip) → uint64
 ```
 - Returns `GasTransfer × (baseFee + tip) = 21 × (baseFee + tip)`.
-- At genesis baseFee=10, no tip: **210 oenexa = $0.00000021** (at $1/OEN).
+- At genesis baseFee=10, no tip: **210 oenexa = $0.00000021** (at $1/ONXC).
 
 ```
 FeeComparisonTable() → []FeeComparison
 ```
 - Returns architectural benchmark data across consensus archetypes: PoW ($1.50), Legacy PoS ($0.05),
-  DAG ($0.02), Sidechain ($0.002), Single-Shard ($0.00025), Move-VM ($0.00002), **OEN ($0.00000021)**.
+  DAG ($0.02), Sidechain ($0.002), Single-Shard ($0.00025), Move-VM ($0.00002), **ONXC ($0.00000021)**.
 
 ---
 
@@ -433,7 +433,7 @@ Sets `GasLimit = GasTransfer`, `Type = TxTransfer`.
 
 ```
 const (
-    InitialBlockReward = 45 × OneOEN   // 45 OEN per block in Era 0
+    InitialBlockReward = 45 × OneOEN   // 45 ONXC per block in Era 0
     HalvingInterval    = 1,000,000     // ~23 days at 2s/block
     GenesisPremine     = 10,000,000 × OneOEN
 )
@@ -448,11 +448,11 @@ BlockReward(height) → uint64
 
 | Era | Block range           | Reward/block |
 |-----|-----------------------|--------------|
-| 0   | 1 – 1,000,000         | 45 OEN       |
-| 1   | 1,000,001 – 2,000,000 | 22.5 OEN     |
-| 2   | 2,000,001 – 3,000,000 | 11.25 OEN    |
+| 0   | 1 – 1,000,000         | 45 ONXC       |
+| 1   | 1,000,001 – 2,000,000 | 22.5 ONXC     |
+| 2   | 2,000,001 – 3,000,000 | 11.25 ONXC    |
 | ... | ...                   | ...          |
-| Max | ~32M+                 | 0 OEN        |
+| Max | ~32M+                 | 0 ONXC        |
 
 ```
 TotalEmissionAt(height) → uint64   // total block rewards up to height
@@ -473,7 +473,7 @@ type GenesisConfig struct {
 ```
 
 **`DefaultGenesisConfig(validatorAddr)`** — creates a config with
-10,000,000 OEN pre-mined to the validator.
+10,000,000 ONXC pre-mined to the validator.
 
 **`Build()`** — creates the genesis block (height 0):
 - `BaseFee = InitialBaseFee` (10 oenexa/gas) — seeds the fee market
@@ -1052,7 +1052,7 @@ type VM struct {
 NewVM(ctx) → (*VM, error)
 ```
 - Creates a wazero runtime.
-- Registers the OEN host module (`"env"`) with these host functions:
+- Registers the ONXC host module (`"env"`) with these host functions:
 
 | Export             | Parameters            | Description                        |
 |--------------------|-----------------------|------------------------------------|
@@ -1310,9 +1310,9 @@ Manager.applyRelease(ctx, rel)
 | Step | Action                                                                          |
 |------|---------------------------------------------------------------------------------|
 | 1    | Generate two ML-DSA-65 wallets (validator + deployer)                           |
-| 2    | Build genesis block with 10M + 1M OEN pre-mine                                  |
+| 2    | Build genesis block with 10M + 1M ONXC pre-mine                                  |
 | 3    | Bootstrap StateDB from genesis allocations; create mempool and P2P node         |
-| 4    | Print fee comparison table (OEN vs Consensus Archetypes)                             |
+| 4    | Print fee comparison table (ONXC vs Consensus Archetypes)                             |
 | 5    | Print halving emission schedule (6 eras)                                        |
 | 5b   | Print `BlockReward()` spot-checks at key heights                                |
 | 6    | Deploy `CounterContract` WASM via `ApplyTransaction`                            |
@@ -1341,7 +1341,7 @@ case blk := <-engine.CommitCh():
 ```go
 func totalAllocOEN(allocs map[[32]byte]uint64) uint64
 ```
-- Helper that sums all genesis allocations and returns the total in OEN.
+- Helper that sums all genesis allocations and returns the total in ONXC.
 
 ---
 
@@ -1474,7 +1474,7 @@ attacks and maintaining 128-bit post-quantum security for preimages.
 
 | Name                 | Value               | Meaning                            |
 |----------------------|---------------------|------------------------------------|
-| `InitialBlockReward` | 45 × OneOEN         | 45 OEN per block (Era 0)           |
+| `InitialBlockReward` | 45 × OneOEN         | 45 ONXC per block (Era 0)           |
 | `HalvingInterval`    | 1,000,000           | Blocks between halvings (~23 days) |
 | `GenesisPremine`     | 10,000,000 × OneOEN | Initial supply allocation          |
 

@@ -112,12 +112,12 @@ func TestTransferCostOenexa_AtGenesis(t *testing.T) {
 }
 
 func TestTransferCostOenexa_SubMicroDollar(t *testing.T) {
-	// At $1/OEN, cost of transfer at genesis base fee = 210 oenexa = $0.00000021.
+	// At $1/ONXC, cost of transfer at genesis base fee = 210 nano-ONXC = $0.00000021.
 	// Verify it is strictly sub-micro-dollar (< $0.00001).
-	costOEN := float64(TransferCostOenexa(InitialBaseFee, 0)) / float64(OneOEN)
+	costONXC := float64(TransferCostOenexa(InitialBaseFee, 0)) / float64(OneONXC)
 	subMicroThreshold := 0.00001
-	if costOEN >= subMicroThreshold {
-		t.Errorf("OEN fee $%.10f should be strictly sub-micro-dollar < $%.5f", costOEN, subMicroThreshold)
+	if costONXC >= subMicroThreshold {
+		t.Errorf("ONXC fee $%.10f should be strictly sub-micro-dollar < $%.5f", costONXC, subMicroThreshold)
 	}
 }
 
@@ -130,20 +130,20 @@ func TestTransferCostOenexa_AboveZero(t *testing.T) {
 
 // ── FeeComparisonTable ────────────────────────────────────────────────────────
 
-func TestFeeComparisonTable_OENIsCheapest(t *testing.T) {
+func TestFeeComparisonTable_ONXCIsCheapest(t *testing.T) {
 	table := FeeComparisonTable()
-	var oenFee float64
+	var onxcFee float64
 	minOtherFee := 1e18
 	for _, row := range table {
-		if row.Chain[:3] == "OEN" {
-			oenFee = row.TransferUSD
+		if len(row.Chain) >= 4 && row.Chain[:4] == "ONXC" {
+			onxcFee = row.TransferUSD
 		} else if row.TransferUSD < minOtherFee {
 			minOtherFee = row.TransferUSD
 		}
 	}
-	if oenFee >= minOtherFee {
-		t.Errorf("OEN fee $%.10f should be cheaper than all others (cheapest other: $%.8f)",
-			oenFee, minOtherFee)
+	if onxcFee >= minOtherFee {
+		t.Errorf("ONXC fee $%.10f should be cheaper than all others (cheapest other: $%.8f)",
+			onxcFee, minOtherFee)
 	}
 }
 

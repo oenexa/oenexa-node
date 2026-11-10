@@ -1,4 +1,4 @@
-# OENEXA (OEN) — Engineering & Development Rules
+# OENEXA (ONXC) — Engineering & Development Rules
 
 > **MANDATORY PROJECT POLICY**: All contributors, core developers, and AI assistants working on OENEXA must strictly adhere to the following rules. No pull request or commit will be accepted unless all rules are satisfied.
 

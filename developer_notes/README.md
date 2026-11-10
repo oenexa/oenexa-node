@@ -1,4 +1,4 @@
-# OENEXA (OEN) — Developer Notes Directory
+# OENEXA (ONXC) — Developer Notes Directory
 
 Welcome to the **OENEXA Developer Notes** folder. This directory contains the complete technical architecture notes explaining **WHY** each system was designed and **HOW** it works under the hood.
 

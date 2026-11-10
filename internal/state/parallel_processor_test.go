@@ -23,12 +23,12 @@ func generateParallelBlock(count int) (*state.DB, *core.Block) {
 		rand.Read(from[:])
 		rand.Read(to[:])
 		
-		db.SetAccount(from, &state.Account{Balance: 10 * core.OneOEN})
+		db.SetAccount(from, &state.Account{Balance: 10 * core.OneONXC})
 		
 		tx := &core.Transaction{
 			From:     from,
 			To:       to,
-			Amount:   core.OneOEN,
+			Amount:   core.OneONXC,
 			GasLimit: 21000,
 			GasPrice: 100,
 			Nonce:    0,

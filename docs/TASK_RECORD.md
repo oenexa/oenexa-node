@@ -73,7 +73,7 @@ Every package in the blockchain codebase has achieved **100.0% statement coverag
 | P2P deadlock & race condition fix | 2026-09-16 | Fixed pipe drain & test synchronization; reached 100% coverage | COMPLETE |
 | Consensus engine coverage completion | 2026-09-16 | Added test hooks and error branch tests; reached 100% coverage | COMPLETE |
 | Full 100% statement coverage achieved across all internal packages | 2026-09-16 | 44 packages + BDD suite verified at 100% | COMPLETE |
-| OENEXA (OEN) Protocol Upgrade — Shielded engine & dual-pool integration | 2026-09-19 | Implemented `internal/shielded` (Note, Nullifier, Merkle accumulator, Turnstile invariant, Viewing keys) at 100% coverage | COMPLETE |
+| OENEXA (ONXC) Protocol Upgrade — Shielded engine & dual-pool integration | 2026-09-19 | Implemented `internal/shielded` (Note, Nullifier, Merkle accumulator, Turnstile invariant, Viewing keys) at 100% coverage | COMPLETE |
 | OENEXA State machine & turnstile execution | 2026-09-19 | Added TxShield, TxUnshield, TxShieldedTransfer state handling, rollbacks, and turnstile supply audit at 100% coverage | COMPLETE |
 | OENEXA Tokenomics, RPC, DEX & RWA integration | 2026-09-19 | Upgraded OenSwap AMM, RWA shielded balance, oen_* RPC methods at 100% coverage | COMPLETE |
 | OENEXA UI Portal & Shielded Tab | 2026-09-19 | React + Vite dashboard upgraded with ShieldedTab, dual balance view, viewing key exporter (Vitest 21/21 passing, production build verified) | COMPLETE |

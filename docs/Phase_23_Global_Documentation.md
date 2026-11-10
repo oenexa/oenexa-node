@@ -11,7 +11,7 @@ Phase 23 prepares OENEXA for global regulatory compliance and multi-language/mul
 | Region | Framework | OENEXA Approach | Status |
 |--------|-----------|-----------------|--------|
 | **European Union** | MiCA (Markets in Crypto-Assets Regulation) | Full compliance: CASP registration, custody (Phase 21), whitepaper | Architecture complete |
-| **United States** | SEC / CFTC framework | RWA tokens as securities (Phase 15); OEN as commodity; no US retail CBDC | Legal review ongoing |
+| **United States** | SEC / CFTC framework | RWA tokens as securities (Phase 15); ONXC as commodity; no US retail CBDC | Legal review ongoing |
 | **UAE** | VARA (Virtual Assets Regulatory Authority) | VARA VASP licence; Phase 19 CBDC pilot with UAE Central Bank | Active engagement |
 | **Singapore** | MAS (Monetary Authority of Singapore) | Major Payment Institution licence; DPT service provider | Architecture complete |
 | **United Kingdom** | FCA Digital Asset Framework | Cryptoasset business registration; stablecoin framework | In review |
@@ -46,7 +46,7 @@ The compliance engine is implemented as an OenexaVM WASM contract that:
 | USA | USD | FinCEN-registered MSB |
 
 ### FATF Travel Rule Compliance
-- Automatic Travel Rule enforcement for transfers > 1,000 OEN / CBDC equivalent
+- Automatic Travel Rule enforcement for transfers > 1,000 ONXC / CBDC equivalent
 - Sender and receiver institution details embedded in ISO 20022 `pacs.008` (Phase 20)
 - IVMS 101 data standard for inter-VASP messaging
 

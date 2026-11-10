@@ -51,7 +51,7 @@ The Mempool buffers and orders unconfirmed transactions broadcast across the P2P
 
 * **Pure-Go WebAssembly Engine:** OenexaVM is built with `wazero` (`CGO_ENABLED=0`), offering memory safety and cross-platform compatibility without C dependencies.
 * **Gas Metering & Sandbox Security:** Every WASM opcode and host call consumes gas according to a deterministic schedule. Contracts access state only through secure host functions.
-* **Oenexa Cortex (`internal/contracts/cortex`):** Tokenized Tier-4 renewable data center bonds, on-chain Compute-as-a-Service (CaaS) leasing paid in OEN, and automated yield streaming to backers.
+* **Oenexa Cortex (`internal/contracts/cortex`):** Tokenized Tier-4 renewable data center bonds, on-chain Compute-as-a-Service (CaaS) leasing paid in ONXC, and automated yield streaming to backers.
 * **D-Commerce Escrow (`internal/contracts/dcommerce`):** Zero-trust physical delivery escrow using two-step QR code secrets ($S_{\text{pickup}}$ and $S_{\text{dropoff}}$) for atomic settlement, zero merchant platform fees, and micro-merchant POS.
 
 ---

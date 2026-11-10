@@ -18,11 +18,11 @@ This schema defines a credential asserting that a user has passed KYC/AML checks
   ],
   "id": "urn:uuid:3978344f-8596-4c3a-a978-8fcaba3903c5",
   "type": ["VerifiableCredential", "KYCCredential"],
-  "issuer": "did:oen:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "issuer": "did:ONXC:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
   "issuanceDate": "2026-09-01T12:00:00Z",
   "expirationDate": "2027-09-01T12:00:00Z",
   "credentialSubject": {
-    "id": "did:oen:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+    "id": "did:ONXC:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
     "kycStatus": "APPROVED",
     "amlRiskLevel": "LOW",
     "jurisdiction": "US",
@@ -32,7 +32,7 @@ This schema defines a credential asserting that a user has passed KYC/AML checks
     "type": "MLDSA65Signature2026",
     "created": "2026-09-01T12:00:05Z",
     "proofPurpose": "assertionMethod",
-    "verificationMethod": "did:oen:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef#keys-1",
+    "verificationMethod": "did:ONXC:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef#keys-1",
     "jws": "eyJhbGciOiJNTERTQTY1Ii...[3309-byte-signature-encoded]..."
   }
 }
@@ -50,10 +50,10 @@ This schema defines a credential asserting that an entity meets the legal requir
   ],
   "id": "urn:uuid:98765432-1234-5678-abcd-ef0123456789",
   "type": ["VerifiableCredential", "AccreditedInvestorCredential"],
-  "issuer": "did:oen:auditor-address-hex",
+  "issuer": "did:ONXC:auditor-address-hex",
   "issuanceDate": "2026-09-02T09:30:00Z",
   "credentialSubject": {
-    "id": "did:oen:user-address-hex",
+    "id": "did:ONXC:user-address-hex",
     "accreditationStatus": "VERIFIED",
     "criteriaMet": ["NetWorthLimit", "IncomeLimit"],
     "jurisdiction": "EU"
@@ -61,7 +61,7 @@ This schema defines a credential asserting that an entity meets the legal requir
   "proof": {
     "type": "MLDSA65Signature2026",
     "proofPurpose": "assertionMethod",
-    "verificationMethod": "did:oen:auditor-address-hex#keys-1",
+    "verificationMethod": "did:ONXC:auditor-address-hex#keys-1",
     "jws": "..."
   }
 }

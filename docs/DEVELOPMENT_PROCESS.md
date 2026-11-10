@@ -23,12 +23,12 @@ This document outlines the evolutionary development process used to implement th
 2. **Oracle Network (Phase 10)**: Decentralized median-aggregated telemetry feeds for real-world environmental and pricing data.
 3. **DeFi Hub (Phase 11)**: OenexaSwap automated market maker (AMM) and over-collateralized lending protocols.
 4. **D-Commerce Escrow (Phase 12)**: Zero-trust, QR-code mediated physical delivery escrow smart contracts (`internal/contracts/dcommerce`) enabling zero-fee Decentralized Commerce and open market trade.
-5. **Micro-Merchant Gateway (Phase 13)**: Point-of-Sale (POS) mobile interfaces for street vendors and retail stores to instantly accept OEN with zero chargebacks.
+5. **Micro-Merchant Gateway (Phase 13)**: Point-of-Sale (POS) mobile interfaces for street vendors and retail stores to instantly accept ONXC with zero chargebacks.
 
 ### Stage 4: Infrastructure, AI, and SaaS (Phases 14 - 21)
 1. **Oenexa Cortex (Phase 14)**: Green Data Center tokenized infrastructure bonds and automated yield distribution contracts (`internal/contracts/cortex`).
-2. **Compute-as-a-Service (CaaS) (Phase 15)**: On-chain leasing of decentralized GPU/TPU clusters for AI agents and LLM training paid natively in OEN.
-3. **SaaS Development (Phase 16)**: Smart contract frameworks for recurring SaaS subscriptions (auto-deducted OEN) and product crowdfunding.
+2. **Compute-as-a-Service (CaaS) (Phase 15)**: On-chain leasing of decentralized GPU/TPU clusters for AI agents and LLM training paid natively in ONXC.
+3. **SaaS Development (Phase 16)**: Smart contract frameworks for recurring SaaS subscriptions (auto-deducted ONXC) and product crowdfunding.
 4. **Real World Assets (RWA) (Phase 17)**: Fractionalization of real estate, renewable assets, and traditional debt instruments.
 5. **AI Marketplace (Phase 18)**: Autonomous AI agent registration, discovery, and task execution escrow.
 6. **CBDC & ISO 20022 (Phases 19 - 20)**: Central bank digital currency gateways and ISO 20022 financial messaging adapters.
@@ -162,7 +162,7 @@ If a Byzantine validator signs two different block hashes for the same height, r
 ### 4. Zero-Trust D-Commerce Escrow (The QR-Code Delivery Protocol)
 To dismantle extractive Web2 delivery platforms (which charge up to 30% merchant commission), OENEXA implements a zero-trust physical delivery escrow (`internal/contracts/dcommerce`):
 
-1. **Buyer Orders**: Buyer deposits OEN (goods cost + courier tip) into the smart contract. The buyer's wallet generates a random secret $S_{\text{dropoff}}$ and submits its hash $H(S_{\text{dropoff}})$ on-chain.
+1. **Buyer Orders**: Buyer deposits ONXC (goods cost + courier tip) into the smart contract. The buyer's wallet generates a random secret $S_{\text{dropoff}}$ and submits its hash $H(S_{\text{dropoff}})$ on-chain.
 2. **merchant Prepares**: merchant accepts the order and submits $H(S_{\text{pickup}})$ on-chain.
 3. **Courier Pickup**: The courier arrives at the merchant and scans the merchant's physical barcode/QR code, revealing $S_{\text{pickup}}$. The courier calls `ConfirmPickup(orderID, S_{\text{pickup}})`. The contract computes $\text{SHA256}(S_{\text{pickup}})$ and verifies it matches $H(S_{\text{pickup}})$. The state transitions to `PICKED_UP`.
 4. **Customer Drop-off**: The courier arrives at the buyer's home. The buyer displays their QR code, revealing $S_{\text{dropoff}}$. The courier scans it and calls `ConfirmDelivery(orderID, S_{\text{dropoff}})`.
@@ -173,8 +173,8 @@ To dismantle extractive Web2 delivery platforms (which charge up to 30% merchant
 ### 5. Oenexa Cortex: Green Data Center Infrastructure
 OENEXA powers the future of decentralized AI through **Oenexa Cortex** (`internal/contracts/cortex`):
 
-- **Fractional Infrastructure Bonds**: Physical Tier-4 data centers running on 100% renewable energy are tokenized as `CortexAsset` contracts. Users pool OEN to fund construction and receive fractional shares.
-- **Compute-as-a-Service (CaaS)**: Once the data center is active, AI developers pay OEN to lease GPU/TPU compute clusters.
+- **Fractional Infrastructure Bonds**: Physical Tier-4 data centers running on 100% renewable energy are tokenized as `CortexAsset` contracts. Users pool ONXC to fund construction and receive fractional shares.
+- **Compute-as-a-Service (CaaS)**: Once the data center is active, AI developers pay ONXC to lease GPU/TPU compute clusters.
 - **Autonomous Yield Streaming**: All compute fees accumulate in the contract's `RevenuePool`. Investors claim their proportional dividend with guaranteed mathematical fairness:
   $$\text{InvestorYield} = \frac{\text{SharesHeld}}{\text{TotalShares}} \times \text{RevenuePool} - \text{PreviouslyClaimed}$$
 

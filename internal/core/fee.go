@@ -1,7 +1,7 @@
 package core
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OEN Fee Model — Algorithmic Gas Pricing & Deflationary Burn
+// ONXC Fee Model — Algorithmic Gas Pricing & Deflationary Burn
 //
 // PURPOSE:
 //   1. Provides deterministic, congestion-responsive execution pricing for all
@@ -17,18 +17,18 @@ package core
 //   - An algorithmic base fee that auto-adjusts based on parent block capacity utilization
 //     guarantees predictable wallet fee estimation and rapid congestion alleviation.
 //   - Burning the base fee permanently eliminates transaction revenue from validator collusion,
-//     aligning network security with long-term token value accrual for all OEN holders.
+//     aligning network security with long-term token value accrual for all ONXC holders.
 //
 // HOW:
 //   - Two-component fee structure:
 //       EffectiveFeePerGas = BaseFee + PriorityTip
 //       TotalFee           = GasUsed × EffectiveFeePerGas
-//   - BaseFee: Burned permanently (decreasing circulating OEN supply).
+//   - BaseFee: Burned permanently (decreasing circulating ONXC supply).
 //   - PriorityTip: Credited to the block proposer validator as immediate incentive.
 //   - Target block gas utilization is exactly 50% of BlockGasLimit (TargetBlockGas = BlockGasLimit / 2).
 //   - If GasUsed > TargetBlockGas, BaseFee increases by a factor proportional to excess gas (up to +12.5%).
 //   - If GasUsed < TargetBlockGas, BaseFee decreases by a factor proportional to deficit gas (up to -12.5%).
-//   - Absolute floor: MinBaseFee = 1 oenexa/gas (prevents zero-cost spam attacks).
+//   - Absolute floor: MinBaseFee = 1 nano-ONXC/gas (prevents zero-cost spam attacks).
 //
 // FORMAL MATHEMATICAL PROOF OF BASE FEE ELASTICITY & OSCILLATION BOUNDS:
 //   Let:
@@ -196,11 +196,11 @@ type FeeComparison struct {
 }
 
 // FeeComparisonTable returns a list of chains for comparison.
-// OEN figures assume InitialBaseFee and a token price of $1.00.
+// ONXC figures assume InitialBaseFee and a token price of $1.00.
 func FeeComparisonTable() []FeeComparison {
-	// OEN transfer fee at genesis base fee, assuming $1/OEN:
-	//   21 gas × 10 oenexa/gas = 210 oenexa = 0.00000021 OEN = $0.00000021
-	oenFeeUSD := float64(TransferCostOenexa(InitialBaseFee, 0)) / float64(OneOEN)
+	// ONXC transfer fee at genesis base fee, assuming $1/ONXC:
+	//   21 gas × 10 nano-ONXC/gas = 210 nano-ONXC = 0.00000021 ONXC = $0.00000021
+	onxcFeeUSD := float64(TransferCostOenexa(InitialBaseFee, 0)) / float64(OneONXC)
 
 	return []FeeComparison{
 		{Chain: "Proof-of-Work Distributed Layer-1", TransferUSD: 1.50, TPSLimit: 15},
@@ -209,6 +209,6 @@ func FeeComparisonTable() []FeeComparison {
 		{Chain: "Sidechain State Commit Archetype", TransferUSD: 0.002, TPSLimit: 7_000},
 		{Chain: "Single-Shard High-Speed PoS Archetype", TransferUSD: 0.00025, TPSLimit: 65_000},
 		{Chain: "Object-Centric Move VM Archetype", TransferUSD: 0.00002, TPSLimit: 120_000},
-		{Chain: "OEN (genesis base fee, $1/OEN)", TransferUSD: oenFeeUSD, TPSLimit: 23_000_000},
+		{Chain: "ONXC (genesis base fee, $1/ONXC)", TransferUSD: onxcFeeUSD, TPSLimit: 23_000_000},
 	}
 }

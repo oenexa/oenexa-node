@@ -27,6 +27,13 @@ func TestSovereignValuationPairs_Known(t *testing.T) {
 		pair   string
 		wantID string
 	}{
+		{"ONXC", "oenexa"},
+		{"ONXC-USD", "usd"},
+		{"ONXC-EUR", "eur"},
+		{"ONXC-GBP", "gbp"},
+		{"ONXC-JPY", "jpy"},
+		{"ONXC-CHF", "chf"},
+		{"ONXC-USDC", "usd"},
 		{"OEN", "oenexa"},
 		{"OEN-USD", "usd"},
 		{"OEN-EUR", "eur"},

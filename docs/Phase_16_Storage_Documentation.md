@@ -38,7 +38,7 @@ The Decentralized Storage Layer allows high-volume assets to be stored off-chain
         |                                                         |
         v                                                         v
 +-------------------------+                               +-------------------------+
-|  AES-256-GCM Envelope   |                               |   OEN Storage Market    |
+|  AES-256-GCM Envelope   |                               |   ONXC Storage Market    |
 | (Encrypted Content      |                               | (Proof-of-Storage Yield |
 |  Key-gated via ML-DSA)  |                               |    Priced by Oracles)   |
 +-------------------------+                               +-------------------------+
@@ -49,7 +49,7 @@ The Decentralized Storage Layer allows high-volume assets to be stored off-chain
 - **On-Chain Cryptographic Anchoring**: OenexaVM smart contracts store only a 32-byte `contentHash` ($\text{SHA-3}$ of the raw payload). Because this hash resides in the global Sparse Merkle Trie, any party can generate an $O(\log N)$ Merkle inclusion proof verifying that a given off-chain document was committed at a specific block height.
 - **Access Control via Post-Quantum Signatures**: Retrieval requests require ML-DSA-65 signed bearer tokens issued by the asset owner. Storage nodes verify signature validity against the owner's on-chain public key before serving data.
 - **Envelope Encryption**: Sensitive files are encrypted client-side using AES-256-GCM with unique ephemeral keys. Ephemeral keys are wrapped using hybrid post-quantum key encapsulation mechanisms (ML-KEM-768) and managed through OenexaID decentralized key vaults.
-- **OEN Storage Market**: Storage providers stake OEN tokens and advertise available capacity to the network. Nodes earn OEN per megabyte-epoch, with dynamic baseline storage pricing continuously benchmarked by the Phase 11 Oracle network.
+- **ONXC Storage Market**: Storage providers stake ONXC tokens and advertise available capacity to the network. Nodes earn ONXC per megabyte-epoch, with dynamic baseline storage pricing continuously benchmarked by the Phase 11 Oracle network.
 
 ---
 
@@ -77,7 +77,7 @@ Storage nodes implement a lightweight JSON-RPC interface that integrates with OE
 
 ## 4. Security & Fault Tolerance
 
-- **Garbage Collection & Slashing**: Storage nodes that fail periodic on-chain storage audit challenges lose a fraction of their bonded OEN stake.
+- **Garbage Collection & Slashing**: Storage nodes that fail periodic on-chain storage audit challenges lose a fraction of their bonded ONXC stake.
 - **Deduplication**: SHA-3 content addressing natively eliminates duplicate file storage across different contracts and users.
 - **Censorship Resistance**: Files are erasure-coded across a minimum of $K$-of-$N$ storage providers, ensuring accessibility even if individual nodes go offline.
 

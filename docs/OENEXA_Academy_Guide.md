@@ -40,7 +40,7 @@ To make OENEXA the fastest blockchain, we separated *reading data* from *proving
 
 How does a transaction go from a user's wallet to being permanently recorded?
 1. **Submission:** A user submits a transaction via the Web API.
-2. **Validation:** The mempool immediately checks the ML-DSA-65 signature and ensures the user has enough OEN to pay the gas fee.
+2. **Validation:** The mempool immediately checks the ML-DSA-65 signature and ensures the user has enough ONXC to pay the gas fee.
 3. **Queuing:** Valid transactions are added to an in-memory priority queue, sorted by the fee they are willing to pay. Adding a transaction takes just **161 nanoseconds**.
 4. **Block Mining/Forging:** The consensus engine pulls the top transactions from the mempool, executes them against the State Engine, and packages them into a block.
 

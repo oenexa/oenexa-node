@@ -84,10 +84,11 @@ import (
 // ─────────────────────────────────────────────────────────────────────────────
 
 const (
-	CurrencySymbol   = "OEN"
-	CurrencyDecimals = 18
-	RosettaAPIVersion = "1.4.14"
-	NodeVersion       = "v1.0.0"
+	CurrencySymbol       = "ONXC"
+	LegacyCurrencySymbol = "OEN"
+	CurrencyDecimals     = 9
+	RosettaAPIVersion    = "1.4.14"
+	NodeVersion          = "v1.0.0"
 )
 
 // Handler implements the Coinbase Rosetta v1.4.14 Data & Construction API.

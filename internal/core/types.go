@@ -14,18 +14,21 @@ const (
 	TxShieldedTransfer TxType = 0x08 // Shielded -> Shielded Pool
 )
 
-// Currency units — 9 decimal places (1 OEN = 1_000_000_000 nano-OEN).
+// Currency units — 9 decimal places (1 ONXC = 1_000_000_000 nano-ONXC).
+// ONXC stands for "Open Network for the Next Generation Coin".
 const (
-	NanoOEN   uint64 = 1
-	OneOEN    uint64 = 1_000_000_000        // 10^9 nano-OEN
-	MaxSupply uint64 = 100_000_000 * OneOEN // 100M OEN = 10^17 nano-OEN (fits uint64)
+	NanoONXC  uint64 = 1
+	OneONXC   uint64 = 1_000_000_000         // 10^9 nano-ONXC
+	MaxSupply uint64 = 100_000_000 * OneONXC // 100M ONXC = 10^17 nano-ONXC (fits uint64)
 
 	// Backwards compatibility aliases
-	Oenexa uint64 = NanoOEN
+	NanoOEN uint64 = NanoONXC
+	OneOEN  uint64 = OneONXC
+	Oenexa  uint64 = NanoONXC
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Gas constants — ultra-low to make OEN the world's cheapest-fee chain.
+// Gas constants — ultra-low to make ONXC the world's cheapest-fee chain.
 // ─────────────────────────────────────────────────────────────────────────────
 const (
 	GasTransfer         uint64 = 21          // standard transfer
@@ -35,12 +38,13 @@ const (
 	GasUnshield         uint64 = 100         // shielded to transparent withdraw
 	GasShieldedTransfer uint64 = 150         // shielded-to-shielded transfer
 	BlockGasLimit       uint64 = 500_000_000 // high block gas limit
-	MinGasPrice         uint64 = 1           // 1 nano-OEN/gas absolute floor
+	MinGasPrice         uint64 = 1           // 1 nano-ONXC/gas absolute floor
 )
 
 // Chain metadata.
 const (
-	Ticker          = "OEN"
+	CoinName        = "Open Network for the Next Generation Coin"
+	Ticker          = "ONXC"
 	LegacyTicker    = "OEN"
 	Decimals        = 9
 	ProtocolVersion = 1

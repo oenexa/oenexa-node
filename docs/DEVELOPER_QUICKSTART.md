@@ -70,7 +70,7 @@ While the node is running, open a separate terminal to manage wallets and broadc
 # Query balance of an account via RPC:
 .\oenexa-cli.exe balance 0x<address_hex> --rpc http://127.0.0.1:8545
 
-# Transfer OEN to another account:
+# Transfer ONXC to another account:
 .\oenexa-cli.exe transfer <private_key_hex> <to_address_hex> 5.0 --rpc http://127.0.0.1:8545
 
 # Query node status and chain info:
@@ -87,7 +87,7 @@ The node binary includes wallet management for transparent and shielded privacy 
 # Generate encrypted keystore:
 .\oenexa-node.exe wallet new
 
-# Deposit transparent OEN into a confidential shielded note:
+# Deposit transparent ONXC into a confidential shielded note:
 .\oenexa-node.exe wallet shield --amount 1000000000 --zaddr 0x...
 
 # Withdraw confidential shielded funds back to a transparent account:

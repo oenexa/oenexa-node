@@ -12,7 +12,7 @@ OenexaSwap utilizes a constant-product formula (`x * y = k`).
 - **Trading Fees**: A 0.3% fee is applied to every swap, which is added directly to the liquidity pool, thereby increasing the value of the LP tokens over time.
 
 ## 3. OenexaLend (Money Market)
-OenexaLend allows users to lock up volatile assets (e.g., OEN) as collateral to borrow stable assets.
+OenexaLend allows users to lock up volatile assets (e.g., ONXC) as collateral to borrow stable assets.
 - **Oracle Integration**: Collateral values are strictly priced via the Phase 10 **OenexaOracle**, relying on the median-aggregator to prevent flash-crash liquidations.
 - **Over-Collateralization**: The protocol enforces a strict 150% collateralization ratio. If the value of the collateral drops below this threshold, liquidators can repay the debt in exchange for a discounted portion of the collateral.
 

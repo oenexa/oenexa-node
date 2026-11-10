@@ -15,8 +15,8 @@ Smart contracts import the following functions directly from the OENEXA Node `en
 
 - `oen_get(slot)`: Reads a 64-bit value from the contract's persistent storage inside the Sparse Merkle Trie.
 - `oen_set(slot, value)`: Modifies the contract's storage. (Cost: 500 Gas).
-- `oen_transfer(to_addr, amount)`: Allows the smart contract to securely send OEN coins to another address.
-- `oen_balance(addr)`: Reads the OEN balance of any wallet on the blockchain.
+- `oen_transfer(to_addr, amount)`: Allows the smart contract to securely send ONXC coins to another address.
+- `oen_balance(addr)`: Reads the ONXC balance of any wallet on the blockchain.
 - `oen_caller()`: Returns the address of the user who initiated the transaction.
 
 ## The State Integration

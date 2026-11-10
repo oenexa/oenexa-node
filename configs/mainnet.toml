@@ -1,13 +1,13 @@
-# OENEXA Mainnet Configuration
+# OENEXA Mainnet Configuration (Native Coin: ONXC)
 # ────────────────────────────────────────────────────────────────────────────
-# Copy this file to ~/.oen/config.toml and adjust for your setup.
+# Copy this file to ~/.onxc/config.toml and adjust for your setup.
 
 [chain]
 network_id = 1
-name       = "OENEXA Mainnet"
+name       = "OENEXA Mainnet (ONXC)"
 
 [node]
-data_dir      = "~/.oen"
+data_dir      = "~/.onxc"
 keystore_file = "keystore.json"
 miner_enabled = false   # set true only on authorized validator nodes
 log_level     = "info"  # debug | info | warn | error

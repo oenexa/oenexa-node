@@ -25,15 +25,15 @@ func setupTestBFT(t *testing.T) (*Engine, *Engine, *crypto.Wallet, *crypto.Walle
 	st2 := state.NewStateDB()
 
 	// Give balances to both validators in state
-	st1.SetAccount(val1Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneOEN})
-	st1.SetAccount(val2Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneOEN})
-	st2.SetAccount(val1Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneOEN})
-	st2.SetAccount(val2Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneOEN})
+	st1.SetAccount(val1Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneONXC})
+	st1.SetAccount(val2Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneONXC})
+	st2.SetAccount(val1Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneONXC})
+	st2.SetAccount(val2Wallet.Address, &state.Account{Balance: 1_000_000 * core.OneONXC})
 
 	cfg := core.DefaultGenesisConfig([][crypto.AddressSize]byte{val1Wallet.Address})
 	cfg.Allocations = map[[crypto.AddressSize]byte]uint64{
-		val1Wallet.Address: 1_000_000 * core.OneOEN,
-		val2Wallet.Address: 1_000_000 * core.OneOEN,
+		val1Wallet.Address: 1_000_000 * core.OneONXC,
+		val2Wallet.Address: 1_000_000 * core.OneONXC,
 	}
 	genesis := cfg.Build()
 

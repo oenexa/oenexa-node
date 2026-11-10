@@ -1,4 +1,4 @@
-# 🏛️ OENEXA (OEN) — Scaleway Cloud Deployment Guide
+# 🏛️ OENEXA (ONXC) — Scaleway Cloud Deployment Guide
 ### *Cloud-init VERSION 22.1+ Automation for Scaleway Elastic Metal & Instances*
 
 This guide details the complete deployment process for running the **OENEXA Layer-1 Quantum-Safe Blockchain & Explorer** on Scaleway bare-metal or cloud infrastructure using automated Cloud-init.
@@ -207,7 +207,7 @@ The encrypted keystore JSON is saved to `/opt/oenexa/backups/keystore_backup_<ti
 
 ### 2. Copy the Keystore to Your Local Machine:
 ```bash
-scp oenexa@<YOUR_SERVER_PUBLIC_IP>:/opt/oenexa/backups/keystore_backup_*.json ~/oen-keystore-backup.json
+scp oenexa@<YOUR_SERVER_PUBLIC_IP>:/opt/oenexa/backups/keystore_backup_*.json ~/ONXC-keystore-backup.json
 ```
 
 ### 3. Check Decryption Password:

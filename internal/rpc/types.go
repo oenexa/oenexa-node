@@ -1,4 +1,4 @@
-// Package rpc provides a JSON-RPC 2.0 HTTP API for the OEN node.
+// Package rpc provides a JSON-RPC 2.0 HTTP API for the ONXC sovereign node.
 package rpc
 
 import "encoding/json"

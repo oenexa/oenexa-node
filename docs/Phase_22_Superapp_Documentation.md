@@ -10,8 +10,8 @@ Phase 22 delivers the OENEXA SuperApp — a single mobile application combining 
 
 | Module | Features | Depends On |
 |--------|----------|------------|
-| **Wallet** | OEN + RWA token management, transaction history, address book | Phase 8 |
-| **Pay** | QR-code OEN payments, CBDC wires, ISO 20022 bank transfers | Phase 8, 19, 20 |
+| **Wallet** | ONXC + RWA token management, transaction history, address book | Phase 8 |
+| **Pay** | QR-code ONXC payments, CBDC wires, ISO 20022 bank transfers | Phase 8, 19, 20 |
 | **DeFi** | DEX trading, liquidity provision, lending, yield vaults | Phase 12, 13 |
 | **Identity** | OenexaID VC management, ZK proof generation, DID resolution | Phase 9 |
 | **Invest** | RWA tokens, HydroChain assets, accreditation onboarding flow | Phase 14, 15 |
@@ -26,7 +26,7 @@ Phase 22 delivers the OENEXA SuperApp — a single mobile application combining 
 - **Framework**: React Native + TypeScript
 - **State management**: Zustand + React Query
 - **Navigation**: React Navigation 6 (stack + tab + drawer)
-- **UI**: Custom design system (dark theme, OEN green `#39d353` accent)
+- **UI**: Custom design system (dark theme, ONXC green `#39d353` accent)
 
 ### Cryptographic Core
 - Core crypto compiled to WebAssembly from `internal/crypto`

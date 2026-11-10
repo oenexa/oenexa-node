@@ -42,7 +42,7 @@ By leveraging post-quantum smart contracts executed on OenexaVM, institutional a
 
 ### Key Architectural Pillars
 - **Infrastructure Bonds**: Smart contracts that securely record data center metadata, total minted shares, circulating fractions, and dynamic revenue distribution schedules. Located at `internal/contracts/aigrid`.
-- **Compute-as-a-Service (CaaS)**: Once operational, the computing power (GPUs, TPUs, AI clusters) of these data centers is leased out. Clients pay for computation using OEN coins, generating a continuous yield that flows back to the initial infrastructure investors.
+- **Compute-as-a-Service (CaaS)**: Once operational, the computing power (GPUs, TPUs, AI clusters) of these data centers is leased out. Clients pay for computation using ONXC coins, generating a continuous yield that flows back to the initial infrastructure investors.
 - **SaaS Development Hosting**: These data centers natively host hybrid SaaS applications, allowing developers to deploy decentralized web services seamlessly.
 - **Oracle Integration**: Direct interface with the decentralized Oracle network (Phase 10) to ingest cryptographically signed IoT telemetry (kilowatt-hours consumed, teraflops processed, and off-taker wholesale settlements).
 
@@ -57,15 +57,15 @@ The core state struct defines the physical infrastructure unit and its financial
 type DataCenterAsset struct {
     AssetID     [32]byte
     TotalShares uint64
-    RevenuePool uint64  // OEN wei accumulated from CaaS
+    RevenuePool uint64  // ONXC wei accumulated from CaaS
     OracleRef   [32]byte
 }
 ```
 
 ### Core Operations
 1. `RegisterDataCenter(assetID, shares, oracleRef, legalMetadataHash)`: Deploys a new data center financing vehicle on-chain.
-2. `PurchaseShares(assetID, shareCount, proofVC)`: Verifies investor accreditation via OenexaID ZK-proof and transfers shares upon payment in OEN.
-3. `DistributeYield(assetID, periodID)`: Pulls validated oracle revenue figures (from AI leasing) and deposits OEN into the asset's dividend pool for claiming.
+2. `PurchaseShares(assetID, shareCount, proofVC)`: Verifies investor accreditation via OenexaID ZK-proof and transfers shares upon payment in ONXC.
+3. `DistributeYield(assetID, periodID)`: Pulls validated oracle revenue figures (from AI leasing) and deposits ONXC into the asset's dividend pool for claiming.
 4. `ClaimDividends(assetID, recipientShieldedAddress)`: Dispatches accrued earnings into a shielded note commitment.
 
 ---

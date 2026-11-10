@@ -9,7 +9,7 @@ Phase 24 marks the full production mainnet launch of the OENEXA network — tran
 ## Launch Checklist
 
 - [ ] Security audit by two independent firms (Phases 7 Bug Bounty + Phase 24 final audit)
-- [ ] Genesis block configuration: initial validator set, genesis OEN distribution, chain parameters
+- [ ] Genesis block configuration: initial validator set, genesis ONXC distribution, chain parameters
 - [ ] Minimum validator count: 21 validators across 3+ continents
 - [ ] QPoS+ consensus with hardware attestation (TPM) for validators
 - [ ] Emergency governance council configured (Phase 10 GreenDAO multi-sig)
@@ -20,12 +20,12 @@ Phase 24 marks the full production mainnet launch of the OENEXA network — tran
 ## Chain Parameters (Mainnet)
 
 ```yaml
-ChainID:           1 (OEN mainnet)
+ChainID:           1 (ONXC mainnet)
 BlockInterval:     2 seconds
 MaxBlockGas:       30,000,000
 BaseFeeInitial:    1,000,000,000 wei (1 gwei)
 MaxValidators:     100
-QPoS_MinStake:     100,000 OEN
+QPoS_MinStake:     100,000 ONXC
 SlashingFraction:  0.05 (5%)
 ```
 

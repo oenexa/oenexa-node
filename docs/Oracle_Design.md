@@ -11,7 +11,7 @@ The OENEXA Oracle Network bridges off-chain real-world data to the deterministic
 ## Architecture
 
 ### 1. Staked Oracle Nodes
-Oracle nodes must stake `OEN` to participate in data reporting. The stake acts as a security bond that can be slashed if the node is proven to have submitted maliciously manipulated data.
+Oracle nodes must stake `ONXC` to participate in data reporting. The stake acts as a security bond that can be slashed if the node is proven to have submitted maliciously manipulated data.
 
 ### 2. The Aggregator Smart Contract
 On-chain contracts do not trust any single oracle node. Instead, the `oracle.go` smart contract implements an aggregator pattern:

@@ -48,7 +48,8 @@ The internal/upgrade package implements autonomous, quantum-resistant node binar
 ### 2.2 Atomic Applier (pplier.go)
 - **Safe Replacement**: Moves <exe> to <exe>.old, then moves the new temp file to <exe>.
 - **Rollback Protection**: If placing the new binary fails, automatically restores <exe>.old back to <exe>.
-- **Cross-Platform Re-exec**: Spawns the new process via eExec (cmd.Start() on Windows with process detached, syscall.Exec on POSIX systems) and exits cleanly.
+- **Cross-Platform Re-exec**: Spawns the new process via 
+eExec (cmd.Start() on Windows with process detached, syscall.Exec on POSIX systems) and exits cleanly.
 - **Startup Cleanup**: On initialization, cleanOldBinary() removes any residual <exe>.old artifacts.
 
 ### 2.3 On-Chain Upgrade Scheduler (scheduler.go)
@@ -70,7 +71,8 @@ To test OS-level executable updates, re-execution, and HTTP streaming without de
    - createTemp: Injects failures during temporary file creation.
    - closeFile: Exercises flush and synchronization failure branches.
    - chmod: Validates permission error handling.
-   - eExecFunc & osExit: Intercepts subprocess spawning and termination to prevent premature test runner exits.
+   - 
+eExecFunc & osExit: Intercepts subprocess spawning and termination to prevent premature test runner exits.
 2. **Abrupt TCP Drop Tests**:
    - Uses http.Hijacker to abruptly terminate TCP connections mid-stream to verify robust handling of network drops during io.Copy and io.ReadAll.
 3. **Mock GitHub Releases Server**:

@@ -97,8 +97,8 @@ func TestServe_StartsAndResponds(t *testing.T) {
 		t.Errorf("/metrics: want 200, got %d", resp2.StatusCode)
 	}
 	body2, _ := io.ReadAll(resp2.Body)
-	if !strings.Contains(string(body2), "oen_chain_height") {
-		t.Error("/metrics response should contain oen_chain_height")
+	if !strings.Contains(string(body2), "onxc_chain_height") {
+		t.Error("/metrics response should contain onxc_chain_height")
 	}
 
 	// Graceful shutdown via context cancellation.

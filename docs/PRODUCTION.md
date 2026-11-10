@@ -1,4 +1,4 @@
-# OENEXA (OEN) — Production Deployment Guide
+# OENEXA (ONXC) — Production Deployment Guide
 
 > **Version**: v0.5.0
 > **Last updated**: 2026-05-21
@@ -197,24 +197,24 @@ Run these steps **once** before starting the node for the first time.
 ### Step 1 — Create the data directory
 
 ```bash
-mkdir -p ~/.oen
+mkdir -p ~/.ONXC
 ```
 
 ### Step 2 — Copy the config file
 
 ```bash
 # Mainnet
-cp configs/mainnet.toml ~/.oen/config.toml
+cp configs/mainnet.toml ~/.ONXC/config.toml
 
 # Or for testnet
-cp configs/testnet.toml ~/.oen/config.toml
+cp configs/testnet.toml ~/.ONXC/config.toml
 ```
 
-Edit `~/.oen/config.toml` — at minimum set:
+Edit `~/.ONXC/config.toml` — at minimum set:
 
 ```toml
 [node]
-data_dir      = "/home/YOUR_USER/.oen"
+data_dir      = "/home/YOUR_USER/.ONXC"
 miner_enabled = false          # true only for validators
 keystore_file = "keystore.json"
 ```
@@ -225,7 +225,7 @@ keystore_file = "keystore.json"
 # Always pass the password via env var — never via --password on the CLI
 export OEN_PASSWORD="your-strong-password-here"
 
-oenexa-node wallet new --config ~/.oen/config.toml
+oenexa-node wallet new --config ~/.ONXC/config.toml
 ```
 
 Expected output:
@@ -233,26 +233,26 @@ Expected output:
 ```
 ✓ New wallet created
   Address  : 3f4a8b2c1d...
-  Keystore : /home/user/.oen/keystore.json
+  Keystore : /home/user/.ONXC/keystore.json
 
 ⚠  Back up your keystore file and remember your password.
    There is NO recovery mechanism — lost keys = lost funds.
 ```
 
-> ⚠️ **CRITICAL**: Back up `~/.oen/keystore.json` to an offline location immediately
+> ⚠️ **CRITICAL**: Back up `~/.ONXC/keystore.json` to an offline location immediately
 > (USB drive, encrypted cloud storage). If you lose this file or forget the password,
 > your funds are permanently inaccessible.
 
 ### Step 4 — Verify the wallet address
 
 ```bash
-oenexa-node wallet show --config ~/.oen/config.toml
+oenexa-node wallet show --config ~/.ONXC/config.toml
 ```
 
 ### Step 5 — Start the node (sync only — no mining)
 
 ```bash
-oenexa-node start --config ~/.oen/config.toml
+oenexa-node start --config ~/.ONXC/config.toml
 ```
 
 The node will:
@@ -267,7 +267,7 @@ The node will:
 
 ## 6. Configuration Reference
 
-Full annotated config (`~/.oen/config.toml`):
+Full annotated config (`~/.ONXC/config.toml`):
 
 ```toml
 # ── Chain identity ────────────────────────────────────────────────────────────
@@ -277,7 +277,7 @@ name       = "OENEXA Mainnet"
 
 # ── Node behaviour ────────────────────────────────────────────────────────────
 [node]
-data_dir      = "~/.oen"          # all data stored here
+data_dir      = "~/.ONXC"          # all data stored here
 keystore_file = "keystore.json"   # relative to data_dir
 miner_enabled = false             # true = produce blocks (validators only)
 log_level     = "info"            # debug | info | warn | error
@@ -345,29 +345,29 @@ sudo chmod +x /usr/local/bin/oenexa-node
 **Create the service user** (never run as root):
 
 ```bash
-sudo useradd --system --no-create-home --shell /usr/sbin/nologin oen
-sudo mkdir -p /var/lib/oen /etc/oen
-sudo chown oen:oen /var/lib/oen
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin ONXC
+sudo mkdir -p /var/lib/ONXC /etc/ONXC
+sudo chown ONXC:ONXC /var/lib/ONXC
 ```
 
 **Install config and keystore**:
 
 ```bash
-sudo cp configs/mainnet.toml /etc/oen/config.toml
-# Edit /etc/oen/config.toml — set data_dir = "/var/lib/oen"
+sudo cp configs/mainnet.toml /etc/ONXC/config.toml
+# Edit /etc/ONXC/config.toml — set data_dir = "/var/lib/ONXC"
 
 # Create the keystore as the service user
-sudo -u oen OEN_PASSWORD="$YOUR_PASSWORD" oenexa-node wallet new \
-  --config /etc/oen/config.toml
+sudo -u ONXC OEN_PASSWORD="$YOUR_PASSWORD" oenexa-node wallet new \
+  --config /etc/ONXC/config.toml
 ```
 
 **Store the password securely**:
 
 ```bash
-# Write the env file, readable only by the oen user
-sudo bash -c 'echo "OEN_PASSWORD=your-strong-password" > /etc/oen/environment'
-sudo chown oen:oen /etc/oen/environment
-sudo chmod 400 /etc/oen/environment
+# Write the env file, readable only by the ONXC user
+sudo bash -c 'echo "OEN_PASSWORD=your-strong-password" > /etc/ONXC/environment'
+sudo chown ONXC:ONXC /etc/ONXC/environment
+sudo chmod 400 /etc/ONXC/environment
 ```
 
 **Install and enable the systemd unit**:
@@ -472,27 +472,27 @@ miner_enabled = true
 Or via the CLI flag:
 
 ```bash
-oenexa-node start --config ~/.oen/config.toml --miner
+oenexa-node start --config ~/.ONXC/config.toml --miner
 ```
 
 ### Block reward schedule
 
 | Era             | Block range           | Reward/block           | Era total           |
 |-----------------|-----------------------|------------------------|---------------------|
-| 0               | 1 – 1,000,000         | 45 OEN                 | 45,000,000 OEN      |
-| 1               | 1,000,001 – 2,000,000 | 22.5 OEN               | 22,500,000 OEN      |
-| 2               | 2,000,001 – 3,000,000 | 11.25 OEN              | 11,250,000 OEN      |
-| 3               | 3,000,001 – 4,000,000 | 5.625 OEN              | 5,625,000 OEN       |
-| 4               | 4,000,001 – 5,000,000 | 2.8125 OEN             | 2,812,500 OEN       |
+| 0               | 1 – 1,000,000         | 45 ONXC                 | 45,000,000 ONXC      |
+| 1               | 1,000,001 – 2,000,000 | 22.5 ONXC               | 22,500,000 ONXC      |
+| 2               | 2,000,001 – 3,000,000 | 11.25 ONXC              | 11,250,000 ONXC      |
+| 3               | 3,000,001 – 4,000,000 | 5.625 ONXC              | 5,625,000 ONXC       |
+| 4               | 4,000,001 – 5,000,000 | 2.8125 ONXC             | 2,812,500 ONXC       |
 | 5+              | …                     | Halves every 1M blocks | …                   |
-| **Mined total** |                       |                        | **90,000,000 OEN**  |
-| **Pre-mine**    |                       |                        | 10,000,000 OEN      |
-| **Hard cap**    |                       |                        | **100,000,000 OEN** |
+| **Mined total** |                       |                        | **90,000,000 ONXC**  |
+| **Pre-mine**    |                       |                        | 10,000,000 ONXC      |
+| **Hard cap**    |                       |                        | **100,000,000 ONXC** |
 
 ### Check validator earnings
 
 ```bash
-ADDR=$(oenexa-node wallet show --config ~/.oen/config.toml | grep Address | awk '{print $2}')
+ADDR=$(oenexa-node wallet show --config ~/.ONXC/config.toml | grep Address | awk '{print $2}')
 oenexa-node query balance --address "$ADDR" --rpc http://127.0.0.1:8545
 ```
 
@@ -557,7 +557,7 @@ oenexa-node tx send \
   --to     3f4a8b2c1d... \
   --amount 1000000000 \
   --nonce  0 \
-  --config ~/.oen/config.toml \
+  --config ~/.ONXC/config.toml \
   --rpc    http://127.0.0.1:8545
 ```
 
@@ -672,7 +672,7 @@ rpc.yourdomain.com {
 }
 ```
 
-**nginx** (`/etc/nginx/sites-available/oen-rpc`):
+**nginx** (`/etc/nginx/sites-available/ONXC-rpc`):
 
 ```nginx
 server {
@@ -696,7 +696,7 @@ server {
 ### 11.2 Firewall rules (UFW)
 
 ```bash
-sudo ufw allow 8765/tcp comment "OEN P2P"     # P2P must be open to the internet
+sudo ufw allow 8765/tcp comment "ONXC P2P"     # P2P must be open to the internet
 sudo ufw deny  8545/tcp                        # RPC — reverse proxy handles external access
 sudo ufw deny  9090/tcp                        # Metrics — internal network only
 sudo ufw allow 22/tcp                          # SSH
@@ -708,7 +708,7 @@ sudo ufw enable
 ```bash
 # Use a password of at least 24 random characters
 # Back up to OFFLINE storage immediately after creation
-cp ~/.oen/keystore.json /mnt/usb/oen-keystore-$(date +%Y%m%d).json
+cp ~/.ONXC/keystore.json /mnt/usb/ONXC-keystore-$(date +%Y%m%d).json
 
 # Prevent the password from appearing in shell history
 unset HISTFILE
@@ -716,8 +716,8 @@ export OEN_PASSWORD="your-password"
 oenexa-node start ...
 
 # In systemd, store the password in an EnvironmentFile with 400 permissions
-sudo chmod 400 /etc/oen/environment
-sudo chown oen:oen /etc/oen/environment
+sudo chmod 400 /etc/ONXC/environment
+sudo chown ONXC:ONXC /etc/ONXC/environment
 ```
 
 ### 11.4 System hardening
@@ -727,13 +727,13 @@ sudo chown oen:oen /etc/oen/environment
 echo "* hard core 0" | sudo tee -a /etc/security/limits.conf
 
 # Lock down the data directory
-sudo chmod 700 /var/lib/oen
-sudo chown -R oen:oen /var/lib/oen
+sudo chmod 700 /var/lib/ONXC
+sudo chown -R ONXC:ONXC /var/lib/ONXC
 ```
 
 ### 11.5 Cryptography summary
 
-OEN uses **exclusively NIST PQC algorithms**. No legacy asymmetric crypto exists anywhere in the codebase.
+ONXC uses **exclusively NIST PQC algorithms**. No legacy asymmetric crypto exists anywhere in the codebase.
 
 | Algorithm   | Standard        | Purpose                                     |
 |-------------|-----------------|---------------------------------------------|
@@ -753,10 +753,10 @@ OEN uses **exclusively NIST PQC algorithms**. No legacy asymmetric crypto exists
 
 | Path                   | Criticality     | Contents                                            |
 |------------------------|-----------------|-----------------------------------------------------|
-| `~/.oen/keystore.json` | 🔴 **CRITICAL** | Encrypted private key — cannot recover without this |
-| `~/.oen/config.toml`   | 🟡 Important    | Node config — easy to recreate from template        |
-| `~/.oen/blocks/`       | 🟢 Optional     | Block database — re-syncs from network peers        |
-| `~/.oen/state/`        | 🟢 Optional     | State database — rebuilt from block history         |
+| `~/.ONXC/keystore.json` | 🔴 **CRITICAL** | Encrypted private key — cannot recover without this |
+| `~/.ONXC/config.toml`   | 🟡 Important    | Node config — easy to recreate from template        |
+| `~/.ONXC/blocks/`       | 🟢 Optional     | Block database — re-syncs from network peers        |
+| `~/.ONXC/state/`        | 🟢 Optional     | State database — rebuilt from block history         |
 
 > **Rule**: back up only `keystore.json`. Everything else re-syncs from the network automatically.
 
@@ -764,12 +764,12 @@ OEN uses **exclusively NIST PQC algorithms**. No legacy asymmetric crypto exists
 
 ```bash
 # Back up keystore (do this FIRST, before anything else)
-cp ~/.oen/keystore.json ~/keystore-backup-$(date +%Y%m%d-%H%M%S).json
+cp ~/.ONXC/keystore.json ~/keystore-backup-$(date +%Y%m%d-%H%M%S).json
 # Move the file to offline storage immediately
 
 # Full data backup (stop the node first for a consistent snapshot)
 sudo systemctl stop oenexa-node
-tar -czf oen-backup-$(date +%Y%m%d).tar.gz ~/.oen/
+tar -czf ONXC-backup-$(date +%Y%m%d).tar.gz ~/.ONXC/
 sudo systemctl start oenexa-node
 ```
 
@@ -777,12 +777,12 @@ sudo systemctl start oenexa-node
 
 ```bash
 # If you have your keystore, recovery is simple
-mkdir -p ~/.oen
-cp /path/to/keystore-backup.json ~/.oen/keystore.json
-cp configs/mainnet.toml ~/.oen/config.toml
+mkdir -p ~/.ONXC
+cp /path/to/keystore-backup.json ~/.ONXC/keystore.json
+cp configs/mainnet.toml ~/.ONXC/config.toml
 
 # Start the node — it re-syncs the full chain from peers automatically
-oenexa-node start --config ~/.oen/config.toml
+oenexa-node start --config ~/.ONXC/config.toml
 ```
 
 ---
@@ -869,7 +869,7 @@ docker compose up -d
 
 ```bash
 export OEN_PASSWORD="your-password"
-oenexa-node start --config ~/.oen/config.toml
+oenexa-node start --config ~/.ONXC/config.toml
 ```
 
 ### "open leveldb: …/blocks: resource temporarily unavailable"
@@ -983,16 +983,16 @@ make build                                   # → bin/oenexa-node
 sudo cp bin/oenexa-node-linux-amd64 /usr/local/bin/oenexa-node
 
 # ── First-time setup ──────────────────────────────────────────────────────────
-mkdir -p ~/.oen
-cp configs/mainnet.toml ~/.oen/config.toml
+mkdir -p ~/.ONXC
+cp configs/mainnet.toml ~/.ONXC/config.toml
 export OEN_PASSWORD="strong-password"
-oenexa-node wallet new  --config ~/.oen/config.toml
-oenexa-node wallet show --config ~/.oen/config.toml
+oenexa-node wallet new  --config ~/.ONXC/config.toml
+oenexa-node wallet show --config ~/.ONXC/config.toml
 
 # ── Start node ────────────────────────────────────────────────────────────────
-oenexa-node start --config ~/.oen/config.toml                    # sync only
-oenexa-node start --config ~/.oen/config.toml --miner            # + produce blocks
-oenexa-node start --config ~/.oen/config.toml --metrics          # + Prometheus
+oenexa-node start --config ~/.ONXC/config.toml                    # sync only
+oenexa-node start --config ~/.ONXC/config.toml --miner            # + produce blocks
+oenexa-node start --config ~/.ONXC/config.toml --metrics          # + Prometheus
 oenexa-node start --testnet                                       # testnet defaults
 
 # ── Query ─────────────────────────────────────────────────────────────────────

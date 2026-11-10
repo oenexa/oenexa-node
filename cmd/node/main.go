@@ -379,14 +379,14 @@ var txSendCmd = &cobra.Command{
 		fmt.Printf("  Hash : %s\n", extractString(result, "tx_hash"))
 		fmt.Printf("  From : %s\n", crypto.AddressToHex(w.Address))
 		fmt.Printf("  To   : %s\n", flagTxTo)
-		fmt.Printf("  Amt  : %d oenexa (%g OEN)\n", flagTxAmount, float64(flagTxAmount)/float64(core.OneOEN))
+		fmt.Printf("  Amt  : %d nano-ONXC (%g ONXC)\n", flagTxAmount, float64(flagTxAmount)/float64(core.OneONXC))
 		return nil
 	},
 }
 
 func init() {
 	txSendCmd.Flags().StringVar(&flagTxTo, "to", "", "destination address (hex)")
-	txSendCmd.Flags().Uint64Var(&flagTxAmount, "amount", 0, "amount in oenexa (1 OEN = 1 000 000 000 oenexa)")
+	txSendCmd.Flags().Uint64Var(&flagTxAmount, "amount", 0, "amount in nano-ONXC (1 ONXC = 1 000 000 000 nano-ONXC)")
 	txSendCmd.Flags().Uint64Var(&flagTxNonce, "nonce", 0, "sender nonce (use oenexa-node query nonce to get the current value)")
 	txCmd.AddCommand(txSendCmd)
 }
@@ -411,13 +411,16 @@ var queryBalanceCmd = &cobra.Command{
 		if addr == "" {
 			return fmt.Errorf("address required (--address or positional arg)")
 		}
-		result, err := rpcCall(flagRPCAddr, "oen_getBalance", []string{addr})
+		result, err := rpcCall(flagRPCAddr, "onxc_getBalance", []string{addr})
 		if err != nil {
 			return err
 		}
-		oenexa := extractUint64(result, "balance_oenexa")
+		balNano := extractUint64(result, "balance_nano_onxc")
+		if balNano == 0 {
+			balNano = extractUint64(result, "balance_oenexa")
+		}
 		fmt.Printf("Address : %s\n", addr)
-		fmt.Printf("Balance : %d oenexa  (%g OEN)\n", oenexa, float64(oenexa)/float64(core.OneOEN))
+		fmt.Printf("Balance : %d nano-ONXC  (%g ONXC)\n", balNano, float64(balNano)/float64(core.OneONXC))
 		return nil
 	},
 }

@@ -44,7 +44,7 @@ docker compose down
 ```
 
 ### ⚠️ Stop and WIPE all Blockchain Data
-If you need to start from a completely clean slate (Genesis block), this command stops the containers and **deletes the `oen-data` persistent volume**.
+If you need to start from a completely clean slate (Genesis block), this command stops the containers and **deletes the `ONXC-data` persistent volume**.
 ```bash
 docker compose down -v
 ```
@@ -67,7 +67,7 @@ docker exec -it oenexa-node /bin/sh
 
 ### View all running Oenexa containers
 ```bash
-docker ps --filter "name=oen"
+docker ps --filter "name=ONXC"
 ```
 
 ---

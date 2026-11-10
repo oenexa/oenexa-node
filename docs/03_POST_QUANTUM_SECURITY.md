@@ -12,7 +12,7 @@ OENEXA is built **post-quantum by default**, implementing standard NIST Post-Qua
 
 ---
 
-## 2. Cryptographic Primitives in OEN
+## 2. Cryptographic Primitives in ONXC
 
 | Primitive | Implementation | Standard | Key Size | Security Level |
 |---|---|---|---|---|
@@ -26,7 +26,7 @@ OENEXA is built **post-quantum by default**, implementing standard NIST Post-Qua
 
 ## 3. How Address Derivation Works
 
-Unlike Ethereum (which takes Keccak-256 and trims to 20 bytes), OEN addresses are the full 32-byte SHA-3-256 hash of the ML-DSA-65 public key:
+Unlike Ethereum (which takes Keccak-256 and trims to 20 bytes), ONXC addresses are the full 32-byte SHA-3-256 hash of the ML-DSA-65 public key:
 
 $$\text{Address} = \text{SHA-3-256}(\text{PublicKey}_{\text{ML-DSA-65}})$$
 

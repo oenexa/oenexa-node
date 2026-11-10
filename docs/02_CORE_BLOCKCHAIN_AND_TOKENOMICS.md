@@ -59,11 +59,12 @@ The base fee is permanently **burned** (removed from circulating supply), while 
 
 ## 4. Tokenomics & Halving Schedule
 
-- **Native Unit**: $1 \text{ OEN} = 1,000,000,000 \text{ oenexa}$ ($10^9$).
-- **Maximum Supply Cap**: $100,000,000 \text{ OEN}$ (hard-coded ceiling).
-- **Initial Block Reward**: $45 \text{ OEN}$ per block for Era 0.
-- **Halving Interval**: $1,051,200$ blocks ($\approx 2 \text{ years}$ at 2s block intervals).
+- **Native Coin / Ticker**: **ONXC** (*Open Network for the Next Generation Coin*).
+- **Atomic Unit**: $1 \text{ ONXC} = 1,000,000,000 \text{ nano-ONXC}$ ($10^9$).
+- **Maximum Supply Cap**: $100,000,000 \text{ ONXC}$ (exact geometric convergence).
+- **Initial Block Reward**: $45 \text{ ONXC}$ per block for Era 0.
+- **Halving Interval**: $1,000,000$ blocks ($\approx 23 \text{ days}$ at 2s block intervals).
 - **Halving Formula** (`BlockReward` in `internal/core/tokenomics.go`):
-  $$\text{Era} = \frac{\text{Height}}{1,051,200}$$
+  $$\text{Era} = \frac{\text{Height} - 1}{1,000,000}$$
   $$\text{Reward}(\text{Height}) = \frac{45 \cdot 10^9}{2^{\text{Era}}}$$
   After Era 32, the reward automatically steps to zero, and the network relies purely on validator transaction tips.

@@ -14,7 +14,7 @@ import (
 //
 // PURPOSE:
 //   1. Enables decentralized Proof-of-Stake participation by allowing any sovereign
-//      OEN holder to delegate stake to registered network validators.
+//      ONXC holder to delegate stake to registered network validators.
 //   2. Orchestrates proportional reward distribution, validator commission accounting,
 //      timelocked unbonding queues, and Byzantine fault slashing propagation.
 //   3. Maximizes total Byzantine fault tolerance capital security by aggregating
@@ -30,7 +30,7 @@ import (
 //     on validator operational reliability, creating market incentives for high uptime.
 //
 // HOW:
-//   - Delegation: Token holders bond OEN (minimum MinDelegationAmount = 0.001 OEN).
+//   - Delegation: Token holders bond ONXC (minimum MinDelegationAmount = 0.001 ONXC).
 //     The staked balance is locked from general transfer and added to the validator's pool.
 //   - Reward Accrual: When a validator proposes or votes on a block, gross rewards
 //     are collected. The validator's configured commission (e.g. 5% / 500 bps) is
@@ -92,7 +92,7 @@ import (
 const (
 	DefaultUnbondingDelayBlocks uint64 = 100 // blocks until unbonding funds mature
 	DefaultCommissionBps        uint64 = 500 // 5% validator commission (500 basis points)
-	MinDelegationAmount         uint64 = 1_000_000 // 0.001 OEN
+	MinDelegationAmount         uint64 = 1_000_000 // 0.001 ONXC
 )
 
 var (

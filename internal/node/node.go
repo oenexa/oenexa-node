@@ -348,15 +348,15 @@ func (n *Node) blockLoop(ctx context.Context) {
 			reward := core.BlockReward(h)
 			supply := core.CirculatingSupply(h)
 
-			log.Printf("[node] ✓ block h=%d hash=%s txs=%d gasUsed=%d baseFee=%d burned=%d reward=%dOEN supply=%dOEN",
+			log.Printf("[node] ✓ block h=%d hash=%s txs=%d gasUsed=%d baseFee=%d burned=%d reward=%dONXC supply=%dONXC",
 				h,
 				crypto.ToHex(blk.Hash)[:12]+"…",
 				len(blk.Txs),
 				blk.Header.GasUsed,
 				blk.Header.BaseFee,
 				blk.Header.BurnedFees,
-				reward/core.OneOEN,
-				supply/core.OneOEN,
+				reward/core.OneONXC,
+				supply/core.OneONXC,
 			)
 
 			// Persist.

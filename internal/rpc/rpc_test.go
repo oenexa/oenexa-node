@@ -295,17 +295,27 @@ func TestRPC_ShieldedAndTurnstile(t *testing.T) {
 
 func TestRPC_OenAliases(t *testing.T) {
 	ts, w := buildTestHandler(t)
+	// Test primary ONXC RPC method
+	resChainONXC := rpcCall(t, ts, "onxc_chainInfo", nil)
+	if ticker, ok := resChainONXC["ticker"].(string); !ok || ticker != "ONXC" {
+		t.Errorf("expected ticker ONXC in onxc_chainInfo, got %v", ticker)
+	}
+
+	// Test backwards-compatible legacy alias
 	resChain := rpcCall(t, ts, "oen_chainInfo", nil)
 	if _, ok := resChain["height"]; !ok {
 		t.Errorf("missing height in oen_chainInfo: %v", resChain)
 	}
-	if ticker, ok := resChain["ticker"].(string); !ok || ticker != "OEN" {
-		t.Errorf("expected ticker OEN, got %v", ticker)
+	if ticker, ok := resChain["ticker"].(string); !ok || ticker != "ONXC" {
+		t.Errorf("expected ticker ONXC, got %v", ticker)
 	}
 
-	resBal := rpcCall(t, ts, "oen_getBalance", []string{crypto.AddressToHex(w.Address)})
+	resBal := rpcCall(t, ts, "onxc_getBalance", []string{crypto.AddressToHex(w.Address)})
+	if _, ok := resBal["balance_nano_onxc"]; !ok {
+		t.Fatalf("missing balance_nano_onxc in %v", resBal)
+	}
 	if _, ok := resBal["balance_nano_oen"]; !ok {
-		t.Fatalf("missing balance_nano_oen in %v", resBal)
+		t.Fatalf("missing backwards-compatible balance_nano_oen in %v", resBal)
 	}
 }
 

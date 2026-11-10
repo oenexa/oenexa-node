@@ -11,7 +11,7 @@ import (
 // ── Deploy ────────────────────────────────────────────────────────────────────
 
 func TestApplyTransaction_Deploy_NoData(t *testing.T) {
-	st := stateWithBalance(addrA, 1_000_000*core.OneOEN)
+	st := stateWithBalance(addrA, 1_000_000*core.OneONXC)
 	tx := makeTx(core.TxDeploy, addrA, addrB, 0, 0, core.GasDeploy, core.MinGasPrice, nil)
 	res, err := ApplyTransaction(st, tx, core.BlockGasLimit, nil, core.MinBaseFee)
 	if err != nil {
@@ -26,7 +26,7 @@ func TestApplyTransaction_Deploy_NoData(t *testing.T) {
 }
 
 func TestApplyTransaction_Deploy_Success_NoVM(t *testing.T) {
-	st := stateWithBalance(addrA, 1_000_000*core.OneOEN)
+	st := stateWithBalance(addrA, 1_000_000*core.OneONXC)
 	data := []byte{0x01, 0x02}
 	tx := makeTx(core.TxDeploy, addrA, addrB, 0, 100, core.GasDeploy+68*2, core.MinGasPrice, data)
 	res, err := ApplyTransaction(st, tx, core.BlockGasLimit, nil, core.MinBaseFee)
@@ -48,7 +48,7 @@ func TestApplyTransaction_Deploy_Success_NoVM(t *testing.T) {
 }
 
 func TestApplyTransaction_Deploy_WithVM(t *testing.T) {
-	st := stateWithBalance(addrA, 1_000_000*core.OneOEN)
+	st := stateWithBalance(addrA, 1_000_000*core.OneONXC)
 
 	ctx := context.Background()
 	execVM, err := vm.NewVM(ctx)
@@ -79,7 +79,7 @@ func TestApplyTransaction_Deploy_WithVM(t *testing.T) {
 // ── Call ──────────────────────────────────────────────────────────────────────
 
 func TestApplyTransaction_Call_NotContract(t *testing.T) {
-	st := stateWithBalance(addrA, 1_000_000*core.OneOEN)
+	st := stateWithBalance(addrA, 1_000_000*core.OneONXC)
 	tx := makeTx(core.TxCall, addrA, addrB, 0, 0, core.GasCall, core.MinGasPrice, nil)
 	res, err := ApplyTransaction(st, tx, core.BlockGasLimit, nil, core.MinBaseFee)
 	if err != nil {
@@ -94,7 +94,7 @@ func TestApplyTransaction_Call_NotContract(t *testing.T) {
 }
 
 func TestApplyTransaction_Call_Success_NoVM(t *testing.T) {
-	st := stateWithBalance(addrA, 1_000_000*core.OneOEN)
+	st := stateWithBalance(addrA, 1_000_000*core.OneONXC)
 	contractAddr := addrB
 	contractAcct := &Account{CodeHash: [32]byte{1}}
 	st.SetAccount(contractAddr, contractAcct)
@@ -113,7 +113,7 @@ func TestApplyTransaction_Call_Success_NoVM(t *testing.T) {
 }
 
 func TestApplyTransaction_Call_WithVM(t *testing.T) {
-	st := stateWithBalance(addrA, 1_000_000*core.OneOEN)
+	st := stateWithBalance(addrA, 1_000_000*core.OneONXC)
 
 	ctx := context.Background()
 	execVM, err := vm.NewVM(ctx)
@@ -157,7 +157,7 @@ func TestApplyTransaction_Call_WithVM(t *testing.T) {
 }
 
 func TestApplyTransaction_Call_Revert(t *testing.T) {
-	st := stateWithBalance(addrA, 1_000_000*core.OneOEN)
+	st := stateWithBalance(addrA, 1_000_000*core.OneONXC)
 
 	ctx := context.Background()
 	execVM, err := vm.NewVM(ctx)
@@ -198,7 +198,7 @@ func TestApplyTransaction_Call_Revert(t *testing.T) {
 }
 
 func TestApplyTransaction_UnknownType(t *testing.T) {
-	st := stateWithBalance(addrA, 1_000_000*core.OneOEN)
+	st := stateWithBalance(addrA, 1_000_000*core.OneONXC)
 	tx := makeTx(255, addrA, addrB, 0, 0, core.GasTransfer, core.MinGasPrice, nil)
 	res, err := ApplyTransaction(st, tx, core.BlockGasLimit, nil, core.MinBaseFee)
 	if err != nil {

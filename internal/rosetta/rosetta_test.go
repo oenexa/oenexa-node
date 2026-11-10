@@ -273,7 +273,7 @@ func TestRosetta_ConstructionPipeline(t *testing.T) {
 			Account:             &rosetta.AccountIdentifier{Address: crypto.ToHex(userWallet.Address)},
 			Amount: &rosetta.Amount{
 				Value:    "-1000000",
-				Currency: rosetta.Currency{Symbol: "OEN", Decimals: 18},
+				Currency: rosetta.Currency{Symbol: "ONXC", Decimals: 9},
 			},
 		},
 		{
@@ -283,7 +283,7 @@ func TestRosetta_ConstructionPipeline(t *testing.T) {
 			Account:             &rosetta.AccountIdentifier{Address: crypto.ToHex(recipientWallet.Address)},
 			Amount: &rosetta.Amount{
 				Value:    "1000000",
-				Currency: rosetta.Currency{Symbol: "OEN", Decimals: 18},
+				Currency: rosetta.Currency{Symbol: "ONXC", Decimals: 9},
 			},
 		},
 	}

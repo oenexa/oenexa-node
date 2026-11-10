@@ -14,8 +14,16 @@ import (
 )
 
 // Supported sovereign valuation pairs for OENEXA Layer-1.
-// Strictly sovereign native pairs against real-world reserve currencies.
+// Strictly sovereign native ONXC pairs against real-world reserve currencies.
 var SovereignValuationPairs = map[string]string{
+	"ONXC":      "oenexa",
+	"ONXC-USD":  "usd",
+	"ONXC-EUR":  "eur",
+	"ONXC-GBP":  "gbp",
+	"ONXC-JPY":  "jpy",
+	"ONXC-CHF":  "chf",
+	"ONXC-USDC": "usd",
+	// Legacy ticker aliases for seamless backwards-compatibility
 	"OEN":      "oenexa",
 	"OEN-USD":  "usd",
 	"OEN-EUR":  "eur",

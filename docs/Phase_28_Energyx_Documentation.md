@@ -17,7 +17,7 @@ EnergyX is OENEXA's peer-to-peer energy trading platform. It enables prosumers (
 - Tokens are minted dynamically based on oracle feed data.
 
 ### Automated Settlement
-- Smart contracts automatically transfer Energy Credits from seller to buyer, alongside the OEN payment.
+- Smart contracts automatically transfer Energy Credits from seller to buyer, alongside the ONXC payment.
 - Runs every 15-minute settlement period (standard European energy market interval).
 
 ### Grid Integration
@@ -30,7 +30,7 @@ EnergyX is OENEXA's peer-to-peer energy trading platform. It enables prosumers (
 type EnergyListing struct {
     ProducerID  [32]byte   // ML-DSA-65 verified prosumer (OenexaID)
     KWhAvail    uint64
-    PricePerKWh uint64     // OEN wei
+    PricePerKWh uint64     // ONXC wei
     ExpiryBlock uint64
     GridZone    string     // e.g., "DE-TNG" (TenneT Germany)
 }

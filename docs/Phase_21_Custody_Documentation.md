@@ -4,7 +4,7 @@
 
 ## Overview
 
-Phase 21 provides an institutional-grade custody framework for OENEXA assets — enabling regulated custodians, exchanges, and asset managers to hold OEN and tokenized RWA assets with the security controls required by financial regulations (MiCA Article 70, SEC Rule 17f-2, Basel III operational risk frameworks).
+Phase 21 provides an institutional-grade custody framework for OENEXA assets — enabling regulated custodians, exchanges, and asset managers to hold ONXC and tokenized RWA assets with the security controls required by financial regulations (MiCA Article 70, SEC Rule 17f-2, Basel III operational risk frameworks).
 
 ## Architecture
 
@@ -18,7 +18,7 @@ type CustodyPolicy struct {
     Threshold      uint8      // M required signers
     Signers        [][32]byte // N authorised ML-DSA-65 public key hashes
     TimelockBlocks uint64     // blocks to wait before large withdrawals execute
-    LargeThreshold uint64     // OEN wei amount above which timelock applies
+    LargeThreshold uint64     // ONXC wei amount above which timelock applies
     AuditOracleID  [32]byte   // Phase 11 oracle receiving compliance reports
 }
 ```

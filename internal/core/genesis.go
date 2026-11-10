@@ -21,7 +21,7 @@ type GenesisConfig struct {
 func DefaultGenesisConfig(validators [][crypto.AddressSize]byte) *GenesisConfig {
 	alloc := make(map[[crypto.AddressSize]byte]uint64)
 	for _, v := range validators {
-		alloc[v] = 10_000_000 * OneOEN // 10M OEN pre-mine to each validator
+		alloc[v] = 10_000_000 * OneONXC // 10M ONXC pre-mine to each validator
 	}
 	// The first validator acts as the nominal proposer of the genesis block
 	proposer := [crypto.AddressSize]byte{}

@@ -25,7 +25,7 @@ func DefaultMainnetParams() NetworkParams {
 		NetworkName:         "OENEXA Sovereign L1 Mainnet",
 		ProtocolVersion:     "v1.0.0",
 		MaxValidators:       100,
-		MinValidatorStake:   100_000 * 1_000_000_000, // 100k OEN in nano-OEN
+		MinValidatorStake:   100_000 * 1_000_000_000, // 100k ONXC in nano-ONXC
 		UnbondingPeriodSec:  86400 * 14,             // 14 days
 		AllowedJurisdictions: []string{"GLOBAL", "EU", "APAC", "CH", "UAE", "UK"},
 	}

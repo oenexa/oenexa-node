@@ -1,4 +1,4 @@
-// Package config provides TOML-based configuration for the OEN node.
+// Package config provides TOML-based configuration for the ONXC sovereign node.
 package config
 
 import (
@@ -139,10 +139,10 @@ func Default() *Config {
 	return &Config{
 		Chain: ChainConfig{
 			NetworkID: 1,
-			Name:      "OENEXA Mainnet",
+			Name:      "OENEXA Mainnet (ONXC)",
 		},
 		Node: NodeConfig{
-			DataDir:      "~/.oen",
+			DataDir:      "~/.onxc",
 			KeystoreFile: "keystore.json",
 			MinerEnabled: false,
 			LogLevel:     "info",

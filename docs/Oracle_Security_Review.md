@@ -14,7 +14,7 @@ Oracles are frequent targets for DeFi exploitation. If an oracle can be manipula
 
 ### 2.2 Sybil Attacks (Majority Coalition)
 - **Attack**: An attacker spins up 1,000 oracle nodes to control the median outcome.
-- **Mitigation**: Nodes are permissioned based on a minimum `OEN` stake. To spin up enough nodes to control the median, the attacker must lock an astronomically high amount of capital. If a coalition is detected drifting from off-chain realities, the community governance can slash the stakes of the malicious nodes.
+- **Mitigation**: Nodes are permissioned based on a minimum `ONXC` stake. To spin up enough nodes to control the median, the attacker must lock an astronomically high amount of capital. If a coalition is detected drifting from off-chain realities, the community governance can slash the stakes of the malicious nodes.
 
 ### 2.3 Front-Running (MEV)
 - **Attack**: An attacker sees an oracle transaction in the mempool that will lower the price of an asset. They insert their own transaction immediately *before* the oracle update (e.g., to liquidate a position unfairly).

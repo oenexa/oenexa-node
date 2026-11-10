@@ -25,7 +25,7 @@ By unifying decentralized storage (Phase 16) for neural network model weights an
      1. Register Model                  |             2. Request Inference
 +---------------------------+           |         +---------------------------+
 |    AI Model Developer     |           |         |       Consumer Client     |
-| (Mints Royalty NFT + URI) |           |         | (Locks OEN Fee in Escrow) |
+| (Mints Royalty NFT + URI) |           |         | (Locks ONXC Fee in Escrow) |
 +---------------------------+           |         +---------------------------+
               |                         |                       |
               v                         v                       v
@@ -53,7 +53,7 @@ By unifying decentralized storage (Phase 16) for neural network model weights an
 ### Architectural Principles
 - **Model Registry Contract**: Maintains an immutable directory of published AI models on-chain. Each entry records `{modelID, contentHash, pricePerInference, providerAddress}`, ensuring transparent, tamper-proof discovery and pricing.
 - **Inference Lifecycle**:
-  1. *Escrow Deposit*: The consumer locks the required OEN inference fee in the marketplace escrow contract alongside a cryptographic hash of the query input.
+  1. *Escrow Deposit*: The consumer locks the required ONXC inference fee in the marketplace escrow contract alongside a cryptographic hash of the query input.
   2. *Model Retrieval*: The assigned compute node fetches the model weights from the Phase 16 Decentralized Storage Layer.
   3. *Isolated Execution*: The compute node executes the model inside a deterministic `wazero` WASM sandbox.
   4. *Proof Submission*: The node submits the inference result and corresponding execution proof to the smart contract.
@@ -77,11 +77,11 @@ The marketplace supports deterministic runtime targets capable of compiling to W
 
 ## 4. Economic Tokenomics
 
-- **Inference Fee Split**: Every inference fee paid in OEN is split programmatically:
+- **Inference Fee Split**: Every inference fee paid in ONXC is split programmatically:
   - **70%** to the model owner (streamed directly to the model NFT holder)
   - **25%** to the compute node performing the execution
-  - **5%** burned to reduce OEN circulating supply
-- **Quality Assurance Staking**: Model creators stake OEN against their model listings. Models that produce verifiable errors or violate safety contracts risk having their stake slashed.
+  - **5%** burned to reduce ONXC circulating supply
+- **Quality Assurance Staking**: Model creators stake ONXC against their model listings. Models that produce verifiable errors or violate safety contracts risk having their stake slashed.
 
 ---
 

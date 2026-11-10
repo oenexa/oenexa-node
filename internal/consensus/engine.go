@@ -410,7 +410,7 @@ func (e *Engine) slashValidatorLocked(addr [crypto.AddressSize]byte) {
 			penalty := acc.Balance / 10
 			acc.Balance -= penalty
 			e.state.SetAccount(addr, acc)
-			log.Printf("[consensus] Slashed %d OEN from validator %s", penalty/core.OneOEN, crypto.ToHex(addr))
+			log.Printf("[consensus] Slashed %d ONXC from validator %s", penalty/core.OneONXC, crypto.ToHex(addr))
 		}
 	}
 }
@@ -575,14 +575,14 @@ func (e *Engine) commit(blk *core.Block, snap *state.DB) error {
 	e.chain = append(e.chain, blk)
 
 	reward := core.BlockReward(blk.Header.Height)
-	log.Printf("[consensus] block height=%d hash=%s txs=%d gas=%d baseFee=%d burned=%d oenexa reward=%d OEN",
+	log.Printf("[consensus] block height=%d hash=%s txs=%d gas=%d baseFee=%d burned=%d nano-ONXC reward=%d ONXC",
 		blk.Header.Height,
 		crypto.ToHex(blk.Hash)[:16]+"…",
 		len(blk.Txs),
 		blk.Header.GasUsed,
 		blk.Header.BaseFee,
 		blk.Header.BurnedFees,
-		reward/core.OneOEN,
+		reward/core.OneONXC,
 	)
 
 	select {

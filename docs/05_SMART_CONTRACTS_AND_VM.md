@@ -12,7 +12,7 @@ Ethereum Virtual Machine (EVM) suffers from 256-bit word overhead, expensive gas
 ## 2. VM Host Functions & ABI
 
 Located in `internal/vm/host.go`:
-When a WASM module runs on OEN, the node exposes 6 host functions into the module under the `oen` namespace:
+When a WASM module runs on ONXC, the node exposes 6 host functions into the module under the `ONXC` namespace:
 
 | Host Function | Signature | Purpose | Gas Cost |
 |---|---|---|---|

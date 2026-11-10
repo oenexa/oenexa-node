@@ -1,8 +1,8 @@
-# OENEXA (OEN) — Master Development Prompt
+# OENEXA (ONXC) — Master Development Prompt
 ### Full-Program Build Specification, Phase 0 → Phase 32
 
 **Companion document to:** *OENEXA_Whitepaper.md*
-**Purpose:** A single, structured prompt/spec that a development organization (or an AI coding agent operating under human supervision) can follow phase-by-phase to build the OEN ecosystem, with explicit scope, tasks, dependencies, and exit criteria per phase.
+**Purpose:** A single, structured prompt/spec that a development organization (or an AI coding agent operating under human supervision) can follow phase-by-phase to build the ONXC ecosystem, with explicit scope, tasks, dependencies, and exit criteria per phase.
 
 ---
 
@@ -273,7 +273,7 @@
 
 **Deliverables:** Micro-Merchant Gateway interface, POS API endpoints
 
-**Exit Criteria:** Successful end-to-end simulation of a retail user buying a physical good from a mobile vendor using OEN.
+**Exit Criteria:** Successful end-to-end simulation of a retail user buying a physical good from a mobile vendor using ONXC.
 
 ---
 
@@ -300,7 +300,7 @@
 **Objective:** Enable decentralized leasing of GPU/TPU clusters for AI and LLMs.
 
 **Key Tasks:**
-- Develop contracts that lock OEN in exchange for off-chain compute hours.
+- Develop contracts that lock ONXC in exchange for off-chain compute hours.
 - Build integrations linking on-chain payment with off-chain Kubernetes/AI cluster provisioning.
 - Establish slashing and proof-of-compute verification for node operators providing CaaS.
 
@@ -308,7 +308,7 @@
 
 **Deliverables:** CaaS leasing contracts, compute-verification node plugin
 
-**Exit Criteria:** Successful provisioning of an off-chain compute workload using an on-chain OEN payment.
+**Exit Criteria:** Successful provisioning of an off-chain compute workload using an on-chain ONXC payment.
 
 ---
 
@@ -317,7 +317,7 @@
 **Objective:** Create frameworks for deploying, crowdfunding, and subscribing to hybrid SaaS applications.
 
 **Key Tasks:**
-- Develop subscription smart contracts (auto-deducting monthly OEN from user wallets).
+- Develop subscription smart contracts (auto-deducting monthly ONXC from user wallets).
 - Build the SaaS Launchpad for software companies to raise initial development funds.
 - Implement license key generation tied to on-chain subscription verification.
 
@@ -325,7 +325,7 @@
 
 **Deliverables:** SaaS Subscription protocol, SaaS Launchpad DApp
 
-**Exit Criteria:** A mock SaaS application successfully restricts access unless an active on-chain OEN subscription is detected.
+**Exit Criteria:** A mock SaaS application successfully restricts access unless an active on-chain ONXC subscription is detected.
 
 ---
 
@@ -353,14 +353,14 @@
 
 **Key Tasks:**
 - Build a registry of autonomous AI agents offering specific tasks (e.g., trading, research, auditing).
-- Implement task-routing smart contracts that hold OEN in escrow until an AI agent returns a verified result.
+- Implement task-routing smart contracts that hold ONXC in escrow until an AI agent returns a verified result.
 - Integrate the marketplace into the Oenexa Super App.
 
 **Dependencies:** Phase 15 Compute-as-a-Service
 
 **Deliverables:** AI Agent registry, Task Escrow contracts
 
-**Exit Criteria:** Successful routing of a user prompt to an AI agent, paid natively in OEN, with results stored on-chain or via IPFS.
+**Exit Criteria:** Successful routing of a user prompt to an AI agent, paid natively in ONXC, with results stored on-chain or via IPFS.
 
 ## PHASE 19 — CBDC Gateway
 
@@ -386,7 +386,7 @@
 
 **Key Tasks:**
 - Implement ISO 20022 message format support
-- Build SWIFT-interoperable settlement bridging (via a licensed banking partner — OEN itself cannot join SWIFT as a non-bank entity)
+- Build SWIFT-interoperable settlement bridging (via a licensed banking partner — ONXC itself cannot join SWIFT as a non-bank entity)
 - Build cross-border payment settlement flows with a pilot banking partner
 
 **Dependencies:** Phase 19 (parallel development), Phase 21 (custody, for holding settlement funds)
@@ -575,7 +575,7 @@
 
 ## PHASE 31 — Global ESG Network
 
-**Objective:** Federate OEN's ESG infrastructure with external ESG data networks and registries globally.
+**Objective:** Federate ONXC's ESG infrastructure with external ESG data networks and registries globally.
 
 **Key Tasks:**
 - Build interoperability bridges to external carbon/ESG registries and data standards bodies

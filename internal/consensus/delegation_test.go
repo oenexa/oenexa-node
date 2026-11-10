@@ -31,7 +31,7 @@ func TestDelegationManager_Lifecycle(t *testing.T) {
 	dm := consensus.NewDelegationManager(vs, 10) // 10 blocks unbonding delay
 
 	st := state.NewStateDB()
-	initialBalance := uint64(500_000_000) // 500 OEN units
+	initialBalance := uint64(500_000_000) // 500 ONXC units
 	st.SetAccount(delWallet.Address, &state.Account{Balance: initialBalance})
 
 	// 1. Delegate 100_000_000

@@ -39,7 +39,7 @@ func main() {
 		handleBalance(os.Args[2], rpcURL)
 	case "transfer":
 		if len(os.Args) < 5 {
-			fmt.Println("Usage: oenexa-cli transfer <private_key_hex> <to_address> <amount_in_oen> [--rpc <url>]")
+			fmt.Println("Usage: oenexa-cli transfer <private_key_hex> <to_address> <amount_in_onxc> [--rpc <url>]")
 			return
 		}
 		rpcURL := getRPCFlag(os.Args[5:])
@@ -53,12 +53,12 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Println("OENEXA Post-Quantum Wallet & Node CLI")
+	fmt.Println("OENEXA Post-Quantum Wallet & Node CLI (Native Coin: ONXC)")
 	fmt.Println("Usage:")
-	fmt.Println("  oenexa-cli keygen                                        - Generate a new ML-DSA-65 post-quantum wallet")
-	fmt.Println("  oenexa-cli balance <address> [--rpc <url>]               - Check OEN balance of an address")
-	fmt.Println("  oenexa-cli transfer <priv_key> <to> <amount> [--rpc url] - Sign and broadcast a transfer in OEN")
-	fmt.Println("  oenexa-cli info [--rpc <url>]                            - Query node sync and chain information")
+	fmt.Println("  oenexa-cli keygen                                         - Generate a new ML-DSA-65 post-quantum wallet")
+	fmt.Println("  oenexa-cli balance <address> [--rpc <url>]                - Check ONXC balance of an address")
+	fmt.Println("  oenexa-cli transfer <priv_key> <to> <amount> [--rpc url]  - Sign and broadcast a transfer in ONXC")
+	fmt.Println("  oenexa-cli info [--rpc <url>]                             - Query node sync and chain information")
 }
 
 func getRPCFlag(args []string) string {
@@ -124,7 +124,14 @@ func handleBalance(addrStr, rpcURL string) {
 	}
 
 	var balNano uint64
-	if v, ok := data["balance_nano_oen"]; ok {
+	if v, ok := data["balance_nano_onxc"]; ok {
+		switch n := v.(type) {
+		case float64:
+			balNano = uint64(n)
+		case uint64:
+			balNano = n
+		}
+	} else if v, ok := data["balance_nano_oen"]; ok {
 		switch n := v.(type) {
 		case float64:
 			balNano = uint64(n)
@@ -139,11 +146,11 @@ func handleBalance(addrStr, rpcURL string) {
 			balNano = n
 		}
 	}
-	balOEN := float64(balNano) / float64(core.OneOEN)
+	balONXC := float64(balNano) / float64(core.OneONXC)
 
 	fmt.Println("=== OENEXA Balance ===")
 	fmt.Printf("Address : %s\n", addrStr)
-	fmt.Printf("Balance : %.9f OEN (%d nano-OEN)\n", balOEN, balNano)
+	fmt.Printf("Balance : %.9f ONXC (%d nano-ONXC)\n", balONXC, balNano)
 }
 
 func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
@@ -166,13 +173,13 @@ func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 		return
 	}
 
-	amountOEN, err := strconv.ParseFloat(amountStr, 64)
-	if err != nil || amountOEN <= 0 {
+	amountONXC, err := strconv.ParseFloat(amountStr, 64)
+	if err != nil || amountONXC <= 0 {
 		fmt.Printf("Error: Invalid transfer amount: %s\n", amountStr)
 		return
 	}
 
-	amountNano := uint64(amountOEN * float64(core.OneOEN))
+	amountNano := uint64(amountONXC * float64(core.OneONXC))
 
 	// 1. Fetch current account nonce from node
 	nonceRes, err := callRPC(rpcURL, "oen_getTransactionCount", []string{crypto.AddressToHex(wallet.Address)})
@@ -242,9 +249,9 @@ func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 	fmt.Printf("Transaction Hash: %s\n", sendData["tx_hash"])
 	fmt.Printf("From            : %s\n", crypto.AddressToHex(wallet.Address))
 	fmt.Printf("To              : %s\n", crypto.AddressToHex(toAddr))
-	fmt.Printf("Amount          : %.9f OEN (%d nano-OEN)\n", amountOEN, amountNano)
+	fmt.Printf("Amount          : %.9f ONXC (%d nano-ONXC)\n", amountONXC, amountNano)
 	fmt.Printf("Nonce           : %d\n", nonce)
-	fmt.Printf("Gas Price       : %d nano-OEN/gas\n", gasPrice)
+	fmt.Printf("Gas Price       : %d nano-ONXC/gas\n", gasPrice)
 	fmt.Println("================================================================================")
 	fmt.Println("Transaction is now in the mempool and gossiping across P2P validator mesh.")
 }

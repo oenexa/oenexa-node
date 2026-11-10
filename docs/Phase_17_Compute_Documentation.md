@@ -11,7 +11,7 @@
 
 **Phase 17** introduces a high-throughput, verifiable off-chain compute network for OENEXA. Heavy computations — such as complex mathematical simulations, machine learning training, and high-frequency risk modeling — are cost-prohibitive to run directly on-chain within block gas limits.
 
-The Decentralized Compute Network allows clients to submit task specifications on-chain, while compute providers execute the jobs off-chain in deterministic sandboxes. Computational integrity is guaranteed cryptographically before escrowed OEN rewards are disbursed.
+The Decentralized Compute Network allows clients to submit task specifications on-chain, while compute providers execute the jobs off-chain in deterministic sandboxes. Computational integrity is guaranteed cryptographically before escrowed ONXC rewards are disbursed.
 
 ---
 
@@ -48,7 +48,7 @@ The Decentralized Compute Network allows clients to submit task specifications o
            +-----------------------------+-----------------------------+
                                          |
                                          v
-                       4. Escrow Settled & OEN Paid to Node
+                       4. Escrow Settled & ONXC Paid to Node
 ```
 
 ### Architectural Components
@@ -58,14 +58,14 @@ The Decentralized Compute Network allows clients to submit task specifications o
       ProgramHash [32]byte // Content hash of the WASM binary (Phase 16)
       InputHash   [32]byte // Hash of task input data
       MaxGas      uint64   // Deterministic instruction quota
-      Reward      uint64   // OEN bounty held in escrow
+      Reward      uint64   // ONXC bounty held in escrow
   }
   ```
 - **Off-Chain Execution**: Registered compute nodes listen for task events, retrieve the compiled WASM binary and input payload from Phase 16 storage, and execute the program inside an isolated `wazero` runtime.
 - **Verification Protocol**:
-  - *Optimistic Mode*: Default mode featuring a 7-day challenge window. Compute providers bond OEN collateral; invalid results can be challenged by any verifier via interactive bisection games.
+  - *Optimistic Mode*: Default mode featuring a 7-day challenge window. Compute providers bond ONXC collateral; invalid results can be challenged by any verifier via interactive bisection games.
   - *ZK-Proof Mode*: Providers generate succinct cryptographic proofs of correct execution, enabling instant on-chain settlement without dispute windows (integrating with Phase 25 rollups).
-- **Escrow Settlement**: Once the verification criteria are satisfied (challenge window expires or ZK-proof verifies), the escrow contract atomically releases the OEN reward to the compute provider and slashes any failed bonds.
+- **Escrow Settlement**: Once the verification criteria are satisfied (challenge window expires or ZK-proof verifies), the escrow contract atomically releases the ONXC reward to the compute provider and slashes any failed bonds.
 
 ---
 
@@ -80,7 +80,7 @@ Because OENEXA's L1 smart contract engine is built natively upon the pure-Go zer
 
 ## 4. Economic Security & Slashing
 
-- **Provider Collateral**: Compute nodes must stake a minimum threshold of OEN tokens to participate in job routing.
+- **Provider Collateral**: Compute nodes must stake a minimum threshold of ONXC tokens to participate in job routing.
 - **Dispute Slashing**: In the event an optimistic challenge proves a provider submitted fraudulent or non-deterministic outputs, 100% of the provider's bond is slashed (50% awarded to the challenger, 50% burned).
 - **Timeouts & Refunds**: If a claimed task is not completed before the specified deadline, the job is reassigned and the delinquent provider is penalized.
 

@@ -1,6 +1,6 @@
-# OENEXA (OEN) Documentation
+# OENEXA (ONXC) Documentation
 
-Welcome to the official documentation repository for **OENEXA (OEN)** — a high-performance, quantum-safe, post-quantum Layer-1 blockchain built from the ground up to protect decentralized finance, real-world assets, and sovereign infrastructure against classical and quantum computing threats.
+Welcome to the official documentation repository for **OENEXA (ONXC)** — a high-performance, quantum-safe, post-quantum Layer-1 blockchain built from the ground up to protect decentralized finance, real-world assets, and sovereign infrastructure against classical and quantum computing threats.
 
 ---
 

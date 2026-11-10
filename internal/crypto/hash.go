@@ -53,11 +53,14 @@ func HexToHash(s string) ([HashSize]byte, error) {
 }
 
 // HexToAddress decodes a hex string into an [AddressSize]byte.
-// Accepts bare hex strings, 0x-prefixed, or OEN-prefixed strings,
+// Accepts bare hex strings, 0x-prefixed, onxc-prefixed, or oen-prefixed strings,
 // supporting both 32-byte native addresses and 20-byte legacy/EVM addresses.
 func HexToAddress(s string) ([AddressSize]byte, error) {
 	s = strings.TrimSpace(s)
-	if strings.HasPrefix(strings.ToLower(s), "oen") {
+	lower := strings.ToLower(s)
+	if strings.HasPrefix(lower, "onxc") {
+		s = s[4:]
+	} else if strings.HasPrefix(lower, "oen") {
 		s = s[3:]
 	} else if len(s) >= 2 && (s[:2] == "0x" || s[:2] == "0X") {
 		s = s[2:]
