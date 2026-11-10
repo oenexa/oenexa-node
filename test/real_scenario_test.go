@@ -315,6 +315,31 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 	if len(recentBlocks) != 3 { // genesis, block 1, block 2
 		t.Errorf("recent blocks count: want 3, got %d", len(recentBlocks))
 	}
+	// ── 13. Query Tokenomics & Exchange Supply Endpoints ──────────────────
+	circSupplyRes := callRPC(t, ts.URL, "oen_getCirculatingSupply", nil)
+	var circMap map[string]interface{}
+	reencodeJSON(circSupplyRes, &circMap)
+	if circMap["ticker"] != "OEN" {
+		t.Errorf("ticker: want OEN, got %v", circMap["ticker"])
+	}
+	if circMap["circulating_supply_oen"].(float64) <= 0 {
+		t.Errorf("circulating supply should be positive")
+	}
+
+	tokenomicsRes := callRPC(t, ts.URL, "oen_getTokenomics", nil)
+	var tMap map[string]interface{}
+	reencodeJSON(tokenomicsRes, &tMap)
+	if tMap["max_supply_oen"].(float64) != 100_000_000 {
+		t.Errorf("max supply: want 100M, got %v", tMap["max_supply_oen"])
+	}
+
+	stakingRes := callRPC(t, ts.URL, "oen_getStakingInfo", nil)
+	var sMap map[string]interface{}
+	reencodeJSON(stakingRes, &sMap)
+	if sMap["target_bonded_ratio"].(float64) != 0.67 {
+		t.Errorf("target bonded ratio: want 0.67, got %v", sMap["target_bonded_ratio"])
+	}
+
 	_ = ctx
 }
 

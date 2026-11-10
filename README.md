@@ -129,13 +129,13 @@
 
 OENEXA eliminates all legacy asymmetric primitives vulnerable to Shor's algorithm on a quantum computer (RSA, ECDSA, Ed25519, secp256k1, and pairing curves). The entire node operates strictly on NIST Post-Quantum Cryptography standards:
 
-| Primitive | Standard / Spec | Output / Size | Implementation / Role |
-| :--- | :--- | :--- | :--- |
-| **ML-DSA-65** | **NIST FIPS 204** (Dilithium3) | Public Key: 1,952 B<br>Signature: 3,309 B | Transparent transactions (`t-addr`), block proposal signatures, validator PBFT consensus voting, and governance. |
-| **ML-KEM-768** | **NIST FIPS 203** (Kyber768) | Ciphertext: 1,088 B<br>Shared Secret: 32 B | Ephemeral quantum-resistant P2P session key encapsulation, preventing *"Harvest Now, Decrypt Later"* espionage. |
-| **SHA-3-256** | **NIST FIPS 202** | 32-byte digest | Cryptographic address derivation ($\text{Addr} = \text{SHA3-256}(\text{PubKey})$), block headers, SMT hashing, and note commitments. |
-| **AES-256-GCM** | **NIST SP 800-38D** | 32-byte key, 12-byte IV | Authenticated P2P wire communication encryption and local disk keystore encryption. |
-| **Argon2id** | **RFC 9106** | 64 MB memory, 3 iterations | Memory-hard key derivation function (KDF) protecting encrypted private spending keys at rest. |
+| Primitive       | Standard / Spec                | Output / Size                              | Implementation / Role                                                                                                                |
+|:----------------|:-------------------------------|:-------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------|
+| **ML-DSA-65**   | **NIST FIPS 204** (Dilithium3) | Public Key: 1,952 B<br>Signature: 3,309 B  | Transparent transactions (`t-addr`), block proposal signatures, validator PBFT consensus voting, and governance.                     |
+| **ML-KEM-768**  | **NIST FIPS 203** (Kyber768)   | Ciphertext: 1,088 B<br>Shared Secret: 32 B | Ephemeral quantum-resistant P2P session key encapsulation, preventing *"Harvest Now, Decrypt Later"* espionage.                      |
+| **SHA-3-256**   | **NIST FIPS 202**              | 32-byte digest                             | Cryptographic address derivation ($\text{Addr} = \text{SHA3-256}(\text{PubKey})$), block headers, SMT hashing, and note commitments. |
+| **AES-256-GCM** | **NIST SP 800-38D**            | 32-byte key, 12-byte IV                    | Authenticated P2P wire communication encryption and local disk keystore encryption.                                                  |
+| **Argon2id**    | **RFC 9106**                   | 64 MB memory, 3 iterations                 | Memory-hard key derivation function (KDF) protecting encrypted private spending keys at rest.                                        |
 
 ---
 
@@ -290,17 +290,17 @@ To support planetary-scale transaction volume (millions of concurrent micro-tran
 
 ## 11. Currency, Gas & Tokenomics (EIP-1559)
 
-| Parameter | Specification |
-| :--- | :--- |
-| **Asset Symbol** | **OEN** (*Open Economy, Next Generation Exchange & Assets*) |
-| **Atomic Unit** | **nano-OEN** ($1\ \text{OEN} = 10^9\ \text{nano-OEN}$; 9 decimal places) |
-| **Hard Cap** | **100,000,000 OEN** |
-| **Genesis Allocation** | 10,000,000 OEN (10% allocated to ecosystem development, grants & community reserve) |
-| **Mining / Staking Subsidy** | 90,000,000 OEN emitted across 32 halving eras |
-| **Era 0 Block Reward** | 45.000000000 OEN per block |
-| **Block Time Target** | 2.0 seconds |
-| **Block Gas Limit** | 30,000,000 gas |
-| **Fee Architecture** | **EIP-1559 Dynamic Fee Mechanism**: Base fee is deterministically adjusted and burned on-chain; priority tip is awarded to the block proposer. |
+| Parameter                    | Specification                                                                                                                                  |
+|:-----------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------|
+| **Asset Symbol**             | **OEN** (*Open Economy, Next Generation Exchange & Assets*)                                                                                    |
+| **Atomic Unit**              | **nano-OEN** ($1\ \text{OEN} = 10^9\ \text{nano-OEN}$; 9 decimal places)                                                                       |
+| **Hard Cap**                 | **100,000,000 OEN**                                                                                                                            |
+| **Genesis Allocation**       | 10,000,000 OEN (10% allocated to ecosystem development, grants & community reserve)                                                            |
+| **Mining / Staking Subsidy** | 90,000,000 OEN emitted across 32 halving eras                                                                                                  |
+| **Era 0 Block Reward**       | 45.000000000 OEN per block                                                                                                                     |
+| **Block Time Target**        | 2.0 seconds                                                                                                                                    |
+| **Block Gas Limit**          | 30,000,000 gas                                                                                                                                 |
+| **Fee Architecture**         | **EIP-1559 Dynamic Fee Mechanism**: Base fee is deterministically adjusted and burned on-chain; priority tip is awarded to the block proposer. |
 
 ---
 
@@ -534,17 +534,17 @@ npm run dev
 
 The OENEXA node exposes standard and privacy-enhanced JSON-RPC 2.0 methods over HTTP/WebSockets on port `8545`:
 
-| Method | Parameters | Description |
-| :--- | :--- | :--- |
-| `oen_blockNumber` | `[]` | Returns the current chain block height. |
-| `oen_getBalance` | `[address, "latest"]` | Returns transparent balance in nano-OEN. |
-| `oen_getTransactionCount` | `[address, "latest"]` | Returns current nonce for an account. |
-| `oen_sendRawTransaction` | `[signedTxHex]` | Ingests, validates, and broadcasts an ML-DSA-65 signed transaction. |
-| `oen_getBlockByNumber` | `[height, fullTxBool]` | Returns block header, transactions, and state root. |
-| `oen_chainInfo` | `[]` | Returns node status, peer count, genesis hash, and sync state. |
-| `oen_getShieldedBalance` | `[viewingKey]` | Queries decrypted shielded note value for a given viewing key. |
-| `oen_getTurnstileStatus` | `[]` | Returns transparent supply, shielded supply, and total conservation check. |
-| `oen_estimateGas` | `[txObject]` | Calculates gas consumed for WASM contract execution or transfer. |
+| Method                    | Parameters             | Description                                                                |
+|:--------------------------|:-----------------------|:---------------------------------------------------------------------------|
+| `oen_blockNumber`         | `[]`                   | Returns the current chain block height.                                    |
+| `oen_getBalance`          | `[address, "latest"]`  | Returns transparent balance in nano-OEN.                                   |
+| `oen_getTransactionCount` | `[address, "latest"]`  | Returns current nonce for an account.                                      |
+| `oen_sendRawTransaction`  | `[signedTxHex]`        | Ingests, validates, and broadcasts an ML-DSA-65 signed transaction.        |
+| `oen_getBlockByNumber`    | `[height, fullTxBool]` | Returns block header, transactions, and state root.                        |
+| `oen_chainInfo`           | `[]`                   | Returns node status, peer count, genesis hash, and sync state.             |
+| `oen_getShieldedBalance`  | `[viewingKey]`         | Queries decrypted shielded note value for a given viewing key.             |
+| `oen_getTurnstileStatus`  | `[]`                   | Returns transparent supply, shielded supply, and total conservation check. |
+| `oen_estimateGas`         | `[txObject]`           | Calculates gas consumed for WASM contract execution or transfer.           |
 
 ---
 

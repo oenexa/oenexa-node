@@ -87,13 +87,13 @@ The transaction pool orchestrates incoming transactions, prioritizes gas fees, v
 
 ### Current Single-Node Testnet Performance
 - **Raw RPC Ingestion**: **~4,500 TPS** sustained over HTTP/WebSocket JSON-RPC endpoints.
-- **Block Time**: 1.0 second target block time.
+- **Block Time**: 1.0-second target block time.
 - **Single-Core Verification Ceiling**: ML-DSA-65 signature verification requires 78 µs per transaction, imposing a theoretical single-core ceiling of:
   $$\text{Capacity}_{\text{single core}} = \frac{1\,000\,000\,\mu\text{s}}{78\,\mu\text{s}} \approx 12\,820 \text{ verifications/second}$$
-- On the benchmark machine (20 cores), parallelized verification provides theoretical multi-threaded signature verification headroom exceeding **150,000 verifications/second**. However, state trie lock contention, RPC serialization, and network I/O currently gate L1 execution throughput at ~4,500 TPS.
+- On the benchmark machine (20 cores), parallelized verification provides theoretical multithreaded signature verification headroom exceeding **150,000 verifications/second**. However, state trie lock contention, RPC serialization, and network I/O currently gate L1 execution throughput at ~4,500 TPS.
 
 ### Path to 100,000+ TPS
-To scale from testnet alpha to planetary-scale infrastructure:
+To scale from Testnet alpha to planetary-scale infrastructure:
 1. **Signature Verification Batching**: Grouping ML-DSA-65 verifications across transaction batches using vectorized AVX-512 / NEON routines.
 2. **Parallel State Access (State Sharding/Conflict Graphs)**: Pre-executing non-conflicting account reads/writes in parallel worker threads prior to trie commitment.
-3. **Layer-2 Rollups (Phase 25)**: Execution offloaded to sovereign ZK-Rollups and optimistic rollups, utilizing OENEXA L1 strictly for data availability and quantum-safe settlement.
+3. **Layer-2 Rollups (Phase 25)**: Execution offloaded to sovereign ZK-Rollups and optimistic rollup, utilizing OENEXA L1 strictly for data availability and quantum-safe settlement.

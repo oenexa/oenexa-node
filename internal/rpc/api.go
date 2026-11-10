@@ -57,6 +57,15 @@ func (a *API) Dispatch(req *Request) *Response {
 		return a.getShieldedBalance(req)
 	case "oen_getTurnstileStatus":
 		return a.getTurnstileStatus(req)
+	// ── Tokenomics & Supply (Exchange Integration) ────────────────────────
+	case "oen_getCirculatingSupply", "eth_circulatingSupply":
+		return a.getCirculatingSupply(req)
+	case "oen_getTotalSupply", "eth_totalSupply":
+		return a.getTotalSupply(req)
+	case "oen_getTokenomics":
+		return a.getTokenomics(req)
+	case "oen_getStakingInfo":
+		return a.getStakingInfo(req)
 
 	// ── Chain ──────────────────────────────────────────────────────────────
 	case "oen_chainInfo":
@@ -562,4 +571,67 @@ func (a *API) getTransactionByHash(req *Request) *Response {
 	}
 	
 	return okResponse(req.ID, nil)
+}
+
+
+func (a *API) getCirculatingSupply(req *Request) *Response {
+	h := a.engine.Height()
+	supplyNano := core.CirculatingSupply(h)
+	return okResponse(req.ID, map[string]interface{}{
+		"height":                  h,
+		"circulating_supply_nano": supplyNano,
+		"circulating_supply_oen":  float64(supplyNano) / float64(core.OneOEN),
+		"max_supply_oen":          float64(core.MaxSupply) / float64(core.OneOEN),
+		"ticker":                  core.Ticker,
+	})
+}
+
+func (a *API) getTotalSupply(req *Request) *Response {
+	h := a.engine.Height()
+	circNano := core.CirculatingSupply(h)
+	shieldedNano := a.st.GetShieldedBalance()
+	return okResponse(req.ID, map[string]interface{}{
+		"total_supply_nano":    circNano,
+		"total_supply_oen":     float64(circNano) / float64(core.OneOEN),
+		"shielded_supply_nano": shieldedNano,
+		"max_supply_oen":       float64(core.MaxSupply) / float64(core.OneOEN),
+	})
+}
+
+func (a *API) getTokenomics(req *Request) *Response {
+	h := a.engine.Height()
+	reward := core.BlockReward(h)
+	circ := core.CirculatingSupply(h)
+	countdown := core.HalvingCountdown(h)
+	era := uint64(0)
+	if h > 0 {
+		era = (h - 1) / core.HalvingInterval
+	}
+	return okResponse(req.ID, map[string]interface{}{
+		"height":                   h,
+		"current_block_reward":     reward,
+		"current_block_reward_oen": float64(reward) / float64(core.OneOEN),
+		"halving_era":              era,
+		"halving_countdown_blocks": countdown,
+		"genesis_premine_oen":      float64(core.GenesisPremine) / float64(core.OneOEN),
+		"treasury_allocation_oen":  float64(core.TreasuryAllocation) / float64(core.OneOEN),
+		"liquidity_reserve_oen":    float64(core.LiquidityReserve) / float64(core.OneOEN),
+		"staking_bootstrap_oen":    float64(core.StakingBootstrap) / float64(core.OneOEN),
+		"circulating_supply_oen":   float64(circ) / float64(core.OneOEN),
+		"max_supply_oen":           float64(core.MaxSupply) / float64(core.OneOEN),
+		"staking_yield_apy_67pct":  core.StakingYieldEstimate(h, 0.67),
+	})
+}
+
+func (a *API) getStakingInfo(req *Request) *Response {
+	h := a.engine.Height()
+	return okResponse(req.ID, map[string]interface{}{
+		"height":                  h,
+		"target_bonded_ratio":     0.67,
+		"estimated_apy_at_50pct":  core.StakingYieldEstimate(h, 0.50),
+		"estimated_apy_at_67pct":  core.StakingYieldEstimate(h, 0.67),
+		"estimated_apy_at_80pct":  core.StakingYieldEstimate(h, 0.80),
+		"active_validators":       1,
+		"unbonding_period_blocks": 43200, // ~24h at 2s/block
+	})
 }
