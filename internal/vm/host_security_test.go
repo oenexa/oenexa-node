@@ -61,11 +61,11 @@ func (m *mockStateAccessor) Transfer(from, to [crypto.AddressSize]byte, amount u
 // buildAllHostCallsWASM constructs a valid WASM binary exporting tests for all 8 host functions + linear memory.
 func buildAllHostCallsWASM(toAddr [32]byte, logBytes []byte) []byte {
 	// Types:
-	// 0: (i32) -> (i64)         (oen_get, oen_balance)
-	// 1: (i32, i64) -> ()       (oen_set)
-	// 2: (i32, i64) -> (i64)    (oen_transfer)
-	// 3: (i32, i32) -> ()       (oen_log)
-	// 4: () -> (i64)            (oen_caller, oen_block_height, oen_value, query getters)
+	// 0: (i32) -> (i64)         (onxc_get, onxc_balance)
+	// 1: (i32, i64) -> ()       (onxc_set)
+	// 2: (i32, i64) -> (i64)    (onxc_transfer)
+	// 3: (i32, i32) -> ()       (onxc_log)
+	// 4: () -> (i64)            (onxc_caller, onxc_block_height, onxc_value, query getters)
 	// 5: () -> ()               (run_rw, run_xfer, run_log, write_set)
 	typeContent := []byte{
 		0x06,
@@ -84,14 +84,14 @@ func buildAllHostCallsWASM(toAddr [32]byte, logBytes []byte) []byte {
 		return buf
 	}
 	impContent := []byte{0x08}
-	impContent = addImp(impContent, "oen_get", 0)          // func 0
-	impContent = addImp(impContent, "oen_set", 1)          // func 1
-	impContent = addImp(impContent, "oen_transfer", 2)     // func 2
-	impContent = addImp(impContent, "oen_balance", 0)      // func 3
-	impContent = addImp(impContent, "oen_log", 3)          // func 4
-	impContent = addImp(impContent, "oen_caller", 4)       // func 5
-	impContent = addImp(impContent, "oen_block_height", 4) // func 6
-	impContent = addImp(impContent, "oen_value", 4)        // func 7
+	impContent = addImp(impContent, "onxc_get", 0)          // func 0
+	impContent = addImp(impContent, "onxc_set", 1)          // func 1
+	impContent = addImp(impContent, "onxc_transfer", 2)     // func 2
+	impContent = addImp(impContent, "onxc_balance", 0)      // func 3
+	impContent = addImp(impContent, "onxc_log", 3)          // func 4
+	impContent = addImp(impContent, "onxc_caller", 4)       // func 5
+	impContent = addImp(impContent, "onxc_block_height", 4) // func 6
+	impContent = addImp(impContent, "onxc_value", 4)        // func 7
 
 	// 6 local functions (funcs 8..13):
 	// 8: get_caller ()->i64 (type 4)
@@ -123,10 +123,10 @@ func buildAllHostCallsWASM(toAddr [32]byte, logBytes []byte) []byte {
 	bodyCaller := []byte{0x00, 0x10, 0x05, 0x0b}
 	bodyHeight := []byte{0x00, 0x10, 0x06, 0x0b}
 	bodyVal := []byte{0x00, 0x10, 0x07, 0x0b}
-	bodyBal := []byte{0x00, 0x41, 0x00, 0x10, 0x03, 0x0b} // oen_balance(0)
-	// oen_transfer(0, 250) -> i64
+	bodyBal := []byte{0x00, 0x41, 0x00, 0x10, 0x03, 0x0b} // onxc_balance(0)
+	// onxc_transfer(0, 250) -> i64
 	bodyXfer := []byte{0x00, 0x41, 0x00, 0x42, 0xfa, 0x01, 0x10, 0x02, 0x0b}
-	// oen_log(64, 5000) -> tests maxLogBytes=4096 clamping! (SLEB128 64 = 0xc0 0x00)
+	// onxc_log(64, 5000) -> tests maxLogBytes=4096 clamping! (SLEB128 64 = 0xc0 0x00)
 	bodyLog := []byte{0x00, 0x41, 0xc0, 0x00, 0x41, 0x88, 0x27, 0x10, 0x04, 0x0b}
 
 	codeContent := []byte{0x06}
@@ -244,7 +244,7 @@ func TestHostFunctions_AllAndSecurityGuards(t *testing.T) {
 		t.Fatal("expected trap on transfer inside ReadOnly context")
 	}
 
-	// oen_log caps length at maxLogBytes=4096 and charges gas.
+	// onxc_log caps length at maxLogBytes=4096 and charges gas.
 	gasBefore := ec.GasUsed
 	if _, err := v.Call(callCtx, ec, codeHash, "do_log"); err != nil {
 		t.Fatalf("do_log failed: %v", err)

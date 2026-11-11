@@ -59,7 +59,7 @@ const (
 	StakingBootstrap   uint64 = 2_000_000 * OneONXC // 2M ONXC Validator Staking Bootstrap (20%)
 )
 
-// BlockReward returns the block subsidy (in atomic oenexa units) at the specified height.
+// BlockReward returns the block subsidy (in atomic nano-ONXC units) at the specified height.
 //
 // PURPOSE:
 //   Determines the exact coinbase subsidy granted to the proposing validator of block `height`.

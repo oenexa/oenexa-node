@@ -76,14 +76,14 @@ import (
 //      Q.E.D.
 //
 //   4. Anti-Zero-Cost Invariant (Theorem 3):
-//      For all n >= 0, f_n >= MinBaseFee = 1 oenexa/gas.
+//      For all n >= 0, f_n >= MinBaseFee = 1 nano-ONXC/gas.
 //      Proof:
 //        By induction: f_0 = InitialBaseFee = 10 >= 1.
 //        Assume f_n >= 1. In NextBaseFee:
 //        If g_n < G_target, delta = current * under / target / 8.
 //        The conditional check: if delta >= current - MinBaseFee then return MinBaseFee.
 //        Hence f_{n+1} >= MinBaseFee.
-//        Therefore, for all n >= 0, cost(tx) = gas * f_n >= 21 * 1 = 21 oenexa > 0.
+//        Therefore, for all n >= 0, cost(tx) = gas * f_n >= 21 * 1 = 21 nano-ONXC > 0.
 //      Zero-cost transactions are impossible under any network condition.
 //      Q.E.D.
 // ─────────────────────────────────────────────────────────────────────────────

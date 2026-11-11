@@ -10,7 +10,7 @@ import (
 
 // Current is the version embedded at compile time.
 // Override with -ldflags "-X github.com/oenexa/oenexa/internal/upgrade.version=X.Y.Z"
-var version = "0.5.0"
+var version = "1.0.0"
 
 // Version represents a semantic version (Major.Minor.Patch).
 type Version struct {
@@ -21,7 +21,7 @@ type Version struct {
 func Current() Version {
 	v, err := ParseVersion(version)
 	if err != nil {
-		return Version{0, 5, 0}
+		return Version{1, 0, 0}
 	}
 	return v
 }

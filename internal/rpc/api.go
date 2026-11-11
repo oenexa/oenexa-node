@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/oenexa/oenexa/internal/consensus"
 	"github.com/oenexa/oenexa/internal/core"
@@ -122,7 +123,7 @@ func (a *API) Dispatch(req *Request) *Response {
 	case "net_version":
 		return okResponse(req.ID, fmt.Sprintf("%d", core.ChainID))
 	case "web3_clientVersion":
-		return okResponse(req.ID, fmt.Sprintf("Oenexa/v%s", a.version))
+		return okResponse(req.ID, fmt.Sprintf("Oenexa/v%s", strings.TrimPrefix(a.version, "v")))
 
 	default:
 		return errResponse(req.ID, CodeMethodNotFound, fmt.Sprintf("method %q not found", req.Method))

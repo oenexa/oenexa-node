@@ -45,7 +45,7 @@ func TestServer_SecurityHeadersAndCORSAllowlist(t *testing.T) {
 }
 
 func TestServer_RateLimitsAllRoutesExemptsHealthz(t *testing.T) {
-	api := NewAPI(nil, nil, nil, nil, nil, "v0.9.0")
+	api := NewAPI(nil, nil, nil, nil, nil, "v1.0.0")
 	srv := NewServer("127.0.0.1:0", api, time.Second, time.Second)
 	srv.SetRateLimit(0.1, 2) // allow 2 requests then 429
 
@@ -87,7 +87,7 @@ func TestServer_ClientIPAndOversizedBodyAndBadBatch(t *testing.T) {
 		t.Fatalf("clientIP fallback mismatch: %q", got)
 	}
 
-	srv := NewServer("127.0.0.1:0", NewAPI(nil, nil, nil, nil, nil, "v0.9.0"), time.Second, time.Second)
+	srv := NewServer("127.0.0.1:0", NewAPI(nil, nil, nil, nil, nil, "v1.0.0"), time.Second, time.Second)
 	oversized := bytes.Repeat([]byte("a"), maxRequestBody+10)
 	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(oversized))
 	rr := httptest.NewRecorder()

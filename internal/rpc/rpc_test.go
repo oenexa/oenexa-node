@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -225,8 +226,8 @@ func TestRPC_Web3Compatibility(t *testing.T) {
 
 	// web3_clientVersion
 	resVer := rpcCallString(t, ts, "web3_clientVersion", nil)
-	if resVer == "" {
-		t.Errorf("expected web3_clientVersion string, got empty")
+	if resVer == "" || strings.HasPrefix(resVer, "Oenexa/vv") {
+		t.Errorf("unexpected web3_clientVersion %q", resVer)
 	}
 
 	// eth_getBalance with 0x prefix

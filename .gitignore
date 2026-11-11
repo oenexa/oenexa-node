@@ -58,7 +58,8 @@ coverage/
 
 # Node data directories (contain chain DB, state, keys)
 data/
-.oen/
+.onxc/
+.onxc-testnet/
 .oenexa-testnet/
 .oenexa/
 .oenexa-testnet/

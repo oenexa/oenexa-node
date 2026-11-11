@@ -29,7 +29,7 @@ const (
 	gasCostBalance     uint64 = 100
 )
 
-// hostGet implements env.oen_get(slot i32) -> i64
+// hostGet implements env.onxc_get(slot i32) -> i64
 func hostGet() api.GoModuleFunc {
 	return func(ctx context.Context, mod api.Module, stack []uint64) {
 		ec := GetExecCtx(ctx)
@@ -45,7 +45,7 @@ func hostGet() api.GoModuleFunc {
 	}
 }
 
-// hostSet implements env.oen_set(slot i32, value i64)
+// hostSet implements env.onxc_set(slot i32, value i64)
 func hostSet() api.GoModuleFunc {
 	return func(ctx context.Context, mod api.Module, stack []uint64) {
 		ec := GetExecCtx(ctx)
@@ -64,7 +64,7 @@ func hostSet() api.GoModuleFunc {
 	}
 }
 
-// hostTransfer implements env.oen_transfer(to_ptr i32, amount i64)
+// hostTransfer implements env.onxc_transfer(to_ptr i32, amount i64)
 func hostTransfer() api.GoModuleFunc {
 	return func(ctx context.Context, mod api.Module, stack []uint64) {
 		ec := GetExecCtx(ctx)
@@ -103,7 +103,7 @@ func hostTransfer() api.GoModuleFunc {
 	}
 }
 
-// hostBalance implements env.oen_balance(addr_ptr i32) -> i64
+// hostBalance implements env.onxc_balance(addr_ptr i32) -> i64
 func hostBalance() api.GoModuleFunc {
 	return func(ctx context.Context, mod api.Module, stack []uint64) {
 		ec := GetExecCtx(ctx)
@@ -133,7 +133,7 @@ func hostBalance() api.GoModuleFunc {
 	}
 }
 
-// hostLog implements env.oen_log(ptr i32, len i32)
+// hostLog implements env.onxc_log(ptr i32, len i32)
 func hostLog() api.GoModuleFunc {
 	return func(ctx context.Context, mod api.Module, stack []uint64) {
 		ptr, length := asUint32(stack[0]), asUint32(stack[1])
@@ -158,7 +158,7 @@ func hostLog() api.GoModuleFunc {
 	}
 }
 
-// hostCaller implements env.oen_caller() -> i64
+// hostCaller implements env.onxc_caller() -> i64
 func hostCaller() api.GoModuleFunc {
 	return func(ctx context.Context, mod api.Module, stack []uint64) {
 		ec := GetExecCtx(ctx)
@@ -177,7 +177,7 @@ func hostCaller() api.GoModuleFunc {
 	}
 }
 
-// hostBlockHeight implements env.oen_block_height() -> i64
+// hostBlockHeight implements env.onxc_block_height() -> i64
 func hostBlockHeight() api.GoModuleFunc {
 	return func(ctx context.Context, mod api.Module, stack []uint64) {
 		ec := GetExecCtx(ctx)
@@ -192,7 +192,7 @@ func hostBlockHeight() api.GoModuleFunc {
 	}
 }
 
-// hostValue implements env.oen_value() -> i64
+// hostValue implements env.onxc_value() -> i64
 func hostValue() api.GoModuleFunc {
 	return func(ctx context.Context, mod api.Module, stack []uint64) {
 		ec := GetExecCtx(ctx)

@@ -14,6 +14,7 @@ import (
 
 	"github.com/oenexa/oenexa/internal/metrics"
 	"github.com/oenexa/oenexa/internal/rosetta"
+	"github.com/oenexa/oenexa/internal/upgrade"
 )
 
 const (
@@ -319,7 +320,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	var stateRoot string
 	var peers int
 	var pending int
-	ver := "v0.9.0"
+	ver := upgrade.Current().String()
 
 	if s.api != nil {
 		if s.api.engine != nil {

@@ -14,6 +14,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
@@ -24,6 +25,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -35,6 +37,7 @@ import (
 	"github.com/oenexa/oenexa/internal/crypto"
 	"github.com/oenexa/oenexa/internal/keystore"
 	"github.com/oenexa/oenexa/internal/node"
+	"github.com/oenexa/oenexa/internal/shielded"
 	"github.com/oenexa/oenexa/internal/upgrade"
 )
 
@@ -231,19 +234,55 @@ var walletShowCmd = &cobra.Command{
 }
 
 var (
-	flagShieldAmount uint64
-	flagShieldZAddr  string
-	flagUnshieldTo   string
+	flagShieldAmount    uint64
+	flagShieldZAddr     string
+	flagUnshieldTo      string
+	flagUnshieldNull    string
+	flagShieldNonce     uint64
 )
 
 var walletShieldCmd = &cobra.Command{
 	Use:   "shield",
 	Short: "Deposit transparent ONXC into the shielded pool",
-	RunE: func(_ *cobra.Command, _ []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		if flagShieldAmount == 0 {
 			return fmt.Errorf("--amount must be > 0 (in nano-ONXC)")
 		}
-		fmt.Printf("✓ Shield operation initiated: %d nano-ONXC to shielded pool\n", flagShieldAmount)
+		w, err := unlockKeystore()
+		if err != nil {
+			return err
+		}
+		defer w.Zeroize()
+
+		recipientPK := w.PublicKey
+		if flagShieldZAddr != "" {
+			decoded, err := hex.DecodeString(strings.TrimPrefix(flagShieldZAddr, "0x"))
+			if err != nil || len(decoded) == 0 {
+				return fmt.Errorf("invalid --zaddr public key hex")
+			}
+			recipientPK = decoded
+		}
+
+		note, err := shielded.NewNote(recipientPK, flagShieldAmount, nil)
+		if err != nil {
+			return fmt.Errorf("create shielded note: %w", err)
+		}
+
+		nonce := resolveTxNonce(cmd, "nonce", flagShieldNonce, w.Address)
+		baseFee := resolveTxBaseFee()
+
+		tx := core.NewShield(w.Address, w.PublicKey, nonce, flagShieldAmount, baseFee, note.Commitment(), note.Serialize())
+		txHash, err := signAndBroadcastTx(w, tx)
+		if err != nil {
+			return err
+		}
+
+		cm := note.Commitment()
+		fmt.Printf("✓ Shield transaction broadcast\n")
+		fmt.Printf("  Hash       : %s\n", txHash)
+		fmt.Printf("  Commitment : 0x%x\n", cm)
+		fmt.Printf("  Rho        : 0x%x\n", note.Rho)
+		fmt.Printf("  Amt        : %d nano-ONXC (%g ONXC)\n", flagShieldAmount, float64(flagShieldAmount)/float64(core.OneONXC))
 		return nil
 	},
 }
@@ -251,14 +290,54 @@ var walletShieldCmd = &cobra.Command{
 var walletUnshieldCmd = &cobra.Command{
 	Use:   "unshield",
 	Short: "Withdraw shielded ONXC into a transparent address",
-	RunE: func(_ *cobra.Command, _ []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		if flagShieldAmount == 0 {
 			return fmt.Errorf("--amount must be > 0 (in nano-ONXC)")
 		}
 		if flagUnshieldTo == "" {
 			return fmt.Errorf("--to address required")
 		}
-		fmt.Printf("✓ Unshield operation initiated: %d nano-ONXC to %s\n", flagShieldAmount, flagUnshieldTo)
+		toAddr, err := crypto.HexToAddress(flagUnshieldTo)
+		if err != nil {
+			return fmt.Errorf("invalid --to address: %w", err)
+		}
+
+		w, err := unlockKeystore()
+		if err != nil {
+			return err
+		}
+		defer w.Zeroize()
+
+		var nf [crypto.HashSize]byte
+		if flagUnshieldNull != "" {
+			decoded, err := hex.DecodeString(strings.TrimPrefix(flagUnshieldNull, "0x"))
+			if err != nil || len(decoded) != crypto.HashSize {
+				return fmt.Errorf("--nullifier must be a 32-byte hex string")
+			}
+			copy(nf[:], decoded)
+		} else {
+			var rho [crypto.HashSize]byte
+			if _, err := rand.Read(rho[:]); err != nil {
+				return fmt.Errorf("generate unshield entropy: %w", err)
+			}
+			cm := crypto.Hash256(append([]byte("OENEXA_UNSHIELD"), toAddr[:]...))
+			nf = shielded.ComputeNullifier(w.PrivateKey, rho, cm)
+		}
+
+		nonce := resolveTxNonce(cmd, "nonce", flagShieldNonce, w.Address)
+		baseFee := resolveTxBaseFee()
+
+		tx := core.NewUnshield(toAddr, w.PublicKey, nonce, flagShieldAmount, baseFee, nf, nil)
+		txHash, err := signAndBroadcastTx(w, tx)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("✓ Unshield transaction broadcast\n")
+		fmt.Printf("  Hash      : %s\n", txHash)
+		fmt.Printf("  To        : %s\n", flagUnshieldTo)
+		fmt.Printf("  Nullifier : 0x%x\n", nf)
+		fmt.Printf("  Amt       : %d nano-ONXC (%g ONXC)\n", flagShieldAmount, float64(flagShieldAmount)/float64(core.OneONXC))
 		return nil
 	},
 }
@@ -292,10 +371,13 @@ var walletExportVKCmd = &cobra.Command{
 
 func init() {
 	walletShieldCmd.Flags().Uint64Var(&flagShieldAmount, "amount", 0, "amount in nano-ONXC")
-	walletShieldCmd.Flags().StringVar(&flagShieldZAddr, "zaddr", "", "recipient shielded address")
+	walletShieldCmd.Flags().StringVar(&flagShieldZAddr, "zaddr", "", "recipient shielded public key (hex; defaults to local wallet)")
+	walletShieldCmd.Flags().Uint64Var(&flagShieldNonce, "nonce", 0, "sender nonce (auto-fetched if omitted)")
 
 	walletUnshieldCmd.Flags().Uint64Var(&flagShieldAmount, "amount", 0, "amount in nano-ONXC")
 	walletUnshieldCmd.Flags().StringVar(&flagUnshieldTo, "to", "", "recipient transparent address (hex)")
+	walletUnshieldCmd.Flags().StringVar(&flagUnshieldNull, "nullifier", "", "note nullifier (32-byte hex; derived if omitted)")
+	walletUnshieldCmd.Flags().Uint64Var(&flagShieldNonce, "nonce", 0, "sender nonce (auto-fetched if omitted)")
 
 	walletCmd.AddCommand(walletNewCmd)
 	walletCmd.AddCommand(walletShowCmd)
@@ -322,7 +404,7 @@ var (
 var txSendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Sign and broadcast an ONXC transfer",
-	RunE: func(_ *cobra.Command, _ []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		if flagTxTo == "" {
 			return fmt.Errorf("--to address required")
 		}
@@ -330,56 +412,28 @@ var txSendCmd = &cobra.Command{
 			return fmt.Errorf("--amount must be > 0 (in nano-ONXC)")
 		}
 
-		cfg, err := loadConfig()
-		if err != nil {
-			return err
-		}
-		if flagDataDir != "" {
-			cfg.Node.DataDir = flagDataDir
-		}
-
-		password := resolvePassword()
-		if password == "" {
-			return fmt.Errorf("password required (--password or ONXC_PASSWORD env var)")
-		}
-
-		ksPath := resolvePath(cfg.Node.DataDir, cfg.Node.KeystoreFile)
-		w, err := keystore.Decrypt(ksPath, password)
-		if err != nil {
-			return fmt.Errorf("unlock wallet: %w", err)
-		}
-		defer w.Zeroize()
-
 		toAddr, err := crypto.HexToAddress(flagTxTo)
 		if err != nil {
 			return fmt.Errorf("invalid --to address: %w", err)
 		}
 
-		// Fetch current base fee for gas price.
-		baseFee, err := fetchBaseFee(flagRPCAddr)
+		w, err := unlockKeystore()
 		if err != nil {
-			log.Printf("[warn] could not fetch base fee: %v — using InitialBaseFee=%d", err, core.InitialBaseFee)
-			baseFee = core.InitialBaseFee
+			return err
 		}
+		defer w.Zeroize()
 
-		tx := core.NewTransfer(w.Address, toAddr, w.PublicKey, flagTxNonce, flagTxAmount, baseFee)
-		if err := tx.Sign(w.PrivateKey); err != nil {
-			return fmt.Errorf("sign tx: %w", err)
-		}
+		nonce := resolveTxNonce(cmd, "nonce", flagTxNonce, w.Address)
+		baseFee := resolveTxBaseFee()
 
-		raw, err := gobEncodeTx(tx)
+		tx := core.NewTransfer(w.Address, toAddr, w.PublicKey, nonce, flagTxAmount, baseFee)
+		txHash, err := signAndBroadcastTx(w, tx)
 		if err != nil {
-			return fmt.Errorf("encode tx: %w", err)
-		}
-		rawHex := hex.EncodeToString(raw)
-
-		result, err := rpcCall(flagRPCAddr, "onxc_sendRawTransaction", []string{rawHex})
-		if err != nil {
-			return fmt.Errorf("broadcast: %w", err)
+			return err
 		}
 
 		fmt.Printf("✓ Transaction broadcast\n")
-		fmt.Printf("  Hash : %s\n", extractString(result, "tx_hash"))
+		fmt.Printf("  Hash : %s\n", txHash)
 		fmt.Printf("  From : %s\n", crypto.AddressToHex(w.Address))
 		fmt.Printf("  To   : %s\n", flagTxTo)
 		fmt.Printf("  Amt  : %d nano-ONXC (%g ONXC)\n", flagTxAmount, float64(flagTxAmount)/float64(core.OneONXC))
@@ -560,14 +614,71 @@ func resolvePassword() string {
 }
 
 func resolvePath(dataDir, rel string) string {
-	if rel == "" || rel[0] == '/' {
+	if rel == "" || strings.HasPrefix(rel, "/") || filepath.IsAbs(rel) {
 		return rel
 	}
-	if len(dataDir) >= 2 && dataDir[:2] == "~/" {
+	if strings.HasPrefix(dataDir, "~/") {
 		home, _ := os.UserHomeDir()
-		dataDir = home + dataDir[1:]
+		dataDir = filepath.Join(home, dataDir[2:])
 	}
-	return dataDir + "/" + rel
+	return filepath.ToSlash(filepath.Join(dataDir, rel))
+}
+
+func unlockKeystore() (*crypto.Wallet, error) {
+	cfg, err := loadConfig()
+	if err != nil {
+		return nil, err
+	}
+	if flagDataDir != "" {
+		cfg.Node.DataDir = flagDataDir
+	}
+	password := resolvePassword()
+	if password == "" {
+		return nil, fmt.Errorf("password required (--password or ONXC_PASSWORD env var)")
+	}
+	ksPath := resolvePath(cfg.Node.DataDir, cfg.Node.KeystoreFile)
+	w, err := keystore.Decrypt(ksPath, password)
+	if err != nil {
+		return nil, fmt.Errorf("unlock wallet: %w", err)
+	}
+	return w, nil
+}
+
+func resolveTxNonce(cmd *cobra.Command, flagName string, explicit uint64, addr [crypto.AddressSize]byte) uint64 {
+	if cmd != nil && cmd.Flags().Changed(flagName) {
+		return explicit
+	}
+	result, err := rpcCall(flagRPCAddr, "onxc_getTransactionCount", []string{crypto.AddressToHex(addr)})
+	if err != nil {
+		return explicit
+	}
+	return extractUint64(result, "nonce")
+}
+
+func resolveTxBaseFee() uint64 {
+	baseFee, err := fetchBaseFee(flagRPCAddr)
+	if err != nil || baseFee == 0 {
+		if err != nil {
+			log.Printf("[warn] could not fetch base fee: %v — using InitialBaseFee=%d", err, core.InitialBaseFee)
+		}
+		return core.InitialBaseFee
+	}
+	return baseFee
+}
+
+func signAndBroadcastTx(w *crypto.Wallet, tx *core.Transaction) (string, error) {
+	if err := tx.Sign(w.PrivateKey); err != nil {
+		return "", fmt.Errorf("sign tx: %w", err)
+	}
+	raw, err := gobEncodeTx(tx)
+	if err != nil {
+		return "", fmt.Errorf("encode tx: %w", err)
+	}
+	result, err := rpcCall(flagRPCAddr, "onxc_sendRawTransaction", []string{hex.EncodeToString(raw)})
+	if err != nil {
+		return "", fmt.Errorf("broadcast: %w", err)
+	}
+	return extractString(result, "tx_hash"), nil
 }
 
 func printBanner() {

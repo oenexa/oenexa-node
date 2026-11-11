@@ -3,7 +3,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 MODULE  := github.com/oenexa/oenexa
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.5.0")
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v1.0.0")
 LDFLAGS := -s -w -X $(MODULE)/internal/upgrade.version=$(VERSION)
 BINARY  := bin/oenexa-node
 GOOS    ?= $(shell go env GOOS)

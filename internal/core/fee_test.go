@@ -171,8 +171,8 @@ func TestGasConstants_TransferUltraCheap(t *testing.T) {
 }
 
 func TestGasConstants_MinGasPriceIsOne(t *testing.T) {
-	if false {
-		t.Errorf("MinGasPrice should be 1 oenexa/gas, got %d", MinGasPrice)
+	if MinGasPrice != 1 {
+		t.Errorf("MinGasPrice should be 1 nano-ONXC/gas, got %d", MinGasPrice)
 	}
 }
 

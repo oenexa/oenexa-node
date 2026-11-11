@@ -53,7 +53,7 @@ func TestIssueKYCCredential_Extended(t *testing.T) {
 
 	// Test crypto.Sign error
 	badKey := make([]byte, 10) // Invalid key size for ML-DSA-65
-	_, err = identity.IssueKYCCredential(badKey, "did:oen:issuer", "did:oen:subj", "VERIFIED", "LOW", "US")
+	_, err = identity.IssueKYCCredential(badKey, "did:onxc:issuer", "did:onxc:subj", "VERIFIED", "LOW", "US")
 	if err == nil {
 		t.Error("expected sign error")
 	}
@@ -63,7 +63,7 @@ func TestIssueKYCCredential_Extended(t *testing.T) {
 	identity.JsonMarshal = func(v any) ([]byte, error) {
 		return nil, errors.New("marshal error")
 	}
-	_, err = identity.IssueKYCCredential(w.PrivateKey, "did:oen:issuer", "did:oen:subj", "VERIFIED", "LOW", "US")
+	_, err = identity.IssueKYCCredential(w.PrivateKey, "did:onxc:issuer", "did:onxc:subj", "VERIFIED", "LOW", "US")
 	if err == nil {
 		t.Error("expected marshal error")
 	}

@@ -15,6 +15,8 @@ func TestParseVersion_Valid(t *testing.T) {
 	}{
 		{"0.5.0", Version{0, 5, 0}},
 		{"v0.5.0", Version{0, 5, 0}},
+		{"1.0.0", Version{1, 0, 0}},
+		{"v1.0.0", Version{1, 0, 0}},
 		{"1.2.3", Version{1, 2, 3}},
 		{"10.20.30", Version{10, 20, 30}},
 	}
@@ -79,7 +81,7 @@ func TestVersion_Equal(t *testing.T) {
 
 func TestCurrent_ReturnsValid(t *testing.T) {
 	v := Current()
-	// package-level version = "0.5.0"
+	// package-level version = "1.0.0"
 	if v.String() == "" {
 		t.Error("Current() should return non-empty version")
 	}

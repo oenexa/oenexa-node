@@ -43,37 +43,39 @@ func TestCLI_WalletAndQueryAndVersionCommands(t *testing.T) {
 		t.Fatalf("walletExportVKCmd: %v", err)
 	}
 
-	// wallet shield & unshield validation
+	// wallet shield & unshield validation (before RPC server)
 	flagShieldAmount = 0
 	if err := walletShieldCmd.RunE(walletShieldCmd, nil); err == nil {
 		t.Fatal("expected error for zero shield amount")
-	}
-	flagShieldAmount = 100
-	if err := walletShieldCmd.RunE(walletShieldCmd, nil); err != nil {
-		t.Fatalf("walletShieldCmd: %v", err)
 	}
 	flagUnshieldTo = ""
 	if err := walletUnshieldCmd.RunE(walletUnshieldCmd, nil); err == nil {
 		t.Fatal("expected error for missing --to")
 	}
-	flagUnshieldTo = "0x1234"
-	if err := walletUnshieldCmd.RunE(walletUnshieldCmd, nil); err != nil {
-		t.Fatalf("walletUnshieldCmd: %v", err)
-	}
 
-	// Mock JSON-RPC server for query & tx commands.
+	// Mock JSON-RPC server for query, shield, unshield & tx commands.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req rpcReq
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		w.Header().Set("Content-Type", "application/json")
-		res := map[string]any{"balance_nano_onxc": float64(500), "base_fee": float64(10), "tx_hash": "0xabcd", "height": float64(1)}
+		res := map[string]any{"balance_nano_onxc": float64(500), "base_fee": float64(10), "nonce": float64(0), "tx_hash": "0xabcd", "height": float64(1)}
 		_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": req.ID, "result": res})
 	}))
 	defer srv.Close()
 	flagRPCAddr = srv.URL
 
-	// query commands
+	// Real signed wallet shield & unshield broadcast via mock RPC
 	w2, _ := crypto.NewWallet()
+	flagShieldAmount = 100
+	if err := walletShieldCmd.RunE(walletShieldCmd, nil); err != nil {
+		t.Fatalf("walletShieldCmd: %v", err)
+	}
+	flagUnshieldTo = crypto.AddressToHex(w2.Address)
+	if err := walletUnshieldCmd.RunE(walletUnshieldCmd, nil); err != nil {
+		t.Fatalf("walletUnshieldCmd: %v", err)
+	}
+
+	// query commands
 	flagQueryAddr = crypto.AddressToHex(w2.Address)
 	for _, fn := range []func() error{
 		func() error { return queryBalanceCmd.RunE(queryBalanceCmd, nil) },

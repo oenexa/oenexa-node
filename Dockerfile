@@ -4,7 +4,7 @@
 FROM golang:1.26-alpine AS builder
 
 # Version injected via --build-arg VERSION=vX.Y.Z (or Makefile sets it).
-ARG VERSION=v0.5.0
+ARG VERSION=v1.0.0
 
 # Install build dependencies (C compiler not needed — pure Go).
 RUN apk add --no-cache git ca-certificates
@@ -54,6 +54,8 @@ EXPOSE 8545/tcp
 
 # Prometheus metrics port.
 EXPOSE 9090/tcp
+
+USER 65532:65532
 
 ENTRYPOINT ["/oenexa-node"]
 CMD ["start", "--config", "/data/config.toml", "--datadir", "/data"]

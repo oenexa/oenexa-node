@@ -22,8 +22,8 @@ func TestCurrent_Fallback(t *testing.T) {
 
 	version = "invalid_version_string"
 	cur := Current()
-	if cur.Major != 0 || cur.Minor != 5 || cur.Patch != 0 {
-		t.Errorf("expected fallback 0.5.0, got %v", cur)
+	if cur.Major != 1 || cur.Minor != 0 || cur.Patch != 0 {
+		t.Errorf("expected fallback 1.0.0, got %v", cur)
 	}
 }
 

@@ -50,28 +50,28 @@ func (v *VM) registerHostModule(ctx context.Context) error {
 	_, err := v.rt.NewHostModuleBuilder("env").
 		NewFunctionBuilder().
 		WithGoModuleFunction(hostGet(), []api.ValueType{api.ValueTypeI32}, []api.ValueType{api.ValueTypeI64}).
-		Export("oen_get").
+		Export("onxc_get").
 		NewFunctionBuilder().
 		WithGoModuleFunction(hostSet(), []api.ValueType{api.ValueTypeI32, api.ValueTypeI64}, []api.ValueType{}).
-		Export("oen_set").
+		Export("onxc_set").
 		NewFunctionBuilder().
 		WithGoModuleFunction(hostTransfer(), []api.ValueType{api.ValueTypeI32, api.ValueTypeI64}, []api.ValueType{api.ValueTypeI64}).
-		Export("oen_transfer").
+		Export("onxc_transfer").
 		NewFunctionBuilder().
 		WithGoModuleFunction(hostBalance(), []api.ValueType{api.ValueTypeI32}, []api.ValueType{api.ValueTypeI64}).
-		Export("oen_balance").
+		Export("onxc_balance").
 		NewFunctionBuilder().
 		WithGoModuleFunction(hostLog(), []api.ValueType{api.ValueTypeI32, api.ValueTypeI32}, []api.ValueType{}).
-		Export("oen_log").
+		Export("onxc_log").
 		NewFunctionBuilder().
 		WithGoModuleFunction(hostCaller(), []api.ValueType{}, []api.ValueType{api.ValueTypeI64}).
-		Export("oen_caller").
+		Export("onxc_caller").
 		NewFunctionBuilder().
 		WithGoModuleFunction(hostBlockHeight(), []api.ValueType{}, []api.ValueType{api.ValueTypeI64}).
-		Export("oen_block_height").
+		Export("onxc_block_height").
 		NewFunctionBuilder().
 		WithGoModuleFunction(hostValue(), []api.ValueType{}, []api.ValueType{api.ValueTypeI64}).
-		Export("oen_value").
+		Export("onxc_value").
 		Instantiate(ctx)
 	return err
 }

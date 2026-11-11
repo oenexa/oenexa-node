@@ -25,7 +25,7 @@ func TestOenexaCLI_HandlersAndSecurityGuards(t *testing.T) {
 		case "onxc_chainInfo":
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"jsonrpc": "2.0", "id": req["id"],
-				"result": map[string]any{"chain_id": 1, "version": "v0.9.0", "height": 5, "tip_hash": "0xaa", "peer_count": 2, "mempool_len": 1, "ticker": "ONXC"},
+				"result": map[string]any{"chain_id": 1, "version": "v1.0.0", "height": 5, "tip_hash": "0xaa", "peer_count": 2, "mempool_len": 1, "ticker": "ONXC"},
 			})
 		case "onxc_getBalance":
 			_ = json.NewEncoder(w).Encode(map[string]any{

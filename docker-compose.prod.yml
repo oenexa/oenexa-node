@@ -1,114 +1,29 @@
+# docker-compose.prod.yml — OENEXA (ONXC) Production Layer-1 Stack
+# Pure Blockchain Core deployment: oenexa-node + Caddy TLS RPC Gateway + Monitoring
+
 services:
 
-  # ── 1. PostgreSQL 17 + pgvector (AI Vector Embeddings & Relational Store) ───
-  oenexa-postgres:
-    image: pgvector/pgvector:pg17
-    container_name: oenexa-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-oenexa}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oenexa_prod_secret}
-      POSTGRES_DB: ${POSTGRES_DB:-oenexa_db}
-    volumes:
-      - oenexa-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-oenexa} -d ${POSTGRES_DB:-oenexa_db}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - oenexa-net
-
-  # ── 2. Redis 7 (Distributed Caching & Semaphore Locks) ──────────────────────
-  oenexa-redis:
-    image: redis:7-alpine
-    container_name: oenexa-redis
-    restart: unless-stopped
-    volumes:
-      - oenexa-redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - oenexa-net
-
-  # ── 3. OENEXA AI Core (Java 25 Virtual Threads Multi-Agent Swarm) ───────────
-  oenexa-ai-core:
-    build:
-      context: ./src/oenexa-ai-core
-      dockerfile: Dockerfile
-    image: ghcr.io/oenexa/oenexa-ai-core:latest
-    container_name: oenexa-ai-core
-    restart: unless-stopped
-    depends_on:
-      oenexa-postgres:
-        condition: service_healthy
-      oenexa-redis:
-        condition: service_healthy
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:postgresql://oenexa-postgres:5432/${POSTGRES_DB:-oenexa_db}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-oenexa}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-oenexa_prod_secret}
-      SPRING_REDIS_HOST: oenexa-redis
-      SPRING_REDIS_PORT: 6379
-      OENEXA_REDIS_ENABLED: "true"
-      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
-      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
-      DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY:-}"
-      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
-      OLLAMA_HOST: "${OLLAMA_HOST:-http://oenexa-ollama:11434}"
-    expose:
-      - "8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 15s
-      timeout: 5s
-      start_period: 30s
-      retries: 3
-    networks:
-      - oenexa-net
-
-  # ── 4. OENEXA AI Web Cockpit (React 18 + Vite on /ai) ───────────────────────
-  oenexa-ai-web:
-    build:
-      context: ./src/oenexa-ai-web
-      dockerfile: Dockerfile
-    image: ghcr.io/oenexa/oenexa-ai-web:latest
-    container_name: oenexa-ai-web
-    restart: unless-stopped
-    depends_on:
-      oenexa-ai-core:
-        condition: service_healthy
-    expose:
-      - "80"
-    networks:
-      - oenexa-net
-
-  # ── 5. OENEXA Quantum-Safe Layer-1 Blockchain Node ──────────────────────────
+  # ── 1. OENEXA Quantum-Safe Layer-1 Blockchain Node ──────────────────────────
   oenexa-node:
     build:
-      context: ./src/oenexa-node
+      context: .
       dockerfile: Dockerfile
-    image: ghcr.io/oenexa/oenexa-node:latest
+    image: ghcr.io/oenexa/oenexa-node:v1.0.0
     container_name: oenexa-node
     restart: unless-stopped
     environment:
-      ONXC_PASSWORD: "${ONXC_PASSWORD}"
+      ONXC_PASSWORD: "${ONXC_PASSWORD:?ONXC_PASSWORD must be set in .env}"
     ports:
-      - "${P2P_PORT:-8765}:8765"
-      - "127.0.0.1:${RPC_PORT:-8545}:8545"
-      - "127.0.0.1:${METRICS_PORT:-9090}:9090"
+      - "${P2P_PORT:-8765}:8765/tcp"
+      - "127.0.0.1:${RPC_PORT:-8545}:8545/tcp"
+      - "127.0.0.1:${METRICS_PORT:-9090}:9090/tcp"
     volumes:
       - onxc-chain-data:/data
-      - ./configs/node.toml:/data/config.toml:ro
+      - ./configs/mainnet.toml:/data/config.toml:ro
     command: >
       start
       --config /data/config.toml
       --datadir /data
-      --miner
       --metrics
     healthcheck:
       test: ["CMD", "/healthcheck"]
@@ -119,36 +34,7 @@ services:
     networks:
       - oenexa-net
 
-  # ── 6. OENEXA Main Web UI (React 19 + Tailwind + Vite on /) ─────────────────
-  oenexa-ui:
-    build:
-      context: ./src/oenexa-ui
-      dockerfile: Dockerfile
-    image: ghcr.io/oenexa/oenexa-ui:latest
-    container_name: oenexa-ui
-    restart: unless-stopped
-    expose:
-      - "80"
-    networks:
-      - oenexa-net
-
-  # ── 7. OENEXA Decoupled Blockchain Explorer (React 18 + Vite on /explorer) ──
-  oenexa-explorer:
-    build:
-      context: ./src/oenexa-explorer
-      dockerfile: Dockerfile
-    image: ghcr.io/oenexa/oenexa-explorer:latest
-    container_name: oenexa-explorer
-    restart: unless-stopped
-    expose:
-      - "80"
-    depends_on:
-      oenexa-node:
-        condition: service_healthy
-    networks:
-      - oenexa-net
-
-  # ── 8. Caddy Universal SSL/TLS Reverse Proxy Gateway ────────────────────────
+  # ── 2. Caddy Universal SSL/TLS RPC Reverse Proxy Gateway ────────────────────
   caddy:
     image: caddy:2-alpine
     container_name: oenexa-caddy
@@ -161,40 +47,55 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
-      - oenexa-ui
-      - oenexa-explorer
-      - oenexa-ai-web
+      oenexa-node:
+        condition: service_healthy
     networks:
       - oenexa-net
 
-  # ── 9. OENEXA Local Sovereign Ollama LLM Service ───────────────────────────
-  oenexa-ollama:
-    image: ollama/ollama:latest
-    container_name: oenexa-ollama
+  # ── 3. Prometheus (optional — enable with --profile monitoring) ─────────────
+  prometheus:
+    profiles: ["monitoring"]
+    image: prom/prometheus:v2.53.0
+    container_name: onxc-prometheus
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:9091:9090"
     volumes:
-      - oenexa-ollama-data:/root/.ollama
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    networks:
+      - oenexa-net
+
+  # ── 4. Grafana (optional — enable with --profile monitoring) ────────────────
+  grafana:
+    profiles: ["monitoring"]
+    image: grafana/grafana:11.2.0
+    container_name: onxc-grafana
+    restart: unless-stopped
     environment:
-      - OLLAMA_KEEP_ALIVE=24h
-      - OLLAMA_NUM_PARALLEL=2
-    expose:
-      - "11434"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_PASSWORD:?GRAFANA_PASSWORD must be set in .env}"
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
     networks:
       - oenexa-net
 
 volumes:
   onxc-chain-data:
     name: onxc-chain-data
-  oenexa-postgres-data:
-    name: oenexa-postgres-data
-  oenexa-redis-data:
-    name: oenexa-redis-data
-  oenexa-ollama-data:
-    name: oenexa-ollama-data
   caddy-data:
     name: caddy-data
   caddy-config:
     name: caddy-config
+  prometheus-data:
+    name: prometheus-data
+  grafana-data:
+    name: grafana-data
 
 networks:
   oenexa-net:
