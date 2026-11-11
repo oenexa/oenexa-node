@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -129,4 +130,19 @@ func TestManager_ApplyRelease_DownloadError(t *testing.T) {
 		Version:     Current(),
 		DownloadURL: "http://127.0.0.1:0", // Invalid URL
 	})
+}
+
+func TestFetchLatestRelease_NotFoundReturnsErrNoRelease(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.NotFound(w, nil)
+	}))
+	defer ts.Close()
+
+	_, err := FetchLatestRelease(context.Background(), ts.URL)
+	if !errors.Is(err, ErrNoRelease) {
+		t.Fatalf("expected ErrNoRelease on HTTP 404, got %v", err)
+	}
+
+	m := NewManager(Config{ReleaseURL: ts.URL}, nil)
+	m.check(context.Background())
 }

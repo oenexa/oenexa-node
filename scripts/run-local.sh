@@ -15,11 +15,16 @@ fi
 
 cd "$REPO_ROOT"
 
+BIN_EXT=""
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) BIN_EXT=".exe" ;;
+esac
+
 BIN_DIR="$REPO_ROOT/bin"
 DATA_DIR="$REPO_ROOT/data/local-devnet"
 CONFIG_PATH="$REPO_ROOT/configs/local-dev.toml"
-NODE_BIN="$BIN_DIR/oenexa-node"
-CLI_BIN="$BIN_DIR/oenexa-cli"
+NODE_BIN="$BIN_DIR/oenexa-node${BIN_EXT}"
+CLI_BIN="$BIN_DIR/oenexa-cli${BIN_EXT}"
 
 RESET=false
 REBUILD=false
@@ -81,9 +86,12 @@ else
     fi
 fi
 
-# 2. Check and build binaries
+# 2. Check and build binaries (auto-rebuild when Go sources are newer than bin/)
 NEED_BUILD=false
 if [ "$REBUILD" = true ] || [ ! -f "$NODE_BIN" ] || [ ! -f "$CLI_BIN" ]; then
+    NEED_BUILD=true
+elif [ -n "$(find "$REPO_ROOT/cmd" "$REPO_ROOT/internal" "$REPO_ROOT/go.mod" -type f \( -newer "$NODE_BIN" -o -newer "$CLI_BIN" \) 2>/dev/null | head -n1)" ]; then
+    echo "      ℹ Source changes detected; recompiling binaries..."
     NEED_BUILD=true
 fi
 

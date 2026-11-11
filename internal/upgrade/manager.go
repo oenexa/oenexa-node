@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"sync"
@@ -84,7 +85,11 @@ func (m *Manager) Run(ctx context.Context) {
 func (m *Manager) check(ctx context.Context) {
 	rel, err := FetchLatestRelease(ctx, m.cfg.ReleaseURL)
 	if err != nil {
-		log.Printf("[upgrade] release check failed: %v", err)
+		if errors.Is(err, ErrNoRelease) {
+			log.Printf("[upgrade] no published releases yet (running %s)", Current())
+		} else {
+			log.Printf("[upgrade] release check failed: %v", err)
+		}
 		return
 	}
 

@@ -118,7 +118,7 @@ func Serve(ctx context.Context, addr string) {
 		_ = srv.Shutdown(shutCtx)
 	}()
 
-	log.Printf("[metrics] Prometheus endpoint listening on https://%s/metrics", addr)
+	log.Printf("[metrics] Prometheus endpoint listening on http://%s/metrics", addr)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("[metrics] server error: %v", err)
 	}

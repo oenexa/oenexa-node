@@ -289,7 +289,7 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 
 // Start launches all background goroutines and blocks until ctx is canceled.
 func (n *Node) Start(ctx context.Context) {
-	log.Printf("[node] OENEXA v%s starting…", upgrade.Current())
+	log.Printf("[node] OENEXA %s starting…", upgrade.Current())
 
 	// Upgrade manager.
 	go n.upgradeMgr.Run(ctx)
@@ -348,7 +348,7 @@ func (n *Node) blockLoop(ctx context.Context) {
 			reward := core.BlockReward(h)
 			supply := core.CirculatingSupply(h)
 
-			log.Printf("[node] ✓ block h=%d hash=%s txs=%d gasUsed=%d baseFee=%d burned=%d reward=%dONXC supply=%dONXC",
+			log.Printf("[node] ✓ block h=%d hash=%s txs=%d gasUsed=%d baseFee=%d burned=%d nano-ONXC reward=%d ONXC supply=%d ONXC",
 				h,
 				crypto.ToHex(blk.Hash)[:12]+"…",
 				len(blk.Txs),

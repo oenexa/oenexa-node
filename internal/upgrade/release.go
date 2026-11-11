@@ -3,6 +3,7 @@ package upgrade
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,10 +12,13 @@ import (
 	"time"
 )
 
+// ErrNoRelease indicates the release server has no published release yet (HTTP 404).
+var ErrNoRelease = errors.New("no published releases found")
+
 const (
 	// DefaultReleaseURL is the GitHub Releases API endpoint.
 	// Override via Config.ReleaseURL.
-	DefaultReleaseURL = "https://api.github.com/repos/oenexa/node/releases/latest"
+	DefaultReleaseURL = "https://api.github.com/repos/oenexa/oenexa-node/releases/latest"
 
 	httpTimeout = 30 * time.Second
 )
@@ -62,6 +66,9 @@ func FetchLatestRelease(ctx context.Context, apiURL string) (*Release, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("%w (HTTP 404)", ErrNoRelease)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GitHub API returned %d", resp.StatusCode)
 	}

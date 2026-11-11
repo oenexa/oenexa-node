@@ -164,7 +164,7 @@ func (s *Syncer) ApplyBlocks(blocks []*core.Block) {
 			log.Printf("[sync] ApplyBlock h=%d: %v", blk.Header.Height, err)
 			continue
 		}
-		log.Printf("[sync] applied block h=%d hash=%s txs=%d burned=%d q reward=%d q",
+		log.Printf("[sync] applied block h=%d hash=%s txs=%d burned=%d nano-ONXC reward=%d nano-ONXC",
 			blk.Header.Height,
 			crypto.ToHex(blk.Hash)[:12]+"…",
 			len(blk.Txs),

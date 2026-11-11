@@ -90,8 +90,18 @@ if ($Reset) {
     }
 }
 
-# 2. Check and build binaries
+# 2. Check and build binaries (auto-rebuild when Go sources are newer than bin/)
 $NeedBuild = $Rebuild -or (-not (Test-Path $NodeExe)) -or (-not (Test-Path $CliExe))
+if (-not $NeedBuild) {
+    $BinTime = [Math]::Min((Get-Item $NodeExe).LastWriteTimeUtc.Ticks, (Get-Item $CliExe).LastWriteTimeUtc.Ticks)
+    $NewerSrc = Get-ChildItem -Path (Join-Path $RepoRoot "cmd"), (Join-Path $RepoRoot "internal"), (Join-Path $RepoRoot "go.mod") -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTimeUtc.Ticks -gt $BinTime } |
+        Select-Object -First 1
+    if ($NewerSrc) {
+        Write-Host "      Source changes detected ($($NewerSrc.Name)); recompiling binaries..." -ForegroundColor Gray
+        $NeedBuild = $true
+    }
+}
 
 if ($NeedBuild) {
     Write-Host "`n[2/3] Building node and CLI binaries..." -ForegroundColor Yellow
