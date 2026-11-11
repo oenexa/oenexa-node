@@ -3,9 +3,19 @@ package vm
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/tetratelabs/wazero/api"
 )
+
+const maxLogBytes uint32 = 4096
+
+func asUint32(v uint64) uint32 {
+	if v > math.MaxUint32 {
+		panic("invalid i32 host argument")
+	}
+	return uint32(v)
+}
 
 // Gas costs for host functions.
 const (
@@ -30,7 +40,7 @@ func hostGet() api.GoModuleFunc {
 		if err := ec.UseGas(gasCostGet); err != nil {
 			panic(ErrOutOfGas)
 		}
-		slot := uint32(stack[0])
+		slot := asUint32(stack[0])
 		stack[0] = ec.State.GetStorage(ec.ContractAddr, slot)
 	}
 }
@@ -48,7 +58,7 @@ func hostSet() api.GoModuleFunc {
 		if err := ec.UseGas(gasCostSet); err != nil {
 			panic(ErrOutOfGas)
 		}
-		slot := uint32(stack[0])
+		slot := asUint32(stack[0])
 		value := stack[1]
 		ec.State.SetStorage(ec.ContractAddr, slot, value)
 	}
@@ -74,7 +84,7 @@ func hostTransfer() api.GoModuleFunc {
 			panic("no memory")
 		}
 		
-		toPtr := uint32(stack[0])
+		toPtr := asUint32(stack[0])
 		amount := stack[1]
 		
 		b, ok := mem.Read(toPtr, 32)
@@ -110,7 +120,7 @@ func hostBalance() api.GoModuleFunc {
 			panic("no memory")
 		}
 		
-		addrPtr := uint32(stack[0])
+		addrPtr := asUint32(stack[0])
 		b, ok := mem.Read(addrPtr, 32)
 		if !ok || len(b) != 32 {
 			panic("invalid address pointer")
@@ -126,13 +136,16 @@ func hostBalance() api.GoModuleFunc {
 // hostLog implements env.oen_log(ptr i32, len i32)
 func hostLog() api.GoModuleFunc {
 	return func(ctx context.Context, mod api.Module, stack []uint64) {
+		ptr, length := asUint32(stack[0]), asUint32(stack[1])
+		if length > maxLogBytes {
+			length = maxLogBytes
+		}
 		ec := GetExecCtx(ctx)
 		if ec != nil {
-			if err := ec.UseGas(gasCostLog); err != nil {
+			if err := ec.UseGas(gasCostLog + uint64(length)); err != nil {
 				panic(ErrOutOfGas)
 			}
 		}
-		ptr, length := uint32(stack[0]), uint32(stack[1])
 		mem := mod.Memory()
 		if mem == nil {
 			return
@@ -141,7 +154,7 @@ func hostLog() api.GoModuleFunc {
 		if !ok {
 			return
 		}
-		fmt.Printf("[contract log] %s\n", b)
+		fmt.Printf("[contract log] %q\n", b)
 	}
 }
 

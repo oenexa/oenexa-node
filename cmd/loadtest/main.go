@@ -93,8 +93,9 @@ func main() {
 
 					t0 := time.Now()
 					_, err := rpcCall(*rpcAddr, "onxc_sendRawTransaction", []string{rawHex})
-					latMs := uint64(time.Since(t0).Milliseconds())
-					atomic.AddUint64(&totalLatMs, latMs)
+					if ms := time.Since(t0).Milliseconds(); ms > 0 {
+						atomic.AddUint64(&totalLatMs, uint64(ms)) // #nosec G115 -- ms > 0 checked
+					}
 
 					if err != nil {
 						atomic.AddUint64(&txFailed, 1)

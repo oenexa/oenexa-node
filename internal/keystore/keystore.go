@@ -170,7 +170,7 @@ var (
 
 // Decrypt loads an encrypted keystore file and decrypts it with a password.
 func Decrypt(path, password string) (*crypto.Wallet, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- operator-specified keystore file path
 	if err != nil {
 		return nil, fmt.Errorf("keystore: read %s: %w", path, err)
 	}
@@ -235,7 +235,7 @@ func Decrypt(path, password string) (*crypto.Wallet, error) {
 
 // PeekAddress returns the address field from a keystore file (no password needed).
 func PeekAddress(path string) (string, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- operator-specified keystore file path
 	if err != nil {
 		return "", err
 	}

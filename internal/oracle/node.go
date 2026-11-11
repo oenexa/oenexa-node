@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"sort"
 	"strings"
@@ -86,7 +87,12 @@ func (n *OracleNode) FetchSovereignPrice(pair string) (uint64, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("sovereign price feed returned status %d", resp.StatusCode)
+	}
+
+	const maxOracleBody = 1 << 20 // 1 MiB
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxOracleBody))
 	if err != nil {
 		return 0, fmt.Errorf("read sovereign price response: %w", err)
 	}
@@ -99,6 +105,9 @@ func (n *OracleNode) FetchSovereignPrice(pair string) (uint64, error) {
 	val, exists := prices["oenexa"][curr]
 	if !exists {
 		return 0, fmt.Errorf("valuation for pair %q (%q) not returned by feed", pair, curr)
+	}
+	if math.IsNaN(val) || math.IsInf(val, 0) || val < 0 || val >= float64(math.MaxUint64) {
+		return 0, fmt.Errorf("invalid price value %v for pair %q", val, pair)
 	}
 
 	return uint64(val), nil
@@ -122,9 +131,17 @@ func AggregateReports(reports []*OracleReport) (uint64, error) {
 		return 0, errors.New("no oracle reports provided for aggregation")
 	}
 
-	prices := make([]uint64, len(reports))
+	seenReporters := make(map[[crypto.AddressSize]byte]bool, len(reports))
+	prices := make([]uint64, 0, len(reports))
 	for i, r := range reports {
-		prices[i] = r.Price
+		if r == nil {
+			return 0, fmt.Errorf("nil oracle report at index %d", i)
+		}
+		if seenReporters[r.Reporter] {
+			return 0, fmt.Errorf("duplicate oracle reporter at index %d", i)
+		}
+		seenReporters[r.Reporter] = true
+		prices = append(prices, r.Price)
 	}
 	sort.Slice(prices, func(i, j int) bool {
 		return prices[i] < prices[j]
@@ -134,8 +151,9 @@ func AggregateReports(reports []*OracleReport) (uint64, error) {
 	if n%2 == 1 {
 		return prices[n/2], nil
 	}
-	// Even count: return floor average of middle two values
-	return (prices[n/2-1] + prices[n/2]) / 2, nil
+	// Overflow-safe even median: low + (high-low)/2
+	low, high := prices[n/2-1], prices[n/2]
+	return low + (high-low)/2, nil
 }
 
 // FetchESGScore retrieves verified corporate ESG and carbon offset scores.

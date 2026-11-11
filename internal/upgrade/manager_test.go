@@ -15,13 +15,13 @@ func TestManager_Branches(t *testing.T) {
 	var tagToReturn string
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"tag_name": "` + tagToReturn + `", "html_url": "http://foo", "assets": [{"name": "` + binaryAssetName() + `", "browser_download_url": "http://` + r.Host + `/bin"}, {"name": "` + binaryAssetName() + `.sha3sum", "browser_download_url": "http://` + r.Host + `/sum"}]}`))
+		_, _ = w.Write([]byte(`{"tag_name": "` + tagToReturn + `", "html_url": "http://foo", "assets": [{"name": "` + binaryAssetName() + `", "browser_download_url": "http://` + r.Host + `/bin"}, {"name": "` + binaryAssetName() + `.sha3sum", "browser_download_url": "http://` + r.Host + `/sum"}]}`))
 	})
 	mux.HandleFunc("/sum", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`5c70c10245e6eb0fe36bd6bb8afc39f7b90ee356edae4409393fbcfdf65c1315`)) // SHA3-256 of "bad bin"
+		_, _ = w.Write([]byte(`5c70c10245e6eb0fe36bd6bb8afc39f7b90ee356edae4409393fbcfdf65c1315`)) // SHA3-256 of "bad bin"
 	})
 	mux.HandleFunc("/bin", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`bad bin`))
+		_, _ = w.Write([]byte(`bad bin`))
 	})
 	ts := httptest.NewServer(mux)
 	defer ts.Close()
@@ -65,13 +65,13 @@ func TestManager_Run(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"tag_name": "v99.0.0", "html_url": "http://foo", "assets": [{"name": "` + binaryAssetName() + `", "browser_download_url": "http://` + r.Host + `/bin"}, {"name": "` + binaryAssetName() + `.sha3sum", "browser_download_url": "http://` + r.Host + `/sum"}]}`))
+		_, _ = w.Write([]byte(`{"tag_name": "v99.0.0", "html_url": "http://foo", "assets": [{"name": "` + binaryAssetName() + `", "browser_download_url": "http://` + r.Host + `/bin"}, {"name": "` + binaryAssetName() + `.sha3sum", "browser_download_url": "http://` + r.Host + `/sum"}]}`))
 	})
 	mux.HandleFunc("/sum", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`5c70c10245e6eb0fe36bd6bb8afc39f7b90ee356edae4409393fbcfdf65c1315`)) // SHA3-256 of "bad bin"
+		_, _ = w.Write([]byte(`5c70c10245e6eb0fe36bd6bb8afc39f7b90ee356edae4409393fbcfdf65c1315`)) // SHA3-256 of "bad bin"
 	})
 	mux.HandleFunc("/bin", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`bad bin`))
+		_, _ = w.Write([]byte(`bad bin`))
 	})
 	ts := httptest.NewServer(mux)
 	defer ts.Close()
@@ -92,7 +92,7 @@ func TestManager_Run(t *testing.T) {
 func TestManager_ApplyRelease_HashErr(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/bin", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`bad bin`))
+		_, _ = w.Write([]byte(`bad bin`))
 	})
 	ts := httptest.NewServer(mux)
 	defer ts.Close()

@@ -221,7 +221,7 @@ func TestRosetta_AccountAndBlock(t *testing.T) {
 	}
 
 	// Query /block/transaction
-	resp, data = postJSON(t, ts.URL+"/block/transaction", rosetta.BlockTransactionRequest{
+	resp, _ = postJSON(t, ts.URL+"/block/transaction", rosetta.BlockTransactionRequest{
 		NetworkIdentifier: rosetta.NetworkIdentifier{
 			Blockchain: "oenexa",
 			Network:    "mainnet",
@@ -387,7 +387,7 @@ func TestRosetta_ConstructionPipeline(t *testing.T) {
 	}
 
 	// 7. /construction/submit
-	resp, data = postJSON(t, ts.URL+"/construction/submit", rosetta.ConstructionSubmitRequest{
+	resp, _ = postJSON(t, ts.URL+"/construction/submit", rosetta.ConstructionSubmitRequest{
 		NetworkIdentifier: rosetta.NetworkIdentifier{
 			Blockchain: "oenexa",
 			Network:    "mainnet",

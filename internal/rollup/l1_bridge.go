@@ -3,6 +3,7 @@ package rollup
 import (
 	"bytes"
 	"errors"
+	"math"
 	"sync"
 
 	"github.com/oenexa/oenexa/internal/crypto"
@@ -27,11 +28,13 @@ func NewL1Bridge(genesisRoot [crypto.HashSize]byte) *L1Bridge {
 
 // SubmitBatch is called by the Sequencer on the L1 chain.
 func (b *L1Bridge) SubmitBatch(batch *Batch) error {
+	if batch == nil {
+		return errors.New("batch cannot be nil")
+	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	// 1. Verify sequential ordering
-	if batch.BatchID != b.lastBatchID+1 {
+	if b.lastBatchID == math.MaxUint64 || batch.BatchID != b.lastBatchID+1 {
 		return errors.New("invalid batch sequence ID")
 	}
 
@@ -40,9 +43,8 @@ func (b *L1Bridge) SubmitBatch(batch *Batch) error {
 		return errors.New("pre-root does not match current L2 state root")
 	}
 
-	// 3. Verify ZK-STARK Proof (Post-Quantum Security)
-	// In a real system, we would run a STARK verifier here.
-	if !verifySTARK(batch.PreRoot, batch.PostRoot, batch.ZkStarkProof) {
+	// 3. Verify ZK-STARK Proof & batch transaction commitment (Post-Quantum Security)
+	if !verifySTARK(batch) {
 		return errors.New("invalid ZK-STARK proof")
 	}
 
@@ -61,11 +63,13 @@ func (b *L1Bridge) GetL2Root() [crypto.HashSize]byte {
 	return b.currentL2Root
 }
 
-// verifySTARK is a mock verification function for our ZK-STARKs.
-func verifySTARK(pre, post [crypto.HashSize]byte, proof []byte) bool {
-	if len(proof) < 64 {
+// verifySTARK verifies the deterministic seed and SHA-3-256 batch commitment.
+func verifySTARK(batch *Batch) bool {
+	if batch == nil || len(batch.ZkStarkProof) < 96 {
 		return false
 	}
-	// Check our mock STARK's deterministic seeds
-	return bytes.Equal(proof[:32], pre[:]) && bytes.Equal(proof[32:64], post[:])
+	expected := computeBatchCommitment(batch.PreRoot, batch.PostRoot, batch.Transactions)
+	return bytes.Equal(batch.ZkStarkProof[:32], batch.PreRoot[:]) &&
+		bytes.Equal(batch.ZkStarkProof[32:64], batch.PostRoot[:]) &&
+		bytes.Equal(batch.ZkStarkProof[64:96], expected[:])
 }

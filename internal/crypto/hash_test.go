@@ -7,8 +7,12 @@ import (
 
 func TestHash256_Length(t *testing.T) {
 	h := Hash256([]byte("oenexa"))
-	if len(h) != HashSize {
+	if len(h[:]) != HashSize {
 		t.Fatalf("expected %d bytes, got %d", HashSize, len(h))
+	}
+	var zero [HashSize]byte
+	if h == zero {
+		t.Fatal("Hash256 returned zero hash for non-empty input")
 	}
 }
 

@@ -153,7 +153,7 @@ func TestApplyTransaction_Call_WithVM(t *testing.T) {
 
 	// Test fallback funcName with length < 1+nameLen
 	txFallback := makeTx(core.TxCall, addrA, contractAddr, 1, 0, core.GasCall+16*1+10000, core.MinGasPrice, []byte{100})
-	ApplyTransaction(st, txFallback, core.BlockGasLimit, execVM, core.MinBaseFee)
+	_, _ = ApplyTransaction(st, txFallback, core.BlockGasLimit, execVM, core.MinBaseFee)
 }
 
 func TestApplyTransaction_Call_Revert(t *testing.T) {
@@ -216,7 +216,7 @@ func TestApplyCall_InsufficientBalance(t *testing.T) {
 	st := stateWithBalance(addrA, 50)
 	tx := makeTx(core.TxCall, addrA, addrB, 0, 100, core.GasCall, core.MinGasPrice, nil)
 	st.SetAccount(addrB, &Account{CodeHash: [32]byte{1}})
-	_, _, err := applyCall(st, tx, nil, 1000)
+	_, _, err := applyCall(st, tx, nil, 1000, core.GasCall)
 	if err == nil || err.Error() != "insufficient balance for call value" {
 		t.Fatalf("expected insufficient balance for call value, got %v", err)
 	}

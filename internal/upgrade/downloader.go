@@ -94,7 +94,7 @@ func Download(ctx context.Context, rel *Release) (string, error) {
 
 // ComputeFileHash returns the SHA-3-256 hex digest of a file on disk.
 func ComputeFileHash(path string) (string, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304 -- hashes local upgrade binary path computed/verified by upgrade manager
 	if err != nil {
 		return "", err
 	}

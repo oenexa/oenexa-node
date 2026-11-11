@@ -23,7 +23,9 @@ func TestEmptyMerkleRoot_NotZero(t *testing.T) {
 }
 
 func TestEmptyMerkleRoot_Deterministic(t *testing.T) {
-	if EmptyMerkleRoot() != EmptyMerkleRoot() {
+	a := EmptyMerkleRoot()
+	b := EmptyMerkleRoot()
+	if a != b {
 		t.Fatal("EmptyMerkleRoot is not deterministic")
 	}
 }

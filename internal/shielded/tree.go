@@ -49,10 +49,11 @@ func NewNoteCommitmentTree() *NoteCommitmentTree {
 func (t *NoteCommitmentTree) Append(cm [32]byte) (uint32, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if uint64(len(t.leaves)) >= MaxTreeLeaves {
+	n := len(t.leaves)
+	if n < 0 || uint64(n) >= MaxTreeLeaves || uint64(n) > uint64(^uint32(0)) {
 		return 0, errors.New("shielded: commitment tree is full")
 	}
-	idx := uint32(len(t.leaves))
+	idx := uint32(n) // #nosec G115 -- guarded by n >= 0 and n <= MaxUint32
 	t.leaves = append(t.leaves, cm)
 	return idx, nil
 }
@@ -61,7 +62,14 @@ func (t *NoteCommitmentTree) Append(cm [32]byte) (uint32, error) {
 func (t *NoteCommitmentTree) LeafCount() uint32 {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	return uint32(len(t.leaves))
+	n := len(t.leaves)
+	if n <= 0 {
+		return 0
+	}
+	if uint64(n) > uint64(^uint32(0)) {
+		return ^uint32(0)
+	}
+	return uint32(n) // #nosec G115 -- guarded by [0, MaxUint32]
 }
 
 // Clone returns an independent deep copy of the commitment tree.

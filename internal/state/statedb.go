@@ -36,6 +36,7 @@ package state
 import (
 	"encoding/binary"
 	"errors"
+	"math"
 	"sync"
 
 	"github.com/oenexa/oenexa/internal/crypto"
@@ -168,18 +169,30 @@ func (s *DB) GetNonce(addr [crypto.AddressSize]byte) uint64 {
 }
 
 // Credit adds amount to the balance of addr (used for block rewards and
-// validator tips). Creates the account if it does not exist in the dirty map.
+// validator tips). Hydrates from committed trie/backend if not in dirty cache.
 func (s *DB) Credit(addr [crypto.AddressSize]byte, amount uint64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	acc := s.dirty[addr]
-	if acc == nil {
-		acc = &Account{}
+	var acc *Account
+	if existing, ok := s.dirty[addr]; ok {
+		acc = existing.Clone()
 	} else {
-		acc = acc.Clone()
+		acc = &Account{}
+		if valHash, err := s.trie.Get(addr); err == nil && valHash != mpt.ZeroHashOf() {
+			if backend := s.trie.BackendRef(); backend != nil {
+				flatKey := append([]byte("acct:"), valHash[:]...)
+				if data, err := backend.Get(flatKey); err == nil && len(data) > 0 {
+					acc = DeserializeAccount(data)
+				}
+			}
+		}
 	}
-	acc.Balance += amount
+	if math.MaxUint64-acc.Balance < amount {
+		acc.Balance = math.MaxUint64
+	} else {
+		acc.Balance += amount
+	}
 	s.dirty[addr] = acc
 }
 

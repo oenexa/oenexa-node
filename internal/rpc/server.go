@@ -14,7 +14,10 @@ import (
 	"github.com/oenexa/oenexa/internal/rosetta"
 )
 
-const maxRequestBody = 4 << 20 // 4 MiB
+const (
+	maxRequestBody = 4 << 20 // 4 MiB
+	maxBatchSize   = 100
+)
 
 // Server is the JSON-RPC 2.0 and Rosetta HTTP server.
 type Server struct {
@@ -66,7 +69,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Start(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
-		shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		shutCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 		defer cancel()
 		_ = s.http.Shutdown(shutCtx)
 	}()
@@ -100,9 +103,14 @@ func (s *Server) handleRPC(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, maxRequestBody))
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxRequestBody+1))
 	if err != nil {
 		writeJSON(w, errResponse(nil, CodeParseError, "read body: "+err.Error()))
+		return
+	}
+	if len(body) > maxRequestBody {
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		writeJSON(w, errResponse(nil, CodeInvalidRequest, "request body too large"))
 		return
 	}
 
@@ -148,12 +156,20 @@ func (s *Server) handleBatch(w http.ResponseWriter, body []byte) {
 		writeJSON(w, errResponse(nil, CodeInvalidRequest, "empty batch"))
 		return
 	}
+	if len(reqs) > maxBatchSize {
+		writeJSON(w, errResponse(nil, CodeInvalidRequest, "batch exceeds maximum allowed size"))
+		return
+	}
 
 	responses := make([]*Response, 0, len(reqs))
 	for _, raw := range reqs {
 		var req Request
 		if err := json.Unmarshal(raw, &req); err != nil {
 			responses = append(responses, errResponse(nil, CodeParseError, err.Error()))
+			continue
+		}
+		if req.JSONRPC != "2.0" {
+			responses = append(responses, errResponse(req.ID, CodeInvalidRequest, "jsonrpc must be \"2.0\""))
 			continue
 		}
 		metrics.RPCRequests.WithLabelValues(req.Method).Inc()

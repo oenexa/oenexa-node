@@ -58,7 +58,7 @@ func main() {
 		totalAccounts++
 		key := iter.Key()
 		if len(key) < 4+20 {
-			log.Fatalf("FAIL: Corrupt account key length: %d", len(key))
+			log.Fatalf("FAIL: Corrupt account key length: %d", len(key)) // #nosec G706 -- integer length only
 		}
 	}
 	iter.Release()

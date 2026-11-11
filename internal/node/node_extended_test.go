@@ -41,8 +41,8 @@ func TestNodeStartupShutdown(t *testing.T) {
 
 	// Call P2P handlers for coverage
 	if n.p2pNode != nil {
-		n.p2pNode.OnTxReceived("", &core.Transaction{})
-		n.p2pNode.OnBlockReceived("", &core.Block{})
+		_ = n.p2pNode.OnTxReceived("", &core.Transaction{})
+		_ = n.p2pNode.OnBlockReceived("", &core.Block{})
 	}
 
 	_ = n.StatusReport()
@@ -57,7 +57,9 @@ func TestNodeStartupErrors(t *testing.T) {
 
 	// 1. Existing invalid keystore with password
 	ksFile := filepath.Join(cfg.Node.DataDir, "keystore.json")
-	os.WriteFile(ksFile, []byte("invalid"), 0600)
+	if err := os.WriteFile(ksFile, []byte("invalid"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	_, err := New(cfg, "wrongpass")
 	if err == nil {
 		t.Fatal("expected error on invalid keystore decryption")
@@ -125,18 +127,22 @@ func TestNodeStartupErrors(t *testing.T) {
 	cfg.Node.DataDir = t.TempDir()
 	cfg.Storage.BlocksDir = "chaindata"
 	blocksFile := filepath.Join(cfg.Node.DataDir, "chaindata")
-	os.WriteFile(blocksFile, []byte("file-not-dir"), 0600)
+	if err := os.WriteFile(blocksFile, []byte("file-not-dir"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	_, err = New(cfg, "")
 	if err == nil {
 		t.Fatal("expected error opening block db if it's a file")
 	}
-	os.Remove(blocksFile)
+	_ = os.Remove(blocksFile)
 
 	// 6. storage.Open state db failure
 	cfg.Node.DataDir = t.TempDir()
 	cfg.Storage.StateDir = "state"
 	stateFile := filepath.Join(cfg.Node.DataDir, "state")
-	os.WriteFile(stateFile, []byte("file-not-dir"), 0600)
+	if err := os.WriteFile(stateFile, []byte("file-not-dir"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	_, err = New(cfg, "")
 	if err == nil {
 		t.Fatal("expected error opening state db if it's a file")
@@ -166,7 +172,9 @@ func TestNodeLoadChain(t *testing.T) {
 	// Insert block 1 and test loadChain up to 2 (missing 2)
 	b1 := genesis
 	b1.Header.Height = 1
-	n.blockStore.PutBlock(b1)
+	if err := n.blockStore.PutBlock(b1); err != nil {
+		t.Fatal(err)
+	}
 	chain, err = n.loadChain(genesis, 2)
 	if err != nil {
 		t.Fatal(err)
@@ -187,8 +195,8 @@ func TestResolveDataPath(t *testing.T) {
 	}
 
 	res2 := resolveDataPath("", "rel")
-	if res2 != "rel" { // because "." joined with "rel" is "rel" on windows usually or ".\rel"
-		// actually filepath.Join(".", "rel") == "rel"
+	if res2 != "rel" {
+		t.Fatalf("expected rel, got %s", res2)
 	}
 
 	res3 := resolveDataPath("~/", "rel")
@@ -219,9 +227,9 @@ func TestStateLoadErrorInNew(t *testing.T) {
 		t.Fatal(err)
 	}
 	blk := &core.Block{Header: core.BlockHeader{Height: 1}}
-	n.blockStore.PutBlock(blk)
-	n.blockStore.UpdateTip(1, blk.Hash)
-	n.stateDB.Put([]byte("a:badhex"), []byte("val"))
+	_ = n.blockStore.PutBlock(blk)
+	_ = n.blockStore.UpdateTip(1, blk.Hash)
+	_ = n.stateDB.Put([]byte("a:badhex"), []byte("val"))
 	n.shutdown()
 
 	_, err = New(cfg, "")
@@ -232,10 +240,10 @@ func TestStateLoadErrorInNew(t *testing.T) {
 	cfg.Node.DataDir = t.TempDir()
 	n2, _ := New(cfg, "")
 	blk2 := &core.Block{Header: core.BlockHeader{Height: 1}}
-	n2.blockStore.PutBlock(blk2)
-	n2.blockStore.UpdateTip(1, blk2.Hash)
+	_ = n2.blockStore.PutBlock(blk2)
+	_ = n2.blockStore.UpdateTip(1, blk2.Hash)
 	st := state.NewStateDB()
-	n2.stateStore.SaveState(st)
+	_ = n2.stateStore.SaveState(st)
 	n2.shutdown()
 
 	nOk, err := New(cfg, "")

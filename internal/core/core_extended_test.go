@@ -29,10 +29,6 @@ func TestCore_NextBaseFee(t *testing.T) {
 	// 3. gasUsed < target (e.g. 0 utilization)
 	minCap := current - current/MaxBaseFeeChangeDenom
 	if current/MaxBaseFeeChangeDenom == 0 {
-		minCap = current // actually wait, the delta logic might be diff
-		// If current=10, denom=8, current*under/target/8...
-		// under = target, delta = 10 * target / target / 8 = 1.
-		// minCap = 9
 		minCap = 9
 	}
 	if fee := NextBaseFee(current, 0); fee != minCap {
@@ -50,13 +46,12 @@ func TestCore_NextBaseFee(t *testing.T) {
 	}
 
 	// 6. gasUsed < target normally
-	if fee := NextBaseFee(current, target-1); fee != current { // wait, 10 * 1 / target / 8 = 0. current - 0 = 10?
-		// delta = 0 -> current - delta = 10.
+	if fee := NextBaseFee(current, target-1); fee != current {
+		t.Errorf("expected %d, got %d", current, fee)
 	}
 	// Let's use a large current to hit delta > 0
 	if fee := NextBaseFee(100, target/2); fee != 100-(100*(target/2)/target/8) {
-		// delta = 100 * (target/2) / target / 8 = 100 * 0.5 / 8 = 6
-		// 100 - 6 = 94
+		t.Errorf("unexpected NextBaseFee for half target: got %d", fee)
 	}
 }
 

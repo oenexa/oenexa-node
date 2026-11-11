@@ -3,6 +3,7 @@ package multisig
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 )
 
 // State Keys
@@ -12,6 +13,10 @@ var (
 	// owners are stored as "owner_0", "owner_1", etc.
 )
 
+func ownerKey(i uint32) []byte {
+	return []byte(fmt.Sprintf("owner_%d", i))
+}
+
 // InitMultisig initializes the M-of-N multisig wallet.
 // Payload format: [threshold uint32] [owner_count uint32] [pubkey1 1952 bytes] [pubkey2 1952 bytes] ...
 func InitMultisig(payloadPtr, payloadLen uint32) int32 {
@@ -20,12 +25,23 @@ func InitMultisig(payloadPtr, payloadLen uint32) int32 {
 		return -1 // Invalid payload
 	}
 
-	// threshold := binary.BigEndian.Uint32(payload[0:4])
+	threshold := binary.BigEndian.Uint32(payload[0:4])
 	ownerCount := binary.BigEndian.Uint32(payload[4:8])
 
-	expectedLen := 8 + (ownerCount * 1952) // 1952 is ML-DSA-65 public key size
-	if uint32(len(payload)) != expectedLen {
+	// Check payload length using 64-bit math to prevent uint32 multiplication wraparound.
+	expectedLen := uint64(8) + (uint64(ownerCount) * 1952) // 1952 is ML-DSA-65 public key size
+	if uint64(len(payload)) != expectedLen {
 		return -2 // Payload length mismatch
+	}
+	if threshold == 0 || threshold > ownerCount {
+		return -1 // Invalid threshold bounds
+	}
+
+	// Guard against re-initialization if a non-zero threshold is already recorded.
+	if existing, err := ReadState(KeyThreshold, 4); err == nil && len(existing) >= 4 {
+		if binary.BigEndian.Uint32(existing) > 0 {
+			return -3 // Already initialized
+		}
 	}
 
 	// Write threshold and owner count to state
@@ -35,9 +51,8 @@ func InitMultisig(payloadPtr, payloadLen uint32) int32 {
 	// Write each owner's public key
 	offset := uint32(8)
 	for i := uint32(0); i < ownerCount; i++ {
-		keyName := append([]byte("owner_"), byte(i))
 		pubKey := payload[offset : offset+1952]
-		WriteState(keyName, pubKey)
+		WriteState(ownerKey(i), pubKey)
 		offset += 1952
 	}
 
@@ -56,47 +71,54 @@ func ExecuteTransfer(payloadPtr, payloadLen uint32) int32 {
 	amount := binary.BigEndian.Uint64(payload[32:40])
 	numSigs := binary.BigEndian.Uint32(payload[40:44])
 
-	expectedLen := 44 + (numSigs * 3309) // 3309 is ML-DSA-65 signature size
-	if uint32(len(payload)) != expectedLen {
+	expectedLen := uint64(44) + (uint64(numSigs) * 3309) // 3309 is ML-DSA-65 signature size
+	if uint64(len(payload)) != expectedLen {
 		return -2
 	}
 
 	// Read threshold
 	threshBytes, err := ReadState(KeyThreshold, 4)
-	if err != nil {
+	if err != nil || len(threshBytes) < 4 {
 		return -3
 	}
 	threshold := binary.BigEndian.Uint32(threshBytes)
-
-	if numSigs < threshold {
-		return -4 // Not enough signatures
+	if threshold == 0 || numSigs < threshold {
+		return -4 // Not enough signatures or uninitialized threshold
 	}
 
 	// Read owner count
 	ownerCountBytes, err := ReadState(KeyOwners, 4)
-	if err != nil {
+	if err != nil || len(ownerCountBytes) < 4 {
 		return -5
 	}
 	ownerCount := binary.BigEndian.Uint32(ownerCountBytes)
+	if ownerCount == 0 || threshold > ownerCount {
+		return -5
+	}
 
-	// Construct the message that should have been signed
-	// msg = [to_address] + [amount]
-	msgToSign := append(toAddr, payload[32:40]...)
+	// Construct the message that should have been signed without mutating payload's backing array.
+	msgToSign := make([]byte, 40)
+	copy(msgToSign[0:32], toAddr)
+	copy(msgToSign[32:40], payload[32:40])
 
-	// Verify signatures against owner public keys
+	// Verify signatures against distinct owner public keys (prevent duplicate-owner replay).
 	validSigs := uint32(0)
 	sigOffset := uint32(44)
+	usedOwners := make(map[uint32]bool, ownerCount)
 
 	for s := uint32(0); s < numSigs; s++ {
 		sig := payload[sigOffset : sigOffset+3309]
 
 		for o := uint32(0); o < ownerCount; o++ {
-			keyName := append([]byte("owner_"), byte(o))
-			pubKey, err := ReadState(keyName, 1952)
-			if err == nil {
+			if usedOwners[o] {
+				continue
+			}
+			pubKey, err := ReadState(ownerKey(o), 1952)
+			if err == nil && len(pubKey) == 1952 {
 				if VerifySig(pubKey, msgToSign, sig) {
+					usedOwners[o] = true
 					validSigs++
-					break // Sig matches this owner
+					break
 				}
 			}
 		}
@@ -134,8 +156,5 @@ var VerifySig = func(pubKey, msg, sig []byte) bool {
 }
 
 var DoTransfer = func(to []byte, amount uint64) bool {
-	if amount == 0 {
-		return false
-	}
-	return true
+	return amount != 0
 }

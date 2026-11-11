@@ -22,7 +22,7 @@ func TestDecrypt_Extended_Errors(t *testing.T) {
 
 	// 2. bad JSON
 	badJSONPath := filepath.Join(tmp, "bad.json")
-	os.WriteFile(badJSONPath, []byte("invalid json"), 0600)
+	_ = os.WriteFile(badJSONPath, []byte("invalid json"), 0600)
 	_, err = keystore.Decrypt(badJSONPath, "pw")
 	if err == nil || !strings.Contains(err.Error(), "parse") {
 		t.Errorf("expected parse error, got %v", err)
@@ -30,7 +30,7 @@ func TestDecrypt_Extended_Errors(t *testing.T) {
 
 	validWallet, _ := crypto.NewWallet()
 	validPath := filepath.Join(tmp, "valid.json")
-	keystore.Encrypt(validPath, "pw", validWallet)
+	_ = keystore.Encrypt(validPath, "pw", validWallet)
 	validData, _ := os.ReadFile(validPath)
 
 	tests := []struct {
@@ -111,11 +111,11 @@ func TestDecrypt_Extended_Errors(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var m map[string]any
-			json.Unmarshal(validData, &m)
+			_ = json.Unmarshal(validData, &m)
 			tc.mutate(m)
 			mutatedData, _ := json.Marshal(m)
 			path := filepath.Join(tmp, "mutated.json")
-			os.WriteFile(path, mutatedData, 0600)
+			_ = os.WriteFile(path, mutatedData, 0600)
 
 			_, err := keystore.Decrypt(path, "pw")
 			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
@@ -136,7 +136,7 @@ func TestPeekAddress_Extended_Errors(t *testing.T) {
 
 	// 2. bad json
 	badJSONPath := filepath.Join(tmp, "bad.json")
-	os.WriteFile(badJSONPath, []byte("invalid json"), 0600)
+	_ = os.WriteFile(badJSONPath, []byte("invalid json"), 0600)
 	_, err = keystore.PeekAddress(badJSONPath)
 	if err == nil {
 		t.Error("expected error for bad json")
@@ -145,7 +145,7 @@ func TestPeekAddress_Extended_Errors(t *testing.T) {
 	// 3. valid file
 	validWallet, _ := crypto.NewWallet()
 	validPath := filepath.Join(tmp, "valid.json")
-	keystore.Encrypt(validPath, "pw", validWallet)
+	_ = keystore.Encrypt(validPath, "pw", validWallet)
 	addr, err := keystore.PeekAddress(validPath)
 	if err != nil {
 		t.Errorf("expected no error for valid file, got %v", err)
@@ -159,7 +159,7 @@ func TestDecrypt_Extended_WrongPassword(t *testing.T) {
 	tmp := t.TempDir()
 	validWallet, _ := crypto.NewWallet()
 	validPath := filepath.Join(tmp, "valid.json")
-	keystore.Encrypt(validPath, "pw", validWallet)
+	_ = keystore.Encrypt(validPath, "pw", validWallet)
 
 	_, err := keystore.Decrypt(validPath, "wrong")
 	if err == nil {

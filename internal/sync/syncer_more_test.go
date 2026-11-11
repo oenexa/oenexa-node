@@ -116,7 +116,9 @@ func TestSyncer_ApplyBlocks(t *testing.T) {
 	}
 	// Sign with a different key
 	badW, _ := crypto.NewWallet()
-	blkBadSig.SignHeader(badW.PrivateKey)
+	if err := blkBadSig.SignHeader(badW.PrivateKey); err != nil {
+		t.Fatal(err)
+	}
 
 	s.ApplyBlocks([]*core.Block{blkBadSig})
 
@@ -124,7 +126,9 @@ func TestSyncer_ApplyBlocks(t *testing.T) {
 	blkMissingParent := &core.Block{
 		Header: core.BlockHeader{Height: 1},
 	}
-	blkMissingParent.SignHeader(w.PrivateKey)
+	if err := blkMissingParent.SignHeader(w.PrivateKey); err != nil {
+		t.Fatal(err)
+	}
 
 	s.ApplyBlocks([]*core.Block{blkMissingParent})
 

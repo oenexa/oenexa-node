@@ -199,7 +199,7 @@ func TestMockFunctions(t *testing.T) {
 	resetMocks()
 	origPtr(0, 10)
 	origWrite(nil, nil)
-	origRead(nil, 10)
+	_, _ = origRead(nil, 10)
 	origVerify(make([]byte, 10), nil, make([]byte, 10))
 	origDoTransfer(nil, 1)
 	origDoTransfer(nil, 0)

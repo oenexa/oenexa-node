@@ -91,8 +91,15 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 	}
 
 	bdb, err := storage.Open(blocksDir)
+	if err != nil {
+		return nil, fmt.Errorf("open block db: %w", err)
+	}
 
 	sdb, err := storage.Open(stateDir)
+	if err != nil {
+		_ = bdb.Close()
+		return nil, fmt.Errorf("open state db: %w", err)
+	}
 
 	n.blockDB = bdb
 	n.stateDB = sdb
@@ -120,13 +127,22 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 	if tipErr != nil || storedTip == 0 {
 		// Fresh database — persist genesis and bootstrap state.
 		log.Println("[node] initializing from the genesis block …")
-		_ = n.blockStore.PutBlock(genesisBlock)
-		_ = n.blockStore.UpdateTip(0, genesisBlock.Hash)
+		if err := n.blockStore.PutBlock(genesisBlock); err != nil {
+			n.shutdown()
+			return nil, fmt.Errorf("persist genesis block: %w", err)
+		}
+		if err := n.blockStore.UpdateTip(0, genesisBlock.Hash); err != nil {
+			n.shutdown()
+			return nil, fmt.Errorf("persist genesis tip: %w", err)
+		}
 		st := state.NewStateDB()
 		for addr, bal := range genesisCfg.Allocations {
 			st.SetAccount(addr, &state.Account{Balance: bal})
 		}
-		_ = n.stateStore.SaveState(st)
+		if err := n.stateStore.SaveState(st); err != nil {
+			n.shutdown()
+			return nil, fmt.Errorf("persist genesis state: %w", err)
+		}
 		n.st = st
 		log.Printf("[node] genesis block hash: %s", crypto.ToHex(genesisBlock.Hash))
 	} else {
@@ -149,12 +165,20 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 	// request context since the VM outlives individual requests).
 	vmCtx := context.Background()
 	execVM, err := vm.NewVM(vmCtx)
+	if err != nil {
+		n.shutdown()
+		return nil, fmt.Errorf("init wasm vm: %w", err)
+	}
 
 	n.execVM = execVM
 
 	// ── 6. Consensus engine ───────────────────────────────────────────────
 	// Rebuild the in-memory chain from the block store.
 	chain, err := n.loadChain(genesisBlock, storedTip)
+	if err != nil {
+		n.shutdown()
+		return nil, fmt.Errorf("load chain: %w", err)
+	}
 
 	var validators []*consensus.Validator
 	for _, addr := range initialValidators {
@@ -169,6 +193,10 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 		validators = append(validators, val)
 	}
 	vs, err := consensus.NewValidatorSet(validators)
+	if err != nil {
+		n.shutdown()
+		return nil, fmt.Errorf("init validator set: %w", err)
+	}
 
 	scheduler := upgrade.NewScheduler(1, nil)
 	n.upgradeMgr = upgrade.NewManager(upgrade.Config{
@@ -296,13 +324,16 @@ func (n *Node) Start(ctx context.Context) {
 
 	// P2P.
 	if n.p2pNode != nil {
-		n.p2pNode.Start(ctx)
-		for _, addr := range n.cfg.P2P.BootstrapPeers {
-			go func(a string) {
-				if err := n.p2pNode.Connect(ctx, a); err != nil {
-					log.Printf("[p2p] bootstrap %s failed: %v", a, err)
-				}
-			}(addr)
+		if err := n.p2pNode.Start(ctx); err != nil {
+			log.Printf("[p2p] start failed: %v", err)
+		} else {
+			for _, addr := range n.cfg.P2P.BootstrapPeers {
+				go func(a string) {
+					if err := n.p2pNode.Connect(ctx, a); err != nil {
+						log.Printf("[p2p] bootstrap %s failed: %v", a, err)
+					}
+				}(addr)
+			}
 		}
 	}
 
@@ -370,7 +401,9 @@ func (n *Node) blockLoop(ctx context.Context) {
 
 			// Broadcast.
 			if n.p2pNode != nil {
-				_ = n.p2pNode.BroadcastBlock(context.Background(), blk)
+				bCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+				_ = n.p2pNode.BroadcastBlock(bCtx, blk)
+				cancel()
 			}
 
 			// Metrics.

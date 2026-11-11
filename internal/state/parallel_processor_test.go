@@ -20,8 +20,8 @@ func generateParallelBlock(count int) (*state.DB, *core.Block) {
 	for i := 0; i < count; i++ {
 		var from [crypto.AddressSize]byte
 		var to [crypto.AddressSize]byte
-		rand.Read(from[:])
-		rand.Read(to[:])
+		_, _ = rand.Read(from[:])
+		_, _ = rand.Read(to[:])
 		
 		db.SetAccount(from, &state.Account{Balance: 10 * core.OneONXC})
 		
@@ -103,7 +103,7 @@ func TestParallelExecutionConsistency(t *testing.T) {
 	if resSeq.BurnedFees != resPar.BurnedFees {
 		t.Errorf("BurnedFees mismatch")
 	}
-	
+
 	rootSeq := dbSeq.CommitRoot()
 	rootPar := dbPar.CommitRoot()
 	

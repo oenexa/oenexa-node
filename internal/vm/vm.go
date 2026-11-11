@@ -3,26 +3,36 @@ package vm
 import (
 	"context"
 	"fmt"
+	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/oenexa/oenexa/internal/crypto"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
 )
 
+const (
+	// MaxMemoryPages limits each WASM instance to 256 * 64 KiB = 16 MiB.
+	MaxMemoryPages = 256
+	// DefaultCallTimeout caps WASM contract execution to prevent infinite-loop DoS.
+	DefaultCallTimeout = 5 * time.Second
+)
+
 // VM manages WASM contract compilation and execution via wazero.
 type VM struct {
+	mu      sync.RWMutex
 	rt      wazero.Runtime
 	modules map[string]wazero.CompiledModule // codeHash hex -> compiled module
-	seq     atomic.Uint64 // unique suffix for module instance names
+	seq     atomic.Uint64                    // unique suffix for module instance names
 }
-
-var newRuntime = wazero.NewRuntime
 
 // NewVM creates a new VM and registers the OENEXA host module.
 func NewVM(ctx context.Context) (*VM, error) {
-	// Enable CloseOnContextDone to protect against infinite loops (Gas Exhaustion)
-	cfg := wazero.NewRuntimeConfig().WithCloseOnContextDone(true)
+	// Enable CloseOnContextDone + memory limit to protect against infinite loops & OOM bombs.
+	cfg := wazero.NewRuntimeConfig().
+		WithCloseOnContextDone(true).
+		WithMemoryLimitPages(MaxMemoryPages)
 	rt := wazero.NewRuntimeWithConfig(ctx, cfg)
 	v := &VM{
 		rt:      rt,
@@ -71,12 +81,24 @@ func (v *VM) registerHostModule(ctx context.Context) error {
 func (v *VM) Deploy(ctx context.Context, contractAddr [crypto.AddressSize]byte, code []byte) error {
 	codeHash := crypto.Hash256(code)
 	key := crypto.ToHex(codeHash)
-	if _, exists := v.modules[key]; exists {
+
+	v.mu.RLock()
+	_, exists := v.modules[key]
+	v.mu.RUnlock()
+	if exists {
 		return nil // already compiled
 	}
+
 	compiled, err := v.rt.CompileModule(ctx, code)
 	if err != nil {
 		return fmt.Errorf("compile WASM: %w", err)
+	}
+
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if _, exists := v.modules[key]; exists {
+		_ = compiled.Close(ctx)
+		return nil
 	}
 	v.modules[key] = compiled
 	return nil
@@ -92,8 +114,16 @@ func (v *VM) Call(
 	funcName string,
 	params ...uint64,
 ) ([]uint64, error) {
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, DefaultCallTimeout)
+		defer cancel()
+	}
+
 	key := crypto.ToHex(codeHash)
+	v.mu.RLock()
 	compiled, ok := v.modules[key]
+	v.mu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("contract isn't deployed: %s", key)
 	}
@@ -105,9 +135,9 @@ func (v *VM) Call(
 	if err != nil {
 		return nil, fmt.Errorf("instantiate module: %w", err)
 	}
-	defer func(mod api.Module, ctx context.Context) {
-		_ = mod.Close(ctx)
-	}(mod, ctx)
+	defer func() {
+		_ = mod.Close(context.Background())
+	}()
 
 	fn := mod.ExportedFunction(funcName)
 	if fn == nil {

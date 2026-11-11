@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/oenexa/oenexa/internal/core"
 	"github.com/oenexa/oenexa/internal/crypto"
@@ -242,7 +244,11 @@ func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 	fmt.Println("Transaction is now in the mempool and gossiping across P2P validator mesh.")
 }
 
-func callRPC(url, method string, params interface{}) (json.RawMessage, error) {
+func callRPC(rawURL, method string, params interface{}) (json.RawMessage, error) {
+	u, err := url.ParseRequestURI(rawURL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return nil, fmt.Errorf("invalid RPC URL %q", rawURL)
+	}
 	reqBody, _ := json.Marshal(map[string]interface{}{
 		"jsonrpc": "2.0",
 		"id":      1,
@@ -250,11 +256,13 @@ func callRPC(url, method string, params interface{}) (json.RawMessage, error) {
 		"params":  params,
 	})
 
-	resp, err := http.Post(url, "application/json", bytes.NewReader(reqBody))
+	client := &http.Client{Timeout: 15 * time.Second}
+	// #nosec G107 -- CLI operator-specified RPC URL validated for http/https scheme
+	resp, err := client.Post(u.String(), "application/json", bytes.NewReader(reqBody))
 	if err != nil {
-		return nil, fmt.Errorf("node unreachable at %s: %w", url, err)
+		return nil, fmt.Errorf("node unreachable at %s: %w", rawURL, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var r struct {
 		Result json.RawMessage `json:"result"`

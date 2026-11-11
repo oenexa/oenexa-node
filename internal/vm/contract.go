@@ -101,9 +101,9 @@ func buildCounterWASM() []byte {
 	} // 6 bytes
 
 	codeContent := []byte{0x02} // count=2
-	codeContent = append(codeContent, byte(len(body0)))
+	codeContent = appendULEB128(codeContent, safeUint32Len(len(body0)))
 	codeContent = append(codeContent, body0...)
-	codeContent = append(codeContent, byte(len(body1)))
+	codeContent = appendULEB128(codeContent, safeUint32Len(len(body1)))
 	codeContent = append(codeContent, body1...)
 
 	// ── Assemble module ───────────────────────────────────────────────────
@@ -122,9 +122,19 @@ func buildCounterWASM() []byte {
 // appendSection writes [sectionID][leb128(len(content))][content] to buf.
 func appendSection(buf []byte, id byte, content []byte) []byte {
 	buf = append(buf, id)
-	buf = appendULEB128(buf, uint32(len(content)))
+	buf = appendULEB128(buf, safeUint32Len(len(content)))
 	buf = append(buf, content...)
 	return buf
+}
+
+func safeUint32Len(n int) uint32 {
+	if n <= 0 {
+		return 0
+	}
+	if uint64(n) > uint64(^uint32(0)) {
+		return ^uint32(0)
+	}
+	return uint32(n) // #nosec G115 -- guarded by [0, MaxUint32]
 }
 
 // appendULEB128 encodes v as an unsigned LEB128 integer into buf.

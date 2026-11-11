@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/gob"
 	"log"
+	"math"
 	"sync"
 	"time"
 
@@ -121,12 +122,22 @@ func (s *Syncer) trySync() {
 	want := local // next height to request
 	log.Printf("[sync] behind peers: local=%d best_peer=%d, catching up…", local, best)
 
-	// Request blocks in batches until caught up or no more peers.
-	for want < best {
-		count := uint32(BatchSize)
-		remaining := best - want
-		if remaining < uint64(count) {
-			count = uint32(remaining)
+	// Request blocks in bounded batches per tick so an inflated peer height
+	// cannot spin trySync endlessly.
+	const maxBatchesPerTick = 8
+	for batches := 0; want < best && batches < maxBatchesPerTick; batches++ {
+		batch := BatchSize
+		if batch <= 0 {
+			break
+		}
+		var count uint32
+		if uint64(batch) > math.MaxUint32 {
+			count = math.MaxUint32
+		} else {
+			count = uint32(batch) // #nosec G115 -- bounded to [1, MaxUint32]
+		}
+		if remaining := best - want; remaining < uint64(count) {
+			count = uint32(remaining) // #nosec G115 -- remaining < count <= MaxUint32
 		}
 
 		req := p2p.SyncReq{
@@ -142,28 +153,90 @@ func (s *Syncer) trySync() {
 // ApplyBlocks validates and applies a slice of blocks received from a peer.
 // Blocks outside the expected range or failing validation are discarded.
 func (s *Syncer) ApplyBlocks(blocks []*core.Block) {
+	if s == nil || s.engine == nil {
+		return
+	}
 	for _, blk := range blocks {
-		localHeight := s.engine.Height()
-		if blk.Header.Height != localHeight {
-			// Already have this block, or it's ahead of what we expect.
+		if blk == nil {
 			continue
 		}
-		// Basic structural validation.
+		localHeight := s.engine.Height()
+		if localHeight == 0 || blk.Header.Height != localHeight {
+			// Already have this block, chain uninitialized, or height mismatch.
+			continue
+		}
+		// Basic structural & validator signature validation.
 		if err := blk.VerifyValidatorSig(s.validatorPub); err != nil {
 			log.Printf("[sync] invalid block sig at h=%d: %v", blk.Header.Height, err)
 			continue
 		}
-		// Apply the block to state.
+		// Parent linkage & timestamp check.
 		prev := s.engine.BlockByHeight(localHeight - 1)
-		if blk.Header.PrevHash != prev.Hash {
+		if prev == nil || blk.Header.PrevHash != prev.Hash {
 			log.Printf("[sync] prev-hash mismatch at h=%d", blk.Header.Height)
 			continue
 		}
-		result, err := state.ApplyBlock(s.st, blk, blk.Header.ValidatorAddr, s.execVM)
-		if err != nil {
-			log.Printf("[sync] ApplyBlock h=%d: %v", blk.Header.Height, err)
+
+		// Verify transaction signatures, hashes, and Merkle root before execution.
+		txHashes := make([][crypto.HashSize]byte, len(blk.Txs))
+		invalidTx := false
+		for i, tx := range blk.Txs {
+			if tx == nil {
+				invalidTx = true
+				break
+			}
+			if err := tx.BasicValidate(); err != nil {
+				log.Printf("[sync] invalid tx at h=%d idx=%d: %v", blk.Header.Height, i, err)
+				invalidTx = true
+				break
+			}
+			txHashes[i] = tx.Hash
+		}
+		if invalidTx {
 			continue
 		}
+		if core.ComputeMerkleRoot(txHashes) != blk.Header.MerkleRoot {
+			log.Printf("[sync] merkle root mismatch at h=%d", blk.Header.Height)
+			continue
+		}
+
+		// Execute against an isolated snapshot so failed or mismatched blocks never corrupt live state.
+		var snap *state.DB
+		var result *state.BlockResult
+		if s.st != nil {
+			snap = s.st.Snapshot()
+			var err error
+			result, err = state.ApplyBlock(snap, blk, blk.Header.ValidatorAddr, s.execVM)
+			if err != nil {
+				log.Printf("[sync] ApplyBlock h=%d: %v", blk.Header.Height, err)
+				continue
+			}
+			if result.GasUsed != blk.Header.GasUsed {
+				log.Printf("[sync] gas used mismatch at h=%d: header=%d computed=%d", blk.Header.Height, blk.Header.GasUsed, result.GasUsed)
+				continue
+			}
+			if result.BurnedFees != blk.Header.BurnedFees {
+				log.Printf("[sync] burned fees mismatch at h=%d: header=%d computed=%d", blk.Header.Height, blk.Header.BurnedFees, result.BurnedFees)
+				continue
+			}
+			if blk.Header.StateRoot != (crypto.ZeroHash) {
+				computedRoot := snap.CommitRoot()
+				if computedRoot != blk.Header.StateRoot {
+					log.Printf("[sync] state root mismatch at h=%d: header=%s computed=%s",
+						blk.Header.Height, crypto.ToHex(blk.Header.StateRoot), crypto.ToHex(computedRoot))
+					continue
+				}
+			}
+			s.st.Apply(snap)
+		} else {
+			var err error
+			result, err = state.ApplyBlock(nil, blk, blk.Header.ValidatorAddr, s.execVM)
+			if err != nil {
+				log.Printf("[sync] ApplyBlock h=%d: %v", blk.Header.Height, err)
+				continue
+			}
+		}
+
 		log.Printf("[sync] applied block h=%d hash=%s txs=%d burned=%d nano-ONXC reward=%d nano-ONXC",
 			blk.Header.Height,
 			crypto.ToHex(blk.Hash)[:12]+"…",

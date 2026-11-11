@@ -3,11 +3,36 @@ package consensus
 import (
 	"errors"
 	"fmt"
+	"math"
+	"math/big"
+	"math/bits"
 	"sync"
 
 	"github.com/oenexa/oenexa/internal/crypto"
 	"github.com/oenexa/oenexa/internal/state"
 )
+
+// mulDiv64 computes floor(a * b / denom) using arbitrary precision intermediates
+// to prevent uint64 multiplication overflow on large stake/reward amounts.
+func mulDiv64(a, b, denom uint64) uint64 {
+	if denom == 0 || a == 0 || b == 0 {
+		return 0
+	}
+	num := new(big.Int).Mul(new(big.Int).SetUint64(a), new(big.Int).SetUint64(b))
+	num.Div(num, new(big.Int).SetUint64(denom))
+	if !num.IsUint64() {
+		return math.MaxUint64
+	}
+	return num.Uint64()
+}
+
+func addSaturating64(a, b uint64) uint64 {
+	sum, carry := bits.Add64(a, b, 0)
+	if carry != 0 {
+		return math.MaxUint64
+	}
+	return sum
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Delegation & Pooled Staking Architecture
@@ -260,12 +285,13 @@ func (dm *DelegationManager) Undelegate(
 		}
 	}
 
+	completionHeight := addSaturating64(currentHeight, dm.unbondingDelay)
 	entry := &UnbondingEntry{
 		Delegator:        delegator,
 		Validator:        valAddr,
 		Amount:           amount,
 		CreationHeight:   currentHeight,
-		CompletionHeight: currentHeight + dm.unbondingDelay,
+		CompletionHeight: completionHeight,
 	}
 	dm.unbondingQueue = append(dm.unbondingQueue, entry)
 	return entry, nil
@@ -285,7 +311,11 @@ func (dm *DelegationManager) ProcessMaturedUnbondings(st *state.DB, currentHeigh
 			if acc == nil {
 				acc = &state.Account{}
 			}
-			acc.Balance += entry.Amount
+			newBal, carry := bits.Add64(acc.Balance, entry.Amount, 0)
+			if carry != 0 {
+				return nil, errors.New("integer overflow crediting matured unbonding")
+			}
+			acc.Balance = newBal
 			st.SetAccount(entry.Delegator, acc)
 			matured = append(matured, entry)
 		} else {
@@ -309,19 +339,22 @@ func (dm *DelegationManager) DistributeBlockReward(valAddr [crypto.AddressSize]b
 		return totalReward // all goes to validator operator
 	}
 
-	// Commission e.g. 5%
-	commission := (totalReward * pool.CommissionBps) / 10000
+	bps := pool.CommissionBps
+	if bps > 10000 {
+		bps = 10000
+	}
+	commission := mulDiv64(totalReward, bps, 10000)
 	delegatorsPool := totalReward - commission
 
-	// Distribute to all delegators proportionally to their stake
+	// Distribute to all delegators proportionally to their stake using 128-bit math.
 	for _, userDels := range dm.delegations {
 		if d, ok := userDels[valHex]; ok && d.Amount > 0 {
-			share := (delegatorsPool * d.Amount) / pool.TotalDelegated
-			d.PendingRewards += share
+			share := mulDiv64(delegatorsPool, d.Amount, pool.TotalDelegated)
+			d.PendingRewards = addSaturating64(d.PendingRewards, share)
 		}
 	}
 
-	pool.TotalRewardsPaid += delegatorsPool
+	pool.TotalRewardsPaid = addSaturating64(pool.TotalRewardsPaid, delegatorsPool)
 	return commission
 }
 
@@ -348,7 +381,11 @@ func (dm *DelegationManager) ClaimRewards(st *state.DB, delegator [crypto.Addres
 	if acc == nil {
 		acc = &state.Account{}
 	}
-	acc.Balance += reward
+	newBal, carry := bits.Add64(acc.Balance, reward, 0)
+	if carry != 0 {
+		return 0, errors.New("integer overflow claiming delegation rewards")
+	}
+	acc.Balance = newBal
 	st.SetAccount(delegator, acc)
 
 	del.PendingRewards = 0
@@ -366,12 +403,15 @@ func (dm *DelegationManager) SlashValidatorDelegations(valAddr [crypto.AddressSi
 		return 0
 	}
 
+	if penaltyPercent > 100 {
+		penaltyPercent = 100
+	}
 	var totalSlashed uint64
 	for _, userDels := range dm.delegations {
 		if d, ok := userDels[valHex]; ok && d.Amount > 0 {
-			penalty := (d.Amount * penaltyPercent) / 100
+			penalty := mulDiv64(d.Amount, penaltyPercent, 100)
 			d.Amount -= penalty
-			totalSlashed += penalty
+			totalSlashed = addSaturating64(totalSlashed, penalty)
 		}
 	}
 

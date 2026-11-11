@@ -26,14 +26,14 @@ func TestStorageExtended(t *testing.T) {
 	hash := crypto.Hash256([]byte("test"))
 
 	// Put a bad block gob to trigger decodeBlock error
-	db.Put(blockKey(hash), []byte("badgob"))
+	_ = db.Put(blockKey(hash), []byte("badgob"))
 	_, err = bs.GetBlock(hash)
 	if err == nil {
 		t.Fatal("expected decodeBlock error")
 	}
 
 	// Put a bad gob for GetBlockByHeight
-	db.Put(heightKey(10), hash[:])
+	_ = db.Put(heightKey(10), hash[:])
 	_, err = bs.GetBlockByHeight(10)
 	if err == nil {
 		t.Fatal("expected decodeBlock error in GetBlockByHeight")
@@ -102,7 +102,7 @@ func TestDBIterPrefixError(t *testing.T) {
 	path, _ := os.MkdirTemp("", "testdb_iter")
 	defer os.RemoveAll(path)
 	db, _ := Open(path)
-	db.Put([]byte("prefix_1"), []byte("val1"))
+	_ = db.Put([]byte("prefix_1"), []byte("val1"))
 
 	// trigger fn returning error
 	err := db.IterPrefix([]byte("prefix_"), func(k, v []byte) error {

@@ -13,7 +13,7 @@ func TestMempool_PurgeCommitted_EmptyAndNotInPool(t *testing.T) {
 	w1, _ := crypto.NewWallet()
 	w2, _ := crypto.NewWallet()
 	tx1 := core.NewTransfer(w1.Address, w2.Address, w1.PublicKey, 1, 10, core.MinGasPrice)
-	tx1.Sign(w1.PrivateKey)
+	_ = tx1.Sign(w1.PrivateKey)
 
 	err := mp.Add(tx1)
 	if err != nil {
@@ -28,7 +28,7 @@ func TestMempool_PurgeCommitted_EmptyAndNotInPool(t *testing.T) {
 
 	// Tx not in pool
 	tx2 := core.NewTransfer(w1.Address, w2.Address, w1.PublicKey, 2, 10, core.MinGasPrice)
-	tx2.Sign(w1.PrivateKey)
+	_ = tx2.Sign(w1.PrivateKey)
 	mp.PurgeCommitted([]*core.Transaction{tx2})
 	if mp.Size() != 1 {
 		t.Errorf("expected size 1, got %d", mp.Size())
@@ -40,7 +40,7 @@ func TestMempool_Pending_Zero(t *testing.T) {
 	w1, _ := crypto.NewWallet()
 	w2, _ := crypto.NewWallet()
 	tx1 := core.NewTransfer(w1.Address, w2.Address, w1.PublicKey, 1, 10, core.MinGasPrice)
-	tx1.Sign(w1.PrivateKey)
+	_ = tx1.Sign(w1.PrivateKey)
 	_ = mp.Add(tx1)
 
 	res := mp.Pending(0)
@@ -57,14 +57,14 @@ func TestMempool_Add_MaxSizeEdgeCase(t *testing.T) {
 	w1, _ := crypto.NewWallet()
 	w2, _ := crypto.NewWallet()
 	tx1 := core.NewTransfer(w1.Address, w2.Address, w1.PublicKey, 1, 10, core.MinGasPrice)
-	tx1.Sign(w1.PrivateKey)
+	_ = tx1.Sign(w1.PrivateKey)
 	err := mp.Add(tx1)
 	if err != nil {
 		t.Fatalf("failed to add tx1: %v", err)
 	}
 
 	tx2 := core.NewTransfer(w1.Address, w2.Address, w1.PublicKey, 2, 10, core.MinGasPrice)
-	tx2.Sign(w1.PrivateKey)
+	_ = tx2.Sign(w1.PrivateKey)
 	err = mp.Add(tx2)
 	if err == nil || err.Error() != "mempool full" {
 		t.Errorf("expected 'mempool full', got %v", err)
@@ -73,7 +73,7 @@ func TestMempool_Add_MaxSizeEdgeCase(t *testing.T) {
 	// Test max tx data size
 	tx3 := core.NewTransfer(w1.Address, w2.Address, w1.PublicKey, 3, 10, core.MinGasPrice)
 	tx3.Data = make([]byte, MaxTxDataSize+1)
-	tx3.Sign(w1.PrivateKey)
+	_ = tx3.Sign(w1.PrivateKey)
 	err = mp.Add(tx3)
 	if err == nil || err.Error() != "tx data exceeds maximum size" {
 		t.Errorf("expected 'tx data exceeds maximum size', got %v", err)

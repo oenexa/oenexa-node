@@ -123,7 +123,7 @@ func (d duration) MarshalText() ([]byte, error) {
 // Load reads a TOML file at a path and merges it over Default().
 func Load(path string) (*Config, error) {
 	cfg := Default()
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304 -- operator-specified config TOML file path
 	if err != nil {
 		return nil, fmt.Errorf("open config %s: %w", path, err)
 	}

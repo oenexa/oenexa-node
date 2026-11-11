@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/binary"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/oenexa/oenexa/internal/crypto"
@@ -109,10 +110,21 @@ func (tx *Transaction) signingPayload() []byte {
 	buf = append(buf, b8...)
 	binary.BigEndian.PutUint64(b8, tx.GasPrice)
 	buf = append(buf, b8...)
-	binary.BigEndian.PutUint64(b8, uint64(tx.Timestamp))
+	var ts uint64
+	if tx.Timestamp > 0 {
+		ts = uint64(tx.Timestamp) // #nosec G115 -- guarded by tx.Timestamp > 0
+	}
+	binary.BigEndian.PutUint64(b8, ts)
 	buf = append(buf, b8...)
 	b4 := make([]byte, 4)
-	binary.BigEndian.PutUint32(b4, uint32(len(tx.Data)))
+	dataLen := len(tx.Data)
+	var u32Len uint32
+	if dataLen > math.MaxUint32 {
+		u32Len = math.MaxUint32
+	} else if dataLen > 0 {
+		u32Len = uint32(dataLen) // #nosec G115 -- guarded by [0, MaxUint32]
+	}
+	binary.BigEndian.PutUint32(b4, u32Len)
 	buf = append(buf, b4...)
 	buf = append(buf, tx.Data...)
 	buf = append(buf, tx.PublicKey...)

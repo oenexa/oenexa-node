@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 
 	"github.com/cloudflare/circl/kem/mlkem/mlkem768"
 	"golang.org/x/crypto/sha3"
@@ -71,13 +72,23 @@ func (n *Note) Serialize() []byte {
 	buf.Write(n.Rho[:])
 	buf.Write(n.Rcm[:])
 	var b4 [4]byte
-	binary.BigEndian.PutUint32(b4[:], uint32(len(n.RecipientPK)))
+	binary.BigEndian.PutUint32(b4[:], lenToUint32(len(n.RecipientPK)))
 	buf.Write(b4[:])
 	buf.Write(n.RecipientPK)
-	binary.BigEndian.PutUint32(b4[:], uint32(len(n.Memo)))
+	binary.BigEndian.PutUint32(b4[:], lenToUint32(len(n.Memo)))
 	buf.Write(b4[:])
 	buf.Write(n.Memo)
 	return buf.Bytes()
+}
+
+func lenToUint32(n int) uint32 {
+	if n <= 0 {
+		return 0
+	}
+	if n > math.MaxUint32 {
+		return math.MaxUint32
+	}
+	return uint32(n) // #nosec G115 -- guarded by [0, MaxUint32]
 }
 
 var randReader io.Reader = rand.Reader
@@ -95,7 +106,8 @@ func DeserializeNote(data []byte) (*Note, error) {
 
 	pkLen := binary.BigEndian.Uint32(data[72:76])
 	offset := 76
-	if uint64(len(data)-offset) < uint64(pkLen)+4 {
+	remAfterPKLen := len(data) - offset
+	if remAfterPKLen < 4 || uint64(pkLen)+4 > uint64(remAfterPKLen) { // #nosec G115 -- remAfterPKLen >= 4 checked
 		return nil, errors.New("shielded: truncated recipient public key or memo length")
 	}
 	pk := make([]byte, pkLen)
@@ -104,7 +116,8 @@ func DeserializeNote(data []byte) (*Note, error) {
 
 	memoLen := binary.BigEndian.Uint32(data[offset : offset+4])
 	offset += 4
-	if uint64(len(data)-offset) < uint64(memoLen) {
+	remAfterMemoLen := len(data) - offset
+	if remAfterMemoLen < 0 || uint64(memoLen) > uint64(remAfterMemoLen) { // #nosec G115 -- remAfterMemoLen >= 0 checked
 		return nil, errors.New("shielded: truncated memo payload")
 	}
 	memo := make([]byte, memoLen)
@@ -141,7 +154,7 @@ func (n *Note) Encrypt(recipientPubKEMBytes []byte) ([]byte, error) {
 
 	var out bytes.Buffer
 	var b4 [4]byte
-	binary.BigEndian.PutUint32(b4[:], uint32(len(ct)))
+	binary.BigEndian.PutUint32(b4[:], lenToUint32(len(ct)))
 	out.Write(b4[:])
 	out.Write(ct)
 	out.Write(nonce)

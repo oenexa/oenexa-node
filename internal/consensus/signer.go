@@ -25,6 +25,11 @@ type ValidatorSigner interface {
 	SignBlock(blk *core.Block) error
 }
 
+type voteKey struct {
+	round    uint32
+	voteType uint8
+}
+
 // LocalSigner signs votes and blocks using in-memory ML-DSA-65 keys,
 // strictly enforcing high-water mark protection against double-signing.
 type LocalSigner struct {
@@ -35,9 +40,7 @@ type LocalSigner struct {
 
 	// High-water mark state
 	lastVoteHeight uint64
-	lastVoteRound  uint32
-	lastVoteType   uint8
-	lastVoteHash   [crypto.HashSize]byte
+	votesAtHeight  map[voteKey][crypto.HashSize]byte
 	hasVoted       bool
 
 	lastBlockHeight uint64
@@ -48,9 +51,10 @@ type LocalSigner struct {
 // NewLocalSigner creates a new validator signer with post-quantum keys and anti-slashing protection.
 func NewLocalSigner(addr [crypto.AddressSize]byte, pubKey, privKey []byte) *LocalSigner {
 	return &LocalSigner{
-		address: addr,
-		pubKey:  pubKey,
-		privKey: privKey,
+		address:       addr,
+		pubKey:        pubKey,
+		privKey:       privKey,
+		votesAtHeight: make(map[voteKey][crypto.HashSize]byte),
 	}
 }
 
@@ -66,46 +70,67 @@ func (s *LocalSigner) PublicKey() []byte {
 
 // SignVote signs a consensus vote after checking for equivocation.
 func (s *LocalSigner) SignVote(v *Vote) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if len(s.privKey) == 0 {
 		return errors.New("no private key available for signing")
 	}
+	return s.signVoteWithFn(v, func(payload []byte) ([]byte, error) {
+		return crypto.Sign(s.privKey, payload)
+	})
+}
 
-	// High-water mark anti-slashing check
+// signVoteWithFn enforces high-water mark anti-slashing invariants across all (round, voteType)
+// pairs at the current highest height, preventing vote-type toggling equivocation.
+func (s *LocalSigner) signVoteWithFn(v *Vote, signFn func([]byte) ([]byte, error)) error {
+	if v == nil {
+		return errors.New("nil vote")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	key := voteKey{round: v.Round, voteType: v.Type}
 	if s.hasVoted {
 		if v.Height < s.lastVoteHeight {
 			return fmt.Errorf("%w: vote height %d < last signed height %d", ErrStaleVote, v.Height, s.lastVoteHeight)
 		}
-		if v.Height == s.lastVoteHeight && v.Round == s.lastVoteRound && v.Type == s.lastVoteType {
-			if v.BlockHash != s.lastVoteHash {
+		if v.Height == s.lastVoteHeight {
+			if prevHash, exists := s.votesAtHeight[key]; exists && prevHash != v.BlockHash {
 				return fmt.Errorf("%w: conflicting hash %x vs %x at height %d round %d",
-					ErrEquivocationPrevented, v.BlockHash[:8], s.lastVoteHash[:8], v.Height, v.Round)
+					ErrEquivocationPrevented, v.BlockHash[:8], prevHash[:8], v.Height, v.Round)
 			}
 		}
 	}
 
-	if err := v.Sign(s.privKey); err != nil {
+	sig, err := signFn(v.payload())
+	if err != nil {
 		return err
 	}
+	v.Signature = sig
 
-	s.lastVoteHeight = v.Height
-	s.lastVoteRound = v.Round
-	s.lastVoteType = v.Type
-	s.lastVoteHash = v.BlockHash
+	if !s.hasVoted || v.Height > s.lastVoteHeight {
+		s.lastVoteHeight = v.Height
+		s.votesAtHeight = make(map[voteKey][crypto.HashSize]byte)
+	}
+	s.votesAtHeight[key] = v.BlockHash
 	s.hasVoted = true
 	return nil
 }
 
 // SignBlock signs a block after checking for proposal equivocation.
 func (s *LocalSigner) SignBlock(blk *core.Block) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if len(s.privKey) == 0 {
 		return errors.New("no private key available for signing")
 	}
+	return s.signBlockWithFn(blk, func(payload []byte) ([]byte, error) {
+		return crypto.Sign(s.privKey, payload)
+	})
+}
+
+func (s *LocalSigner) signBlockWithFn(blk *core.Block, signFn func([]byte) ([]byte, error)) error {
+	if blk == nil {
+		return errors.New("nil block")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	computedHash := blk.ComputeHash()
 
@@ -118,7 +143,7 @@ func (s *LocalSigner) SignBlock(blk *core.Block) error {
 		}
 	}
 
-	sig, err := crypto.Sign(s.privKey, blk.Header.Encode())
+	sig, err := signFn(blk.Header.Encode())
 	if err != nil {
 		return err
 	}
@@ -166,58 +191,21 @@ func (k *KMSSigner) KeyURI() string {
 }
 
 func (k *KMSSigner) SignVote(v *Vote) error {
-	k.guard.mu.Lock()
-	defer k.guard.mu.Unlock()
-
-	if k.guard.hasVoted {
-		if v.Height < k.guard.lastVoteHeight {
-			return fmt.Errorf("%w: vote height %d < last signed height %d", ErrStaleVote, v.Height, k.guard.lastVoteHeight)
+	return k.guard.signVoteWithFn(v, func(payload []byte) ([]byte, error) {
+		sig, err := k.signFn(payload)
+		if err != nil {
+			return nil, fmt.Errorf("remote kms sign vote: %w", err)
 		}
-		if v.Height == k.guard.lastVoteHeight && v.Round == k.guard.lastVoteRound && v.Type == k.guard.lastVoteType {
-			if v.BlockHash != k.guard.lastVoteHash {
-				return fmt.Errorf("%w: conflicting hash at height %d round %d", ErrEquivocationPrevented, v.Height, v.Round)
-			}
-		}
-	}
-
-	sig, err := k.signFn(v.payload())
-	if err != nil {
-		return fmt.Errorf("remote kms sign vote: %w", err)
-	}
-	v.Signature = sig
-
-	k.guard.lastVoteHeight = v.Height
-	k.guard.lastVoteRound = v.Round
-	k.guard.lastVoteType = v.Type
-	k.guard.lastVoteHash = v.BlockHash
-	k.guard.hasVoted = true
-	return nil
+		return sig, nil
+	})
 }
 
 func (k *KMSSigner) SignBlock(blk *core.Block) error {
-	k.guard.mu.Lock()
-	defer k.guard.mu.Unlock()
-
-	computedHash := blk.ComputeHash()
-
-	if k.guard.hasProposed {
-		if blk.Header.Height < k.guard.lastBlockHeight {
-			return fmt.Errorf("%w: block height %d < last proposed height %d", ErrStaleVote, blk.Header.Height, k.guard.lastBlockHeight)
+	return k.guard.signBlockWithFn(blk, func(payload []byte) ([]byte, error) {
+		sig, err := k.signFn(payload)
+		if err != nil {
+			return nil, fmt.Errorf("remote kms sign block: %w", err)
 		}
-		if blk.Header.Height == k.guard.lastBlockHeight && k.guard.lastBlockHash != [crypto.HashSize]byte{} && k.guard.lastBlockHash != computedHash {
-			return fmt.Errorf("%w: conflicting block hash at height %d", ErrDuplicateBlockProposal, blk.Header.Height)
-		}
-	}
-
-	sig, err := k.signFn(blk.Header.Encode())
-	if err != nil {
-		return fmt.Errorf("remote kms sign block: %w", err)
-	}
-	blk.Signature = sig
-	blk.Hash = computedHash
-
-	k.guard.lastBlockHeight = blk.Header.Height
-	k.guard.lastBlockHash = computedHash
-	k.guard.hasProposed = true
-	return nil
+		return sig, nil
+	})
 }

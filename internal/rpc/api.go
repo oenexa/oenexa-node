@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/oenexa/oenexa/internal/consensus"
@@ -183,14 +184,17 @@ func (a *API) recentBlocks(req *Request) *Response {
 		return okResponse(req.ID, blocks)
 	}
 	start := height - 1
-	var end uint64 = 0
-	if start >= count {
-		end = start - count + 1
+	var end uint64
+	if start >= count-1 {
+		end = start - (count - 1)
 	}
-	for h := int64(start); h >= int64(end); h-- {
-		blk := a.engine.BlockByHeight(uint64(h))
+	for h := start; ; h-- {
+		blk := a.engine.BlockByHeight(h)
 		if blk != nil {
 			blocks = append(blocks, blockToInfo(blk))
+		}
+		if h == end || h == 0 {
+			break
 		}
 	}
 	return okResponse(req.ID, blocks)
@@ -206,6 +210,9 @@ func (a *API) blockByHeight(req *Request) *Response {
 		if err := json.Unmarshal(req.Params, &rawParams); err == nil && len(rawParams) > 0 {
 			switch v := rawParams[0].(type) {
 			case float64:
+				if math.IsNaN(v) || math.IsInf(v, 0) || v < 0 || v >= float64(math.MaxUint64) {
+					return errResponse(req.ID, CodeInvalidParams, "height out of uint64 range")
+				}
 				height = uint64(v)
 			case string:
 				if len(v) >= 2 && (v[:2] == "0x" || v[:2] == "0X") {
@@ -461,29 +468,31 @@ func (a *API) call(req *Request) *Response {
 
 	if args.From != "" {
 		addr, err := crypto.HexToAddress(args.From)
-		if err == nil {
-			tx.From = addr
+		if err != nil {
+			return errResponse(req.ID, CodeInvalidParams, "invalid from address: "+err.Error())
 		}
+		tx.From = addr
 	}
 	if args.To != "" {
 		addr, err := crypto.HexToAddress(args.To)
-		if err == nil {
-			tx.To = addr
+		if err != nil {
+			return errResponse(req.ID, CodeInvalidParams, "invalid to address: "+err.Error())
 		}
+		tx.To = addr
 	}
 	if args.Value != "" {
 		valStr := args.Value
+		var v uint64
+		var err error
 		if len(valStr) >= 2 && (valStr[:2] == "0x" || valStr[:2] == "0X") {
-			v, err := strconv.ParseUint(valStr[2:], 16, 64)
-			if err == nil {
-				tx.Amount = v
-			}
+			v, err = strconv.ParseUint(valStr[2:], 16, 64)
 		} else {
-			v, err := strconv.ParseUint(valStr, 10, 64)
-			if err == nil {
-				tx.Amount = v
-			}
+			v, err = strconv.ParseUint(valStr, 10, 64)
 		}
+		if err != nil {
+			return errResponse(req.ID, CodeInvalidParams, "invalid call value: "+err.Error())
+		}
+		tx.Amount = v
 	}
 	if args.Data != "" {
 		dataStr := args.Data
@@ -491,9 +500,10 @@ func (a *API) call(req *Request) *Response {
 			dataStr = dataStr[2:]
 		}
 		data, err := hex.DecodeString(dataStr)
-		if err == nil {
-			tx.Data = data
+		if err != nil {
+			return errResponse(req.ID, CodeInvalidParams, "invalid call data hex: "+err.Error())
 		}
+		tx.Data = data
 	}
 
 	// Create a snapshot to ensure the read-only call does not mutate the node state
@@ -502,6 +512,9 @@ func (a *API) call(req *Request) *Response {
 	res, err := state.ApplyTransaction(snap, tx, 10_000_000, a.execVM, 0)
 	if err != nil {
 		return errResponse(req.ID, CodeInternalError, fmt.Sprintf("execution reverted: %v", err))
+	}
+	if !res.Success || res.Error != nil {
+		return errResponse(req.ID, CodeInternalError, fmt.Sprintf("execution reverted: %v", res.Error))
 	}
 
 	return okResponse(req.ID, "0x"+hex.EncodeToString(res.ReturnData))
@@ -525,6 +538,9 @@ func (a *API) getTransactionReceipt(req *Request) *Response {
 	height := a.engine.Height()
 	for h := uint64(0); h < height; h++ {
 		blk := a.engine.BlockByHeight(h)
+		if blk == nil {
+			continue
+		}
 		for i, tx := range blk.Txs {
 			if tx.Hash == hash {
 				return okResponse(req.ID, &TxReceipt{
@@ -562,6 +578,9 @@ func (a *API) getTransactionByHash(req *Request) *Response {
 	height := a.engine.Height()
 	for h := uint64(0); h < height; h++ {
 		blk := a.engine.BlockByHeight(h)
+		if blk == nil {
+			continue
+		}
 		for _, tx := range blk.Txs {
 			if tx.Hash == hash {
 				return okResponse(req.ID, &TxInfo{

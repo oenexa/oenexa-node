@@ -81,9 +81,9 @@ func TestEncrypt_ExtendedErrors(t *testing.T) {
 
 	// Also explicitly call the original var functions so they show up as covered
 	f, _ := os.CreateTemp(tmp, "cov")
-	origFileWrite(f, []byte("test"))
-	origFileClose(f)
-	origRemove(f.Name())
+	_, _ = origFileWrite(f, []byte("test"))
+	_ = origFileClose(f)
+	_ = origRemove(f.Name())
 
 	// aesgcmSealFunc fails
 	aesgcmSealFunc = func(key, nonce, plaintext []byte) ([]byte, error) { return nil, errors.New("err") }

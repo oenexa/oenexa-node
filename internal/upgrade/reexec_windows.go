@@ -10,6 +10,7 @@ import (
 // reExec on Windows spawns a new process and lets the current one exit.
 // syscall.Exec is not available on Windows; os/exec is used instead.
 func reExec(exePath string, args []string) error {
+	// #nosec G204,G702 -- exePath is resolved from os.Executable() during self-upgrade with original process args
 	cmd := exec.Command(exePath, args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

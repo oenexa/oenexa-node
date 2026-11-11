@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -600,6 +601,10 @@ type rpcResp struct {
 
 // rpcCall sends a JSON-RPC 2.0 request and returns the decoded Result.
 func rpcCall(endpoint, method string, params interface{}) (map[string]interface{}, error) {
+	u, err := url.ParseRequestURI(endpoint)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return nil, fmt.Errorf("invalid RPC endpoint %q", endpoint)
+	}
 	body, err := json.Marshal(rpcReq{
 		JSONRPC: "2.0",
 		ID:      1,
@@ -610,7 +615,9 @@ func rpcCall(endpoint, method string, params interface{}) (map[string]interface{
 		return nil, err
 	}
 
-	httpResp, err := http.Post(endpoint, "application/json", bytes.NewReader(body)) //nolint:noctx
+	client := &http.Client{Timeout: 15 * time.Second}
+	// #nosec G107 -- CLI operator-specified RPC endpoint validated for http/https scheme
+	httpResp, err := client.Post(u.String(), "application/json", bytes.NewReader(body)) //nolint:noctx
 	if err != nil {
 		return nil, fmt.Errorf("connect to %s: %w", endpoint, err)
 	}

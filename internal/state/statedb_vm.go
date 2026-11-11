@@ -1,9 +1,12 @@
 package state
 
 import (
+	"encoding/binary"
 	"errors"
+	"math/bits"
 
 	"github.com/oenexa/oenexa/internal/crypto"
+	"github.com/oenexa/oenexa/internal/mpt"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -15,47 +18,33 @@ import (
 func (s *DB) GetStorage(addr [crypto.AddressSize]byte, slot uint32) uint64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	// 1. Dirty cache hit
 	if slots, ok := s.dirtyStorage[addr]; ok {
 		if val, ok := slots[slot]; ok {
 			return val
 		}
 	}
-	
+
 	// 2. Persistent trie lookup
-	slotBytes := make([]byte, 4)
-	importBinary := true // hack to bypass lack of import
-	if importBinary {
-		// Just to safely parse it without breaking imports
-		_ = importBinary
-	}
-	// Note: We use shift operations to avoid adding binary import here, or we can just import it.
-	// Wait, we can't import binary if it's not there. We'll let the user add the import or we'll do it cleanly.
-	slotBytes[0] = byte(slot >> 24)
-	slotBytes[1] = byte(slot >> 16)
-	slotBytes[2] = byte(slot >> 8)
-	slotBytes[3] = byte(slot)
-	
-	storageKey := crypto.HashMany(addr[:], slotBytes)
+	var slotBytes [4]byte
+	binary.BigEndian.PutUint32(slotBytes[:], slot)
+
+	storageKey := crypto.HashMany(addr[:], slotBytes[:])
 	valHash, err := s.trie.Get(storageKey)
 	if err != nil || valHash == crypto.ZeroHash {
 		return 0
 	}
-	
+
 	// Decode 64-bit big-endian from the last 8 bytes of valHash
-	var val uint64
-	for i := 24; i < 32; i++ {
-		val = (val << 8) | uint64(valHash[i])
-	}
-	return val
+	return binary.BigEndian.Uint64(valHash[24:32])
 }
 
 // SetStorage sets a 64-bit value in a contract's storage slot.
 func (s *DB) SetStorage(addr [crypto.AddressSize]byte, slot uint32, value uint64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	slots, ok := s.dirtyStorage[addr]
 	if !ok {
 		slots = make(map[uint32]uint64)
@@ -64,22 +53,46 @@ func (s *DB) SetStorage(addr [crypto.AddressSize]byte, slot uint32, value uint64
 	slots[slot] = value
 }
 
+func (s *DB) loadAccountLocked(addr [crypto.AddressSize]byte) *Account {
+	if a, ok := s.dirty[addr]; ok {
+		return a.Clone()
+	}
+	valHash, err := s.trie.Get(addr)
+	if err != nil || valHash == mpt.ZeroHashOf() {
+		return &Account{}
+	}
+	backend := s.trie.BackendRef()
+	if backend != nil {
+		flatKey := append([]byte("acct:"), valHash[:]...)
+		if data, err := backend.Get(flatKey); err == nil && len(data) > 0 {
+			return DeserializeAccount(data)
+		}
+	}
+	return &Account{}
+}
 
-
-// Transfer moves ONXC between two accounts synchronously during VM execution.
+// Transfer moves ONXC between two accounts atomically during VM execution.
 func (s *DB) Transfer(from, to [crypto.AddressSize]byte, amount uint64) error {
-	// Note: GetAccount uses its own RWMutex internally.
-	sender := s.GetAccount(from)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	sender := s.loadAccountLocked(from)
 	if sender.Balance < amount {
 		return errors.New("insufficient balance for transfer")
 	}
-	
-	receiver := s.GetAccount(to)
+	if from == to {
+		return nil
+	}
+
+	receiver := s.loadAccountLocked(to)
+	newBal, carry := bits.Add64(receiver.Balance, amount, 0)
+	if carry != 0 {
+		return errors.New("integer overflow in receiver balance")
+	}
 	sender.Balance -= amount
-	receiver.Balance += amount
-	
-	// SetAccount uses its own Lock internally.
-	s.SetAccount(from, sender)
-	s.SetAccount(to, receiver)
+	receiver.Balance = newBal
+
+	s.dirty[from] = sender
+	s.dirty[to] = receiver
 	return nil
 }

@@ -60,6 +60,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/bits"
 	"sync"
 	"time"
 
@@ -256,6 +257,9 @@ func (e *Engine) produceBlock(ctx context.Context) error {
 
 // ProcessProposal receives a block proposal from the network.
 func (e *Engine) ProcessProposal(blk *core.Block) error {
+	if blk == nil {
+		return fmt.Errorf("nil block proposal")
+	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -285,9 +289,15 @@ func (e *Engine) ProcessProposal(blk *core.Block) error {
 		return fmt.Errorf("block timestamp %d not after parent timestamp %d", blk.Header.Timestamp, prev.Header.Timestamp)
 	}
 
-	// 3. Merkle root validation of transactions
+	// 3. Transaction validation & Merkle root verification
 	txHashes := make([][crypto.HashSize]byte, len(blk.Txs))
 	for i, tx := range blk.Txs {
+		if tx == nil {
+			return fmt.Errorf("nil transaction at index %d", i)
+		}
+		if err := tx.BasicValidate(); err != nil {
+			return fmt.Errorf("invalid transaction at index %d (%s): %w", i, crypto.ToHex(tx.Hash), err)
+		}
 		txHashes[i] = tx.Hash
 	}
 	expectedMerkle := core.ComputeMerkleRoot(txHashes)
@@ -319,13 +329,24 @@ func (e *Engine) ProcessProposal(blk *core.Block) error {
 	if totalBurned != blk.Header.BurnedFees {
 		return fmt.Errorf("burned fees mismatch: header has %d, computed %d", blk.Header.BurnedFees, totalBurned)
 	}
+	expectedBaseFee := core.NextBaseFee(baseFee, totalGas)
+	if blk.Header.BaseFee != expectedBaseFee {
+		return fmt.Errorf("base fee mismatch: header has %d, expected %d", blk.Header.BaseFee, expectedBaseFee)
+	}
 
-	// Credit validator: tip + block subsidy
+	// Credit validator: tip + block subsidy (overflow-checked)
 	reward := core.BlockReward(height)
-	income := totalTip + reward
+	income, carry := bits.Add64(totalTip, reward, 0)
+	if carry != 0 {
+		return fmt.Errorf("validator income overflow")
+	}
 	if income > 0 {
 		valAcc := snap.GetAccount(proposer.Address)
-		valAcc.Balance += income
+		newBal, c2 := bits.Add64(valAcc.Balance, income, 0)
+		if c2 != 0 {
+			return fmt.Errorf("validator balance overflow")
+		}
+		valAcc.Balance = newBal
 		snap.SetAccount(proposer.Address, valAcc)
 	}
 
@@ -480,15 +501,18 @@ func (e *Engine) checkPrecommitQuorumLocked(height uint64, hash [crypto.HashSize
 		voters = append(voters, vote.Voter)
 	}
 	if e.validatorSet.HasQuorum(voters) {
+		if e.proposal == nil || e.proposal.Hash != hash {
+			return
+		}
 		e.step = StepCommit
 		log.Printf("[consensus] Quorum reached for block %d. Committing.", height)
-		
+
 		stateToCommit := e.proposalState
-		if stateToCommit == nil && e.proposal != nil {
+		if stateToCommit == nil {
 			_, stateToCommit, _ = e.buildBlock(height)
 		}
 
-		if e.proposal != nil && stateToCommit != nil {
+		if stateToCommit != nil {
 			_ = commitFunc(e, e.proposal, stateToCommit)
 		}
 		
@@ -515,8 +539,10 @@ func (e *Engine) buildBlock(height uint64) (*core.Block, *state.DB, error) {
 	var totalGas, totalBurned, totalTip uint64
 
 	for _, tx := range pending {
+		txSnap := snap.Snapshot()
 		result, err := applyTxFunc(snap, tx, core.BlockGasLimit-totalGas, e.execVM, baseFee)
 		if err != nil || (result != nil && !result.Success && tx.Type != core.TxCall) {
+			snap.Apply(txSnap)
 			var rErr error
 			if result != nil {
 				rErr = result.Error
@@ -535,10 +561,17 @@ func (e *Engine) buildBlock(height uint64) (*core.Block, *state.DB, error) {
 
 	// ── Credit validator: tip + block subsidy (NOT burned fees) ─────────────
 	reward := core.BlockReward(height)
-	income := totalTip + reward
+	income, carry := bits.Add64(totalTip, reward, 0)
+	if carry != 0 {
+		return nil, nil, fmt.Errorf("validator income overflow")
+	}
 	if income > 0 {
 		validator := snap.GetAccount(e.validatorAddr)
-		validator.Balance += income
+		newBal, c2 := bits.Add64(validator.Balance, income, 0)
+		if c2 != 0 {
+			return nil, nil, fmt.Errorf("validator balance overflow")
+		}
+		validator.Balance = newBal
 		snap.SetAccount(e.validatorAddr, validator)
 	}
 

@@ -171,7 +171,13 @@ func TestState_ApplyTransaction_ExecVM(t *testing.T) {
 		Nonce:    4,
 		Data:     []byte{5, 'f'},
 	}
-	ApplyTransaction(st, txCallShort, 300000, v, 10)
+	res, err = ApplyTransaction(st, txCallShort, 300000, v, 10)
+	if err != nil {
+		t.Fatalf("unexpected protocol error: %v", err)
+	}
+	if res.Error == nil {
+		t.Fatal("expected execution error for short call data")
+	}
 
 	// 4. Deploy with real VM, minimal valid wasm
 	validWasm := []byte{0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00}
@@ -293,12 +299,9 @@ func TestState_ApplyTransaction_CallInsufficientBalanceForValue(t *testing.T) {
 		Nonce:    1,
 		Amount:   amount,
 	}
-	res, err := ApplyTransaction(st, tx, 200000, nil, 10)
-	if err != nil {
-		t.Fatalf("unexpected pre-check error: %v", err)
-	}
-	if res.Error == nil || res.Error.Error() != "insufficient balance for call value" {
-		t.Errorf("expected insufficient balance for value, got %v", res.Error)
+	_, err := ApplyTransaction(st, tx, 200000, nil, 10)
+	if err == nil || err.Error() != "integer overflow in required balance" {
+		t.Fatalf("expected integer overflow in required balance, got %v", err)
 	}
 }
 
@@ -322,12 +325,9 @@ func TestState_ApplyTransaction_TransferInsufficientBalanceForValue(t *testing.T
 		Nonce:    1,
 		Amount:   amount,
 	}
-	res, err := ApplyTransaction(st, tx, 200000, nil, 10)
-	if err != nil {
-		t.Fatalf("unexpected pre-check error: %v", err)
-	}
-	if res.Error == nil || res.Error.Error() != "insufficient balance for transfer" {
-		t.Errorf("expected insufficient balance for transfer, got %v", res.Error)
+	_, err := ApplyTransaction(st, tx, 200000, nil, 10)
+	if err == nil || err.Error() != "integer overflow in required balance" {
+		t.Fatalf("expected integer overflow in required balance, got %v", err)
 	}
 }
 
@@ -388,10 +388,10 @@ func TestState_ApplyBlock_EmptyTxs(t *testing.T) {
 
 	// will fail pre-check due to nonce
 	badTx := core.NewTransfer(alice, alice, w.PublicKey, 999, 0, 10)
-	badTx.Sign(w.PrivateKey)
+	_ = badTx.Sign(w.PrivateKey)
 
 	goodTx := core.NewTransfer(alice, alice, w.PublicKey, 1, 0, 10)
-	goodTx.Sign(w.PrivateKey)
+	_ = goodTx.Sign(w.PrivateKey)
 
 	blk2, err := core.NewBlock(2, [32]byte{}, [32]byte{}, time.Now().UnixNano(), valAddr, []*core.Transaction{badTx, goodTx}, 0, 10, 0)
 	if err != nil {

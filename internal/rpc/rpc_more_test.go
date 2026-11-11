@@ -58,7 +58,7 @@ func TestRPCServer_HTTPError(t *testing.T) {
 		t.Errorf("expected 200, got %d", resp2.StatusCode) // rpc server returns 200 with error JSON
 	}
 	var out map[string]interface{}
-	json.NewDecoder(resp2.Body).Decode(&out)
+	_ = json.NewDecoder(resp2.Body).Decode(&out)
 	if out["error"] == nil {
 		t.Errorf("expected error for bad JSON")
 	}
@@ -103,7 +103,7 @@ func TestRPCServer_RecentBlocks(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&out)
+	_ = json.NewDecoder(resp.Body).Decode(&out)
 	if out["error"] != nil {
 		t.Fatalf("unexpected error: %v", out["error"])
 	}
@@ -125,7 +125,7 @@ func TestRPCServer_Batch(t *testing.T) {
 	body, _ := json.Marshal(req)
 	resp, _ := http.Post(ts.URL, "application/json", bytes.NewReader(body))
 	var out []map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&out)
+	_ = json.NewDecoder(resp.Body).Decode(&out)
 	if len(out) != 2 {
 		t.Errorf("expected 2 responses, got %d", len(out))
 	}
@@ -138,7 +138,7 @@ func TestRPCServer_Batch_Misc(t *testing.T) {
 	body, _ := json.Marshal(req)
 	resp, _ := http.Post(ts.URL, "application/json", bytes.NewReader(body))
 	var out map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&out)
+	_ = json.NewDecoder(resp.Body).Decode(&out)
 	if out["error"] == nil {
 		t.Errorf("expected error for empty batch")
 	}
@@ -147,7 +147,7 @@ func TestRPCServer_Batch_Misc(t *testing.T) {
 	body2 := []byte(`[123, {"jsonrpc": "2.0", "id": 2, "method": "onxc_unknown"}]`)
 	resp2, _ := http.Post(ts.URL, "application/json", bytes.NewReader(body2))
 	var out2 []map[string]interface{}
-	json.NewDecoder(resp2.Body).Decode(&out2)
+	_ = json.NewDecoder(resp2.Body).Decode(&out2)
 	if len(out2) != 2 || out2[0]["error"] == nil || out2[1]["error"] == nil {
 		t.Errorf("expected error for invalid inner request")
 	}
@@ -156,7 +156,7 @@ func TestRPCServer_Batch_Misc(t *testing.T) {
 	body3 := []byte(`[bad json`)
 	resp3, _ := http.Post(ts.URL, "application/json", bytes.NewReader(body3))
 	var out3 map[string]interface{}
-	json.NewDecoder(resp3.Body).Decode(&out3)
+	_ = json.NewDecoder(resp3.Body).Decode(&out3)
 	if out3["error"] == nil {
 		t.Errorf("expected error for bad batch json")
 	}
@@ -244,7 +244,7 @@ func TestRPCServer_InvalidJSONRPC2(t *testing.T) {
 	body, _ := json.Marshal(req)
 	resp, _ := http.Post(ts.URL, "application/json", bytes.NewReader(body))
 	var out map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&out)
+	_ = json.NewDecoder(resp.Body).Decode(&out)
 	if out["error"] == nil {
 		t.Errorf("expected error for missing JSONRPC 2.0")
 	}
@@ -252,7 +252,7 @@ func TestRPCServer_InvalidJSONRPC2(t *testing.T) {
 	// Test empty body
 	resp2, _ := http.Post(ts.URL, "application/json", bytes.NewReader([]byte("   \n ")))
 	var out2 map[string]interface{}
-	json.NewDecoder(resp2.Body).Decode(&out2)
+	_ = json.NewDecoder(resp2.Body).Decode(&out2)
 	if out2["error"] == nil {
 		t.Errorf("expected error for empty body")
 	}
@@ -303,7 +303,9 @@ func TestRPC_BlockByHeight_BadParams(t *testing.T) {
 func TestRPC_SendRawTransaction_Success(t *testing.T) {
 	ts, w := buildTestHandler(t)
 	tx := core.NewTransfer(w.Address, w.Address, w.PublicKey, 1, 100, core.MinGasPrice)
-	tx.Sign(w.PrivateKey)
+	if err := tx.Sign(w.PrivateKey); err != nil {
+		t.Fatal(err)
+	}
 	raw, _ := rpc.GobEncodeTx(tx)
 
 	resp := rpcCallErr(t, ts, "onxc_sendRawTransaction", []string{hex.EncodeToString(raw)})

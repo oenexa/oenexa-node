@@ -9,7 +9,9 @@ import (
 func TestCore_TransactionBasicValidate(t *testing.T) {
 	w, _ := crypto.NewWallet()
 	tx := NewTransfer(w.Address, w.Address, w.PublicKey, 1, 10, MinGasPrice)
-	tx.Sign(w.PrivateKey)
+	if err := tx.Sign(w.PrivateKey); err != nil {
+		t.Fatalf("tx.Sign: %v", err)
+	}
 
 	if err := tx.BasicValidate(); err != nil {
 		t.Fatalf("expected valid tx, got %v", err)

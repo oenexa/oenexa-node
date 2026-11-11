@@ -1,7 +1,9 @@
 package state
 
 import (
+	"errors"
 	"fmt"
+	"math/bits"
 	"sync"
 	"sync/atomic"
 
@@ -14,114 +16,129 @@ import (
 // overlapping accounts. This significantly increases transaction throughput (TPS)
 // on multi-core hardware, moving OENEXA towards the 100,000+ TPS target.
 //
-// BurnedFees are implicitly removed from supply (deflationary).
+// Execution runs against an atomic snapshot so failed blocks never leave partial
+// state mutations behind. BurnedFees are removed from supply (deflationary).
 func ApplyBlockParallel(
 	st *DB,
 	blk *core.Block,
 	validatorAddr [crypto.AddressSize]byte,
 	execVM *vm.VM,
 ) (*BlockResult, error) {
+	if st == nil || blk == nil {
+		return nil, errors.New("state or block is nil")
+	}
 
+	snap := st.Snapshot()
 	baseFee := blk.Header.BaseFee
-	var remainingGas int64 = int64(core.BlockGasLimit)
-	
+	var gasMu sync.Mutex
+	remainingGas := core.BlockGasLimit
+
 	result := &BlockResult{
 		TxResults: make([]*TxResult, len(blk.Txs)),
 	}
 
 	// ── Phase 1: Static Dependency Analysis ───────────────────────────────────
-	// We group transactions into sequential "layers". All transactions in a
-	// layer are guaranteed to touch strictly disjoint addresses and can thus
-	// be executed entirely in parallel.
-	
-	type Layer [][]*core.Transaction
-	var layers [][]int // stores indices of blk.Txs
-	
+	// Group transactions into sequential layers of strictly disjoint sender/recipient pairs.
+	var layers [][]int
+
 	for i, tx := range blk.Txs {
+		if tx == nil {
+			return nil, fmt.Errorf("nil transaction at index %d", i)
+		}
+		// Contract deploys/calls and shielded pool txs can mutate global or arbitrary state
+		// (or trigger snapshot rollback on revert), so isolate them in exclusive layers.
+		isStatefulBarrier := tx.Type == core.TxDeploy || tx.Type == core.TxCall ||
+			tx.Type == core.TxShield || tx.Type == core.TxUnshield || tx.Type == core.TxShieldedTransfer
+		if isStatefulBarrier {
+			layers = append(layers, []int{i})
+			continue
+		}
+
 		sender := tx.From
 		recipient := tx.To
-		
-		// Find the earliest layer where this tx does not conflict with existing txs
+
 		placed := false
 		for layerIdx, layer := range layers {
 			conflict := false
 			for _, prevIdx := range layer {
 				prevTx := blk.Txs[prevIdx]
+				if prevTx.Type == core.TxDeploy || prevTx.Type == core.TxCall ||
+					prevTx.Type == core.TxShield || prevTx.Type == core.TxUnshield || prevTx.Type == core.TxShieldedTransfer {
+					conflict = true
+					break
+				}
 				pSender := prevTx.From
-				
-				// Conflict: they share a sender, recipient, or cross-touch.
-				// (0x0 addresses like contract creation also count as conflicts for safety)
+
 				if sender == pSender || sender == prevTx.To ||
-				   recipient == pSender || recipient == prevTx.To {
+					recipient == pSender || recipient == prevTx.To {
 					conflict = true
 					break
 				}
 			}
-			
+
 			if !conflict {
 				layers[layerIdx] = append(layers[layerIdx], i)
 				placed = true
 				break
 			}
 		}
-		
+
 		if !placed {
-			// Create a new layer
 			layers = append(layers, []int{i})
 		}
 	}
 
 	// ── Phase 2: Parallel Execution ──────────────────────────────────────────
-	
 	var gasUsed, feeCollected, burnedFees, validatorTip uint64
 	var globalErr atomic.Value
-	
+
 	for _, layer := range layers {
 		var wg sync.WaitGroup
-		
-		// We execute the layer in parallel.
+
 		for _, txIdx := range layer {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
-				
+
 				tx := blk.Txs[idx]
-				
-				// Deduct max gas conservatively before execution to prevent race condition on block limit
-				maxGas := int64(tx.GasLimit)
-				if atomic.AddInt64(&remainingGas, -maxGas) < 0 {
-					// Revert the deduction if we blew the limit (unlikely since mempool checks this)
-					atomic.AddInt64(&remainingGas, maxGas)
+
+				// Reserve tx.GasLimit atomically using checked uint64 arithmetic.
+				gasMu.Lock()
+				if tx.GasLimit > remainingGas {
+					gasMu.Unlock()
 					globalErr.Store(fmt.Errorf("block gas limit exceeded"))
 					return
 				}
-				
-				// Check if another goroutine failed
+				remainingGas -= tx.GasLimit
+				gasMu.Unlock()
+
 				if globalErr.Load() != nil {
 					return
 				}
-				
-				txRes, err := ApplyTransaction(st, tx, uint64(maxGas), execVM, baseFee)
+
+				txRes, err := ApplyTransaction(snap, tx, tx.GasLimit, execVM, baseFee)
 				if err != nil {
 					globalErr.Store(fmt.Errorf("tx %s failed: %w", crypto.ToHex(tx.Hash), err))
 					return
 				}
-				
-				// Refund unused gas to the remaining pool
-				atomic.AddInt64(&remainingGas, maxGas - int64(txRes.GasUsed))
-				
-				// Safely accumulate stats
+
+				if txRes.GasUsed < tx.GasLimit {
+					gasMu.Lock()
+					remainingGas += tx.GasLimit - txRes.GasUsed
+					gasMu.Unlock()
+				}
+
 				atomic.AddUint64(&gasUsed, txRes.GasUsed)
 				atomic.AddUint64(&feeCollected, txRes.FeeCollected)
 				atomic.AddUint64(&burnedFees, txRes.BurnedFee)
 				atomic.AddUint64(&validatorTip, txRes.ValidatorTip)
-				
+
 				result.TxResults[idx] = txRes
 			}(txIdx)
 		}
-		
+
 		wg.Wait()
-		
+
 		if errVal := globalErr.Load(); errVal != nil {
 			return nil, errVal.(error)
 		}
@@ -136,13 +153,21 @@ func ApplyBlockParallel(
 	reward := core.BlockReward(blk.Header.Height)
 	result.BlockReward = reward
 
-	income := result.ValidatorTip + reward
+	income, carry := bits.Add64(result.ValidatorTip, reward, 0)
+	if carry != 0 {
+		return nil, errors.New("validator income overflow")
+	}
 	if income > 0 {
-		validator := st.GetAccount(validatorAddr)
-		validator.Balance += income
-		st.SetAccount(validatorAddr, validator)
+		validator := snap.GetAccount(validatorAddr)
+		newBal, c2 := bits.Add64(validator.Balance, income, 0)
+		if c2 != 0 {
+			return nil, errors.New("validator balance overflow")
+		}
+		validator.Balance = newBal
+		snap.SetAccount(validatorAddr, validator)
 	}
 
+	st.Apply(snap)
 	result.ShieldedBalance = st.GetShieldedBalance()
 	return result, nil
 }

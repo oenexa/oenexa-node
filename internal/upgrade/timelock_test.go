@@ -105,8 +105,8 @@ func TestScheduler_EmergencySecurityVeto(t *testing.T) {
 
 	// Attempting to propose the vetoed version again must be rejected!
 	ok, err = scheduler.AddProposal(p)
-	if err == nil {
-		t.Fatalf("expected vetoed proposal rejection")
+	if err == nil || ok {
+		t.Fatalf("expected vetoed proposal rejection, got ok=%v err=%v", ok, err)
 	}
 	if !errors.Is(err, upgrade.ErrProposalVetoed) {
 		t.Fatalf("expected ErrProposalVetoed, got %v", err)

@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
+	"math/bits"
 	"net/http"
 	"strconv"
 	"strings"
@@ -200,7 +202,7 @@ func (h *Handler) handleNetworkStatus(w http.ResponseWriter, r *http.Request) {
 	var curTimestamp int64
 
 	if currentBlk != nil {
-		curIndex = int64(currentBlk.Header.Height)
+		curIndex = safeHeightToInt64(currentBlk.Header.Height)
 		curHash = crypto.ToHex(currentBlk.Hash)
 		curTimestamp = currentBlk.Header.Timestamp / 1e6 // convert ns to ms
 	}
@@ -208,7 +210,7 @@ func (h *Handler) handleNetworkStatus(w http.ResponseWriter, r *http.Request) {
 	var genIndex int64
 	var genHash string
 	if genesisBlk != nil {
-		genIndex = int64(genesisBlk.Header.Height)
+		genIndex = safeHeightToInt64(genesisBlk.Header.Height)
 		genHash = crypto.ToHex(genesisBlk.Hash)
 	}
 
@@ -291,7 +293,7 @@ func (h *Handler) handleAccountBalance(w http.ResponseWriter, r *http.Request) {
 	if height > 0 {
 		if blk := h.engine.BlockByHeight(height - 1); blk != nil {
 			curHash = crypto.ToHex(blk.Hash)
-			curHeight = int64(blk.Header.Height)
+			curHeight = safeHeightToInt64(blk.Header.Height)
 		}
 	}
 
@@ -330,6 +332,10 @@ func (h *Handler) handleBlock(w http.ResponseWriter, r *http.Request) {
 
 	var targetBlock *core.Block
 	if req.BlockIdentifier.Index != nil {
+		if *req.BlockIdentifier.Index < 0 {
+			h.writeError(w, ErrInvalidPayload)
+			return
+		}
 		targetBlock = h.engine.BlockByHeight(uint64(*req.BlockIdentifier.Index))
 	} else if req.BlockIdentifier.Hash != nil {
 		hash, err := crypto.HexToHash(*req.BlockIdentifier.Hash)
@@ -346,7 +352,7 @@ func (h *Handler) handleBlock(w http.ResponseWriter, r *http.Request) {
 	var parentHash string
 	var parentIndex int64
 	if targetBlock.Header.Height > 0 {
-		parentIndex = int64(targetBlock.Header.Height - 1)
+		parentIndex = safeHeightToInt64(targetBlock.Header.Height - 1)
 		parentHash = crypto.ToHex(targetBlock.Header.PrevHash)
 	} else {
 		parentIndex = 0
@@ -362,7 +368,7 @@ func (h *Handler) handleBlock(w http.ResponseWriter, r *http.Request) {
 	resp := &BlockResponse{
 		Block: &Block{
 			BlockIdentifier: BlockIdentifier{
-				Index: int64(targetBlock.Header.Height),
+				Index: safeHeightToInt64(targetBlock.Header.Height),
 				Hash:  crypto.ToHex(targetBlock.Hash),
 			},
 			ParentBlockIdentifier: BlockIdentifier{
@@ -384,6 +390,10 @@ func (h *Handler) handleBlockTransaction(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if req.BlockIdentifier.Index < 0 {
+		h.writeError(w, ErrInvalidPayload)
+		return
+	}
 	targetBlock := h.engine.BlockByHeight(uint64(req.BlockIdentifier.Index))
 	if targetBlock == nil {
 		h.writeError(w, ErrBlockNotFound)
@@ -555,27 +565,51 @@ func (h *Handler) handleConstructionPayloads(w http.ResponseWriter, r *http.Requ
 			continue
 		}
 		if strings.HasPrefix(op.Amount.Value, "-") {
-			addr, _ := crypto.HexToAddress(op.Account.Address)
+			addr, err := crypto.HexToAddress(op.Account.Address)
+			if err != nil {
+				h.writeError(w, ErrInvalidAccount)
+				return
+			}
 			fromAddr = addr
 		} else {
-			addr, _ := crypto.HexToAddress(op.Account.Address)
+			addr, err := crypto.HexToAddress(op.Account.Address)
+			if err != nil {
+				h.writeError(w, ErrInvalidAccount)
+				return
+			}
 			toAddr = addr
-			v, _ := strconv.ParseUint(op.Amount.Value, 10, 64)
+			v, err := strconv.ParseUint(op.Amount.Value, 10, 64)
+			if err != nil {
+				h.writeError(w, ErrInvalidPayload)
+				return
+			}
 			amount = v
 		}
 	}
 
 	var nonce, gasPrice uint64 = 0, core.MinGasPrice
 	if n, ok := req.Metadata["nonce"].(float64); ok {
+		if math.IsNaN(n) || math.IsInf(n, 0) || n < 0 || n >= float64(math.MaxUint64) {
+			h.writeError(w, ErrInvalidPayload)
+			return
+		}
 		nonce = uint64(n)
 	}
 	if gp, ok := req.Metadata["gas_price"].(float64); ok {
+		if math.IsNaN(gp) || math.IsInf(gp, 0) || gp < 0 || gp >= float64(math.MaxUint64) {
+			h.writeError(w, ErrInvalidPayload)
+			return
+		}
 		gasPrice = uint64(gp)
 	}
 
 	var pubBytes []byte
 	if pkStr, ok := req.Metadata["public_key"].(string); ok {
-		decoded, _ := hex.DecodeString(strings.TrimPrefix(pkStr, "0x"))
+		decoded, err := hex.DecodeString(strings.TrimPrefix(pkStr, "0x"))
+		if err != nil {
+			h.writeError(w, ErrInvalidPayload)
+			return
+		}
 		pubBytes = decoded
 	}
 	if len(pubBytes) != crypto.PublicKeySize {
@@ -586,11 +620,18 @@ func (h *Handler) handleConstructionPayloads(w http.ResponseWriter, r *http.Requ
 
 	tx := core.NewTransfer(fromAddr, toAddr, pubBytes, nonce, amount, gasPrice)
 	if ts, ok := req.Metadata["timestamp"].(float64); ok {
+		if math.IsNaN(ts) || math.IsInf(ts, 0) || ts < 0 || ts >= float64(math.MaxInt64) {
+			h.writeError(w, ErrInvalidPayload)
+			return
+		}
 		tx.Timestamp = int64(ts)
 	}
 
 	var buf bytes.Buffer
-	_ = gob.NewEncoder(&buf).Encode(tx)
+	if err := gob.NewEncoder(&buf).Encode(tx); err != nil {
+		h.writeError(w, ErrInternal)
+		return
+	}
 	unsignedTxHex := hex.EncodeToString(buf.Bytes())
 
 	payloadHex := hex.EncodeToString(tx.SigningPayload())
@@ -628,19 +669,32 @@ func (h *Handler) handleConstructionCombine(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if len(req.Signatures) > 0 {
-		sigBytes, _ := hex.DecodeString(strings.TrimPrefix(req.Signatures[0].HexBytes, "0x"))
-		pubBytes, _ := hex.DecodeString(strings.TrimPrefix(req.Signatures[0].PublicKey.HexBytes, "0x"))
-		if len(pubBytes) == crypto.PublicKeySize {
-			tx.PublicKey = pubBytes
-			tx.From = crypto.DeriveAddress(pubBytes)
-		}
-		tx.Signature = sigBytes
-		tx.Hash = tx.ComputeHash()
+	if len(req.Signatures) == 0 || req.Signatures[0] == nil {
+		h.writeError(w, ErrInvalidPayload)
+		return
 	}
+	sigBytes, err := hex.DecodeString(strings.TrimPrefix(req.Signatures[0].HexBytes, "0x"))
+	if err != nil {
+		h.writeError(w, ErrInvalidPayload)
+		return
+	}
+	pubBytes, err := hex.DecodeString(strings.TrimPrefix(req.Signatures[0].PublicKey.HexBytes, "0x"))
+	if err != nil {
+		h.writeError(w, ErrInvalidPayload)
+		return
+	}
+	if len(pubBytes) == crypto.PublicKeySize {
+		tx.PublicKey = pubBytes
+		tx.From = crypto.DeriveAddress(pubBytes)
+	}
+	tx.Signature = sigBytes
+	tx.Hash = tx.ComputeHash()
 
 	var out bytes.Buffer
-	_ = gob.NewEncoder(&out).Encode(&tx)
+	if err := gob.NewEncoder(&out).Encode(&tx); err != nil {
+		h.writeError(w, ErrInternal)
+		return
+	}
 
 	resp := &ConstructionCombineResponse{
 		SignedTransaction: hex.EncodeToString(out.Bytes()),
@@ -715,9 +769,20 @@ func (h *Handler) handleConstructionSubmit(w http.ResponseWriter, r *http.Reques
 	h.writeJSON(w, http.StatusOK, resp)
 }
 
+// safeHeightToInt64 converts a uint64 block height to int64 without wrap-around.
+func safeHeightToInt64(v uint64) int64 {
+	if v > math.MaxInt64 {
+		return math.MaxInt64
+	}
+	return int64(v) // #nosec G115 -- guarded by MaxInt64 check above
+}
+
 func convertCoreTxToRosetta(tx *core.Transaction) *Transaction {
 	succ := "SUCCESS"
-	fee := tx.GasLimit * tx.GasPrice
+	hi, fee := bits.Mul64(tx.GasLimit, tx.GasPrice)
+	if hi != 0 {
+		fee = math.MaxUint64
+	}
 
 	ops := []*Operation{
 		{

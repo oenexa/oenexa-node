@@ -212,13 +212,5 @@ func (s *StateStore) LoadState() (*state.DB, error) {
 	return st, nil
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers for tests — expose encodeAccount/decodeAccount
-// ─────────────────────────────────────────────────────────────────────────────
-
-// encodeAccountForTest exposes encodeAccount for storage_test.go.
-// Not part of the public API.
-func encodeAccountBytes(acc *state.Account) []byte { return encodeAccount(acc) }
-
 // Used by the benchmark to avoid import cycles.
 var _ = bytes.Compare

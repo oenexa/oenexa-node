@@ -43,7 +43,11 @@ func (h *BlockHeader) Encode() []byte {
 	buf = append(buf, h.PrevHash[:]...)
 	buf = append(buf, h.MerkleRoot[:]...)
 	buf = append(buf, h.StateRoot[:]...)
-	binary.BigEndian.PutUint64(b8, uint64(h.Timestamp))
+	var ts uint64
+	if h.Timestamp > 0 {
+		ts = uint64(h.Timestamp) // #nosec G115 -- guarded by h.Timestamp > 0
+	}
+	binary.BigEndian.PutUint64(b8, ts)
 	buf = append(buf, b8...)
 	buf = append(buf, h.ValidatorAddr[:]...)
 	binary.BigEndian.PutUint64(b8, h.GasUsed)

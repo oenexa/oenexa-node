@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"errors"
+	"math/bits"
 
 	"github.com/oenexa/oenexa/internal/crypto"
 )
@@ -28,12 +29,19 @@ func NewValidatorSet(validators []*Validator) (*ValidatorSet, error) {
 	var total uint64
 	idx := make(map[string]int, len(validators))
 	for i, v := range validators {
+		if v == nil {
+			return nil, errors.New("nil validator in validator set")
+		}
 		key := crypto.ToHex(v.Address)
 		if _, dup := idx[key]; dup {
 			return nil, errors.New("duplicate validator address")
 		}
 		idx[key] = i
-		total += v.VotingPower
+		var carry uint64
+		total, carry = bits.Add64(total, v.VotingPower, 0)
+		if carry != 0 {
+			return nil, errors.New("validator total voting power overflow")
+		}
 	}
 	return &ValidatorSet{
 		validators:   validators,
@@ -56,7 +64,10 @@ func (vs *ValidatorSet) HasQuorum(addresses [][crypto.AddressSize]byte) bool {
 			power += vs.validators[i].VotingPower
 		}
 	}
-	return 3*power > 2*vs.totalPower
+	// Check 3*power > 2*totalPower in 128-bit arithmetic to prevent uint64 overflow.
+	hiL, loL := bits.Mul64(3, power)
+	hiR, loR := bits.Mul64(2, vs.totalPower)
+	return hiL > hiR || (hiL == hiR && loL > loR)
 }
 
 // Proposer returns the validator responsible for proposing at the given height

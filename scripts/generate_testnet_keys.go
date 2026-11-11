@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	libp2pCrypto "github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -17,9 +18,11 @@ func main() {
 	if len(os.Args) < 3 {
 		log.Fatal("Usage: go run generate_testnet_keys.go <num_nodes> <out_dir>")
 	}
-	numNodes := 4
-	fmt.Sscanf(os.Args[1], "%d", &numNodes)
-	outDir := os.Args[2]
+	numNodes, err := strconv.Atoi(os.Args[1])
+	if err != nil || numNodes <= 0 {
+		log.Fatal("invalid num_nodes: must be a positive integer")
+	}
+	outDir := filepath.Clean(os.Args[2])
 
 	password := "testnet-password"
 	fmt.Printf("Generating %d nodes...\n", numNodes)
@@ -44,7 +47,10 @@ func main() {
 		peerIDs = append(peerIDs, peerID.String())
 
 		dir := filepath.Join(outDir, fmt.Sprintf("oenexa-node-%d", i))
-		os.MkdirAll(dir, 0755)
+		// #nosec G703,G706 -- outDir is a cleaned operator-supplied output directory for key generation
+		if err := os.MkdirAll(dir, 0o750); err != nil {
+			log.Fatalf("failed to create directory %q: %v", dir, err) // #nosec G706 -- dir quoted
+		}
 
 		err = keystore.Encrypt(filepath.Join(dir, "keystore.json"), password, w)
 		if err != nil {

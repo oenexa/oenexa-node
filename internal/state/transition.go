@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/bits"
 
 	"github.com/oenexa/oenexa/internal/core"
 	"github.com/oenexa/oenexa/internal/crypto"
@@ -40,6 +41,9 @@ func ApplyTransaction(
 	execVM *vm.VM,
 	baseFee uint64,
 ) (*TxResult, error) {
+	if st == nil || tx == nil {
+		return nil, errors.New("state or transaction is nil")
+	}
 
 	// ── Intrinsic gas ────────────────────────────────────────────────────────
 	intrinsic := IntrinsicGas(tx)
@@ -55,13 +59,21 @@ func ApplyTransaction(
 		return nil, fmt.Errorf("gas price %d below current base fee %d", tx.GasPrice, baseFee)
 	}
 
-	// ── Sender account checks ────────────────────────────────────────────────
-	sender := st.GetAccount(tx.From)
-	maxCost := tx.GasLimit * tx.GasPrice
+	// ── Sender account checks (overflow-safe) ───────────────────────────────
+	hi, maxCost := bits.Mul64(tx.GasLimit, tx.GasPrice)
+	if hi != 0 {
+		return nil, errors.New("integer overflow in max gas cost")
+	}
 	requiredBalance := maxCost
 	if tx.Type == core.TxTransfer || tx.Type == core.TxDeploy || tx.Type == core.TxCall || tx.Type == core.TxShield {
-		requiredBalance += tx.Amount
+		var carry uint64
+		requiredBalance, carry = bits.Add64(requiredBalance, tx.Amount, 0)
+		if carry != 0 {
+			return nil, errors.New("integer overflow in required balance")
+		}
 	}
+
+	sender := st.GetAccount(tx.From)
 	if sender.Balance < requiredBalance {
 		return nil, errors.New("insufficient balance")
 	}
@@ -69,10 +81,17 @@ func ApplyTransaction(
 		return nil, fmt.Errorf("nonce mismatch: expected %d, got %d", sender.Nonce, tx.Nonce)
 	}
 
-	// ── Pre-deduct max gas cost ──────────────────────────────────────────────
+	// ── Pre-deduct max gas cost & increment nonce ────────────────────────────
 	sender.Balance -= maxCost
 	sender.Nonce++
 	st.SetAccount(tx.From, sender)
+
+	// Snapshot state only before contract deploy/call payload execution so reverts
+	// roll back transfers and storage mutations cleanly while preserving fee/nonce.
+	var execSnap *DB
+	if tx.Type == core.TxDeploy || tx.Type == core.TxCall {
+		execSnap = st.Snapshot()
+	}
 
 	// ── Dispatch by tx type ──────────────────────────────────────────────────
 	var gasUsed uint64
@@ -87,7 +106,7 @@ func ApplyTransaction(
 		gasUsed, returnData, execErr = applyDeploy(st, tx, execVM)
 
 	case core.TxCall:
-		gasUsed, returnData, execErr = applyCall(st, tx, execVM, tx.GasLimit-intrinsic)
+		gasUsed, returnData, execErr = applyCall(st, tx, execVM, tx.GasLimit-intrinsic, intrinsic)
 
 	case core.TxShield:
 		gasUsed, execErr = applyShield(st, tx)
@@ -103,19 +122,33 @@ func ApplyTransaction(
 		execErr = fmt.Errorf("unknown tx type: 0x%02x", tx.Type)
 	}
 
+	if execErr != nil && execSnap != nil {
+		st.Apply(execSnap)
+	}
+	if gasUsed > tx.GasLimit {
+		gasUsed = tx.GasLimit
+	}
+
 	// ── Refund unused gas ────────────────────────────────────────────────────
 	if gasUsed < tx.GasLimit {
-		refund := (tx.GasLimit - gasUsed) * tx.GasPrice
+		_, refund := bits.Mul64(tx.GasLimit-gasUsed, tx.GasPrice)
 		sender = st.GetAccount(tx.From)
-		sender.Balance += refund
+		newBal, carry := bits.Add64(sender.Balance, refund, 0)
+		if carry != 0 {
+			return nil, errors.New("integer overflow in gas refund")
+		}
+		sender.Balance = newBal
 		st.SetAccount(tx.From, sender)
 	}
 
 	// ── Fee split: burn baseFee portion, tip goes to validator ───────────────
-	feeCollected := gasUsed * tx.GasPrice
+	hi, feeCollected := bits.Mul64(gasUsed, tx.GasPrice)
+	if hi != 0 {
+		return nil, errors.New("integer overflow in fee collected")
+	}
 
 	effectiveBaseFee := baseFee
-	burnedFee := gasUsed * effectiveBaseFee
+	_, burnedFee := bits.Mul64(gasUsed, effectiveBaseFee)
 	validatorTip := feeCollected - burnedFee // priority tip = gasPrice − baseFee
 
 	success := execErr == nil
@@ -139,11 +172,20 @@ func applyTransfer(st *DB, tx *core.Transaction) (uint64, error) {
 	if sender.Balance < tx.Amount {
 		return core.GasTransfer, errors.New("insufficient balance for transfer")
 	}
+	if tx.From == tx.To {
+		return core.GasTransfer, nil
+	}
+
+	recipient := st.GetAccount(tx.To)
+	newBal, carry := bits.Add64(recipient.Balance, tx.Amount, 0)
+	if carry != 0 {
+		return core.GasTransfer, errors.New("integer overflow in transfer recipient balance")
+	}
+
 	sender.Balance -= tx.Amount
 	st.SetAccount(tx.From, sender)
 
-	recipient := st.GetAccount(tx.To)
-	recipient.Balance += tx.Amount
+	recipient.Balance = newBal
 	st.SetAccount(tx.To, recipient)
 
 	return core.GasTransfer, nil
@@ -170,6 +212,30 @@ func applyDeploy(
 
 	codeHash := crypto.Hash256(tx.Data)
 
+	contract := st.GetAccount(contractAddr)
+	if contract.CodeHash != crypto.ZeroHash {
+		return core.GasDeploy, nil, errors.New("contract address already deployed")
+	}
+	contract.CodeHash = codeHash
+
+	if tx.Amount > 0 {
+		sender := st.GetAccount(tx.From)
+		if sender.Balance < tx.Amount {
+			return core.GasDeploy, nil, errors.New("insufficient balance for deploy endowment")
+		}
+		sender.Balance -= tx.Amount
+		st.SetAccount(tx.From, sender)
+
+		contract = st.GetAccount(contractAddr)
+		contract.CodeHash = codeHash
+		newBal, carry := bits.Add64(contract.Balance, tx.Amount, 0)
+		if carry != 0 {
+			return core.GasDeploy, nil, errors.New("integer overflow in contract endowment")
+		}
+		contract.Balance = newBal
+	}
+	st.SetAccount(contractAddr, contract)
+
 	if execVM != nil {
 		ctx := context.Background()
 		if err := execVM.Deploy(ctx, contractAddr, tx.Data); err != nil {
@@ -187,20 +253,6 @@ func applyDeploy(
 			ec, codeHash, "_init")
 	}
 
-	contract := st.GetAccount(contractAddr)
-	contract.CodeHash = codeHash
-	st.SetAccount(contractAddr, contract)
-
-	if tx.Amount > 0 {
-		sender := st.GetAccount(tx.From)
-		sender.Balance -= tx.Amount
-		st.SetAccount(tx.From, sender)
-
-		contract = st.GetAccount(contractAddr)
-		contract.Balance += tx.Amount
-		st.SetAccount(contractAddr, contract)
-	}
-
 	return core.GasDeploy, contractAddr[:], nil
 }
 
@@ -213,28 +265,33 @@ func applyCall(
 	tx *core.Transaction,
 	execVM *vm.VM,
 	gasAvail uint64,
+	intrinsic uint64,
 ) (uint64, []byte, error) {
 
 	contractAcct := st.GetAccount(tx.To)
 	if contractAcct.CodeHash == crypto.ZeroHash {
-		return core.GasCall, nil, errors.New("call target is not a contract")
+		return intrinsic, nil, errors.New("call target is not a contract")
 	}
 
 	if tx.Amount > 0 {
 		sender := st.GetAccount(tx.From)
 		if sender.Balance < tx.Amount {
-			return core.GasCall, nil, errors.New("insufficient balance for call value")
+			return intrinsic, nil, errors.New("insufficient balance for call value")
 		}
 		sender.Balance -= tx.Amount
 		st.SetAccount(tx.From, sender)
 
 		contractAcct = st.GetAccount(tx.To)
-		contractAcct.Balance += tx.Amount
+		newBal, carry := bits.Add64(contractAcct.Balance, tx.Amount, 0)
+		if carry != 0 {
+			return intrinsic, nil, errors.New("integer overflow in contract balance")
+		}
+		contractAcct.Balance = newBal
 		st.SetAccount(tx.To, contractAcct)
 	}
 
 	if execVM == nil {
-		return core.GasCall, nil, nil
+		return intrinsic, nil, nil
 	}
 
 	funcName := "call"
@@ -260,11 +317,10 @@ func applyCall(
 
 	ctx := context.WithValue(context.Background(), vm.ExecCtxKey{}, ec)
 	result, err := execVM.Call(ctx, ec, contractAcct.CodeHash, funcName, params...)
+	gasUsed := intrinsic + ec.GasUsed
 	if err != nil {
-		return core.GasCall, nil, fmt.Errorf("call reverted: %w", err)
+		return gasUsed, nil, fmt.Errorf("call reverted: %w", err)
 	}
-
-	gasUsed := core.GasCall + ec.GasUsed
 
 	var returnData []byte
 	b8 := make([]byte, 8)
@@ -318,6 +374,12 @@ func applyUnshield(st *DB, tx *core.Transaction) (uint64, error) {
 	if len(tx.Data) < 32 {
 		return core.GasUnshield, errors.New("invalid nullifier length")
 	}
+	recipient := st.GetAccount(tx.To)
+	newBal, carry := bits.Add64(recipient.Balance, tx.Amount, 0)
+	if carry != 0 {
+		return core.GasUnshield, errors.New("integer overflow in unshield recipient balance")
+	}
+
 	var nf [32]byte
 	copy(nf[:], tx.Data[:32])
 	if err := st.DebitShieldedPool(tx.Amount); err != nil {
@@ -328,8 +390,7 @@ func applyUnshield(st *DB, tx *core.Transaction) (uint64, error) {
 		return core.GasUnshield, err
 	}
 
-	recipient := st.GetAccount(tx.To)
-	recipient.Balance += tx.Amount
+	recipient.Balance = newBal
 	st.SetAccount(tx.To, recipient)
 
 	return core.GasUnshield, nil

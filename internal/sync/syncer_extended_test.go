@@ -135,7 +135,9 @@ func TestApplyBlocks_ValidAndError(t *testing.T) {
 			PrevHash: [32]byte{1, 2, 3}, // wrong prev hash
 		},
 	}
-	blkMismatch.SignHeader(w.PrivateKey)
+	if err := blkMismatch.SignHeader(w.PrivateKey); err != nil {
+		t.Fatal(err)
+	}
 	s.ApplyBlocks([]*core.Block{blkMismatch})
 
 	// Block that fails ApplyBlock (invalid tx)
@@ -148,7 +150,9 @@ func TestApplyBlocks_ValidAndError(t *testing.T) {
 			{GasLimit: 0}, // Invalid tx will fail
 		},
 	}
-	blkErr.SignHeader(w.PrivateKey)
+	if err := blkErr.SignHeader(w.PrivateKey); err != nil {
+		t.Fatal(err)
+	}
 	s.ApplyBlocks([]*core.Block{blkErr})
 
 	// Valid block, empty txs
@@ -158,17 +162,21 @@ func TestApplyBlocks_ValidAndError(t *testing.T) {
 			PrevHash: genesis.Hash,
 		},
 	}
-	blkValid.SignHeader(w.PrivateKey)
+	if err := blkValid.SignHeader(w.PrivateKey); err != nil {
+		t.Fatal(err)
+	}
 	s.ApplyBlocks([]*core.Block{blkValid})
 
 	// Close DB so next PutBlock fails
-	db.Close()
+	_ = db.Close()
 	blkStoreErr := &core.Block{
 		Header: core.BlockHeader{
 			Height:   1, // eng.Height() is still 1
 			PrevHash: genesis.Hash,
 		},
 	}
-	blkStoreErr.SignHeader(w.PrivateKey)
+	if err := blkStoreErr.SignHeader(w.PrivateKey); err != nil {
+		t.Fatal(err)
+	}
 	s.ApplyBlocks([]*core.Block{blkStoreErr})
 }

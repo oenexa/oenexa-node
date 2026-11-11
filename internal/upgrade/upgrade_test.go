@@ -113,7 +113,7 @@ func TestManager_OnBlock_WithScheduler(t *testing.T) {
 	if err := p.Sign(w.PrivateKey); err != nil {
 		t.Fatal(err)
 	}
-	s.AddProposal(p)
+	_, _ = s.AddProposal(p)
 
 	mgr := NewManager(Config{}, s)
 	mgr.OnBlock(5)

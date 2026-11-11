@@ -88,7 +88,9 @@ func (n *mdnsNotifee) HandlePeerFound(pi peer.AddrInfo) {
 		return
 	}
 	log.Printf("[p2p] Discovered peer via mDNS: %s", pi.ID.String())
-	err := n.h.Connect(context.Background(), pi)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := n.h.Connect(ctx, pi)
 	if err != nil {
 		log.Printf("[p2p] Failed to connect to discovered peer: %v", err)
 	} else {
@@ -456,6 +458,17 @@ func (n *Node) handleBlockSub(ctx context.Context) {
 			continue
 		}
 
+		expectedHash := block.ComputeHash()
+		if block.Hash == ([oenexaCrypto.HashSize]byte{}) {
+			block.Hash = expectedHash
+		} else if block.Hash != expectedHash {
+			log.Printf("[p2p] block hash mismatch from %s", msg.ReceivedFrom)
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltyInvalidBlock, "block hash mismatch")
+			}
+			continue
+		}
+
 		if n.hasSeenBlock(block.Hash) {
 			continue
 		}
@@ -481,6 +494,15 @@ func (n *Node) handleVoteSub(ctx context.Context) {
 		if msg.ReceivedFrom == n.host.ID() {
 			continue
 		}
+		if n.rm != nil && n.rm.IsBanned(msg.ReceivedFrom) {
+			continue
+		}
+		if len(msg.Data) > 64*1024 {
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltySpam, "vote packet too large")
+			}
+			continue
+		}
 		if n.OnVoteReceived != nil {
 			n.OnVoteReceived(msg.Data)
 		}
@@ -504,6 +526,15 @@ func (n *Node) handleSyncReqSub(ctx context.Context) {
 		if msg.ReceivedFrom == n.host.ID() {
 			continue
 		}
+		if n.rm != nil && n.rm.IsBanned(msg.ReceivedFrom) {
+			continue
+		}
+		if len(msg.Data) > 16*1024 {
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltySpam, "sync req packet too large")
+			}
+			continue
+		}
 
 		var req SyncReq
 		if err := json.Unmarshal(msg.Data, &req); err != nil {
@@ -523,6 +554,15 @@ func (n *Node) handleSyncResSub(ctx context.Context) {
 			return
 		}
 		if msg.ReceivedFrom == n.host.ID() {
+			continue
+		}
+		if n.rm != nil && n.rm.IsBanned(msg.ReceivedFrom) {
+			continue
+		}
+		if len(msg.Data) > 16*1024*1024 {
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltySpam, "sync res packet too large")
+			}
 			continue
 		}
 
