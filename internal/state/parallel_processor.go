@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/bits"
+	"runtime"
 	"sync"
 	"sync/atomic"
 
@@ -37,9 +38,11 @@ func ApplyBlockParallel(
 		TxResults: make([]*TxResult, len(blk.Txs)),
 	}
 
-	// ── Phase 1: Static Dependency Analysis ───────────────────────────────────
+	// ── Phase 1: Static Dependency Analysis (O(N)) ──────────────────────────
 	// Group transactions into sequential layers of strictly disjoint sender/recipient pairs.
 	var layers [][]int
+	lastLayerByAddr := make(map[[crypto.AddressSize]byte]int, len(blk.Txs)*2)
+	minLayer := 0
 
 	for i, tx := range blk.Txs {
 		if tx == nil {
@@ -50,91 +53,105 @@ func ApplyBlockParallel(
 		isStatefulBarrier := tx.Type == core.TxDeploy || tx.Type == core.TxCall ||
 			tx.Type == core.TxShield || tx.Type == core.TxUnshield || tx.Type == core.TxShieldedTransfer
 		if isStatefulBarrier {
+			barrierIdx := len(layers)
 			layers = append(layers, []int{i})
+			minLayer = barrierIdx + 1
 			continue
 		}
 
-		sender := tx.From
-		recipient := tx.To
-
-		placed := false
-		for layerIdx, layer := range layers {
-			conflict := false
-			for _, prevIdx := range layer {
-				prevTx := blk.Txs[prevIdx]
-				if prevTx.Type == core.TxDeploy || prevTx.Type == core.TxCall ||
-					prevTx.Type == core.TxShield || prevTx.Type == core.TxUnshield || prevTx.Type == core.TxShieldedTransfer {
-					conflict = true
-					break
-				}
-				pSender := prevTx.From
-
-				if sender == pSender || sender == prevTx.To ||
-					recipient == pSender || recipient == prevTx.To {
-					conflict = true
-					break
-				}
-			}
-
-			if !conflict {
-				layers[layerIdx] = append(layers[layerIdx], i)
-				placed = true
-				break
-			}
+		target := minLayer
+		if l, ok := lastLayerByAddr[tx.From]; ok && l+1 > target {
+			target = l + 1
 		}
-
-		if !placed {
-			layers = append(layers, []int{i})
+		if l, ok := lastLayerByAddr[tx.To]; ok && l+1 > target {
+			target = l + 1
 		}
+		for len(layers) <= target {
+			layers = append(layers, nil)
+		}
+		layers[target] = append(layers[target], i)
+		lastLayerByAddr[tx.From] = target
+		lastLayerByAddr[tx.To] = target
 	}
 
-	// ── Phase 2: Parallel Execution ──────────────────────────────────────────
+	// ── Phase 2: Parallel Execution (Bounded Worker Pool) ───────────────────
 	var gasUsed, feeCollected, burnedFees, validatorTip uint64
 	var globalErr atomic.Value
+	maxWorkers := runtime.GOMAXPROCS(0)
+	if maxWorkers < 1 {
+		maxWorkers = 1
+	}
 
 	for _, layer := range layers {
+		if len(layer) == 0 {
+			continue
+		}
+		if len(layer) == 1 {
+			tx := blk.Txs[layer[0]]
+			if tx.GasLimit > remainingGas {
+				return nil, fmt.Errorf("block gas limit exceeded")
+			}
+			txRes, err := ApplyTransaction(snap, tx, tx.GasLimit, execVM, baseFee)
+			if err != nil {
+				return nil, fmt.Errorf("tx %s failed: %w", crypto.ToHex(tx.Hash), err)
+			}
+			remainingGas -= txRes.GasUsed
+			gasUsed += txRes.GasUsed
+			feeCollected += txRes.FeeCollected
+			burnedFees += txRes.BurnedFee
+			validatorTip += txRes.ValidatorTip
+			result.TxResults[layer[0]] = txRes
+			continue
+		}
+
+		workers := maxWorkers
+		if workers > len(layer) {
+			workers = len(layer)
+		}
+		var cursor atomic.Int64
 		var wg sync.WaitGroup
 
-		for _, txIdx := range layer {
+		for w := 0; w < workers; w++ {
 			wg.Add(1)
-			go func(idx int) {
+			go func() {
 				defer wg.Done()
+				for {
+					pos := int(cursor.Add(1) - 1)
+					if pos >= len(layer) || globalErr.Load() != nil {
+						return
+					}
+					idx := layer[pos]
+					tx := blk.Txs[idx]
 
-				tx := blk.Txs[idx]
-
-				// Reserve tx.GasLimit atomically using checked uint64 arithmetic.
-				gasMu.Lock()
-				if tx.GasLimit > remainingGas {
-					gasMu.Unlock()
-					globalErr.Store(fmt.Errorf("block gas limit exceeded"))
-					return
-				}
-				remainingGas -= tx.GasLimit
-				gasMu.Unlock()
-
-				if globalErr.Load() != nil {
-					return
-				}
-
-				txRes, err := ApplyTransaction(snap, tx, tx.GasLimit, execVM, baseFee)
-				if err != nil {
-					globalErr.Store(fmt.Errorf("tx %s failed: %w", crypto.ToHex(tx.Hash), err))
-					return
-				}
-
-				if txRes.GasUsed < tx.GasLimit {
 					gasMu.Lock()
-					remainingGas += tx.GasLimit - txRes.GasUsed
+					if tx.GasLimit > remainingGas {
+						gasMu.Unlock()
+						globalErr.Store(fmt.Errorf("block gas limit exceeded"))
+						return
+					}
+					remainingGas -= tx.GasLimit
 					gasMu.Unlock()
+
+					txRes, err := ApplyTransaction(snap, tx, tx.GasLimit, execVM, baseFee)
+					if err != nil {
+						globalErr.Store(fmt.Errorf("tx %s failed: %w", crypto.ToHex(tx.Hash), err))
+						return
+					}
+
+					if txRes.GasUsed < tx.GasLimit {
+						gasMu.Lock()
+						remainingGas += tx.GasLimit - txRes.GasUsed
+						gasMu.Unlock()
+					}
+
+					atomic.AddUint64(&gasUsed, txRes.GasUsed)
+					atomic.AddUint64(&feeCollected, txRes.FeeCollected)
+					atomic.AddUint64(&burnedFees, txRes.BurnedFee)
+					atomic.AddUint64(&validatorTip, txRes.ValidatorTip)
+
+					result.TxResults[idx] = txRes
 				}
-
-				atomic.AddUint64(&gasUsed, txRes.GasUsed)
-				atomic.AddUint64(&feeCollected, txRes.FeeCollected)
-				atomic.AddUint64(&burnedFees, txRes.BurnedFee)
-				atomic.AddUint64(&validatorTip, txRes.ValidatorTip)
-
-				result.TxResults[idx] = txRes
-			}(txIdx)
+			}()
 		}
 
 		wg.Wait()

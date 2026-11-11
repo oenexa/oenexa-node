@@ -112,6 +112,7 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 		for _, vHex := range cfg.Chain.Validators {
 			addr, err := crypto.HexToAddress(vHex)
 			if err != nil {
+				n.shutdown()
 				return nil, fmt.Errorf("invalid validator address in config: %v", err)
 			}
 			initialValidators = append(initialValidators, addr)
@@ -124,7 +125,11 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 	genesisBlock := genesisCfg.Build()
 
 	storedTip, _, tipErr := n.blockStore.GetTip()
-	if tipErr != nil || storedTip == 0 {
+	if tipErr != nil {
+		n.shutdown()
+		return nil, fmt.Errorf("read persisted chain tip: %w", tipErr)
+	}
+	if storedTip == 0 {
 		// Fresh database — persist genesis and bootstrap state.
 		log.Println("[node] initializing from the genesis block …")
 		if err := n.blockStore.PutBlock(genesisBlock); err != nil {
@@ -143,7 +148,13 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 			n.shutdown()
 			return nil, fmt.Errorf("persist genesis state: %w", err)
 		}
-		n.st = st
+		// Reload with the persistent SMT attached so fresh boots and restarts compute identical state roots.
+		loadedSt, err := n.stateStore.LoadState()
+		if err != nil {
+			n.shutdown()
+			return nil, fmt.Errorf("hydrate genesis state trie: %w", err)
+		}
+		n.st = loadedSt
 		log.Printf("[node] genesis block hash: %s", crypto.ToHex(genesisBlock.Hash))
 	} else {
 		// Resume from persisted state.
@@ -259,18 +270,25 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 			}
 			return nil
 		}
-		n.p2pNode.OnVoteReceived = func(data []byte) {
+		n.p2pNode.OnVoteValidated = func(_ peer.ID, data []byte) error {
 			if n.engine != nil {
 				var v consensus.Vote
-				if err := json.Unmarshal(data, &v); err == nil {
-					_ = n.engine.ProcessVote(&v)
+				if err := json.Unmarshal(data, &v); err != nil {
+					return err
 				}
+				return n.engine.ProcessVote(&v)
 			}
+			return nil
 		}
 		n.p2pNode.OnSyncReq = func(req p2p.SyncReq) {
-			// Fetch blocks and broadcast response
+			// Cap per-response block count to prevent OOM / giant payload amplification.
+			const maxSyncRespBlocks = 128
+			count := req.MaxCount
+			if count == 0 || count > maxSyncRespBlocks {
+				count = maxSyncRespBlocks
+			}
 			var blocks []*core.Block
-			for i := uint32(0); i < req.MaxCount; i++ {
+			for i := uint32(0); i < count; i++ {
 				blk, err := n.blockStore.GetBlockByHeight(req.FromHeight + uint64(i))
 				if err != nil || blk == nil {
 					break
@@ -310,6 +328,7 @@ func New(cfg *config.Config, keystorePassword string) (*Node, error) {
 			cfg.RPC.ReadTimeout.Duration,
 			cfg.RPC.WriteTimeout.Duration,
 		)
+		n.rpcServer.SetCORSAllowedOrigins(cfg.RPC.CORSOrigins)
 	}
 
 	return n, nil
@@ -422,6 +441,9 @@ func (n *Node) blockLoop(ctx context.Context) {
 
 // shutdown releases all resources.
 func (n *Node) shutdown() {
+	if n.p2pNode != nil {
+		_ = n.p2pNode.Close()
+	}
 	if n.execVM != nil {
 		n.execVM.Close(context.Background())
 	}

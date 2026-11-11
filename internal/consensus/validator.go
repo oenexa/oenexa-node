@@ -73,7 +73,16 @@ func (vs *ValidatorSet) HasQuorum(addresses [][crypto.AddressSize]byte) bool {
 // Proposer returns the validator responsible for proposing at the given height
 // using round-robin selection.
 func (vs *ValidatorSet) Proposer(height uint64) *Validator {
-	idx := height % uint64(len(vs.validators))
+	return vs.ProposerForRound(height, 0)
+}
+
+// ProposerForRound returns the validator responsible for proposing at height+round
+// so offline or Byzantine proposers are rotated cleanly on view-change.
+func (vs *ValidatorSet) ProposerForRound(height uint64, round uint32) *Validator {
+	if vs == nil || len(vs.validators) == 0 {
+		return nil
+	}
+	idx := (height + uint64(round)) % uint64(len(vs.validators))
 	return vs.validators[idx]
 }
 

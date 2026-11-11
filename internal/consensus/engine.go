@@ -73,9 +73,10 @@ import (
 )
 
 const (
-	BlockInterval = 2 * time.Second
-	RoundTimeout  = 4 * time.Second
-	MaxTxPerBlock = 10_000 // raised to match the higher block gas limit
+	BlockInterval       = 2 * time.Second
+	RoundTimeout        = 4 * time.Second
+	MaxFutureBlockDrift = 15 * time.Second
+	MaxTxPerBlock       = 10_000 // raised to match the higher block gas limit
 )
 
 type BFTStep int
@@ -106,12 +107,13 @@ type Engine struct {
 	commitCh chan *core.Block
 
 	// BFT State
-	step          BFTStep
-	round         uint32
-	proposal      *core.Block
-	proposalState *state.DB
-	prevotes      map[[crypto.HashSize]byte]map[string]*Vote // blockHash -> validator -> Vote
-	precommits    map[[crypto.HashSize]byte]map[string]*Vote
+	step           BFTStep
+	round          uint32
+	roundStartedAt time.Time
+	proposal       *core.Block
+	proposalState  *state.DB
+	prevotes       map[[crypto.HashSize]byte]map[string]*Vote // blockHash -> validator -> Vote
+	precommits     map[[crypto.HashSize]byte]map[string]*Vote
 
 	// P2P Hooks
 	OnVoteBroadcast  func(*Vote)
@@ -225,9 +227,15 @@ func (e *Engine) produceBlock(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
+	if e.roundStartedAt.IsZero() {
+		e.roundStartedAt = time.Now()
+	} else if time.Since(e.roundStartedAt) >= RoundTimeout && e.step != StepCommit {
+		e.advanceRoundLocked()
+	}
+
 	height := uint64(len(e.chain))
-	proposer := e.validatorSet.Proposer(height)
-	if proposer.Address != e.validatorAddr {
+	proposer := e.validatorSet.ProposerForRound(height, e.round)
+	if proposer == nil || proposer.Address != e.validatorAddr {
 		return nil // not our turn
 	}
 
@@ -268,7 +276,7 @@ func (e *Engine) ProcessProposal(blk *core.Block) error {
 		return fmt.Errorf("proposal height %d does not match chain height %d", blk.Header.Height, height)
 	}
 
-	proposer := e.validatorSet.Proposer(height)
+	proposer := e.validatorSet.ProposerForRound(height, e.round)
 	if proposer == nil || blk.Header.ValidatorAddr != proposer.Address {
 		return fmt.Errorf("invalid proposer")
 	}
@@ -287,6 +295,9 @@ func (e *Engine) ProcessProposal(blk *core.Block) error {
 	}
 	if blk.Header.Timestamp <= prev.Header.Timestamp {
 		return fmt.Errorf("block timestamp %d not after parent timestamp %d", blk.Header.Timestamp, prev.Header.Timestamp)
+	}
+	if blk.Header.Timestamp > time.Now().Add(MaxFutureBlockDrift).UnixNano() {
+		return fmt.Errorf("block timestamp %d exceeds max future drift", blk.Header.Timestamp)
 	}
 
 	// 3. Transaction validation & Merkle root verification
@@ -509,21 +520,91 @@ func (e *Engine) checkPrecommitQuorumLocked(height uint64, hash [crypto.HashSize
 
 		stateToCommit := e.proposalState
 		if stateToCommit == nil {
-			_, stateToCommit, _ = e.buildBlock(height)
+			replayed, err := e.replayProposalStateLocked(e.proposal)
+			if err != nil {
+				log.Printf("[consensus] precommit quorum replay failed: %v", err)
+				return
+			}
+			stateToCommit = replayed
 		}
 
 		if stateToCommit != nil {
 			_ = commitFunc(e, e.proposal, stateToCommit)
 		}
-		
+
 		// Reset for next height
 		e.step = StepPropose
 		e.round = 0
+		e.roundStartedAt = time.Now()
 		e.proposal = nil
 		e.proposalState = nil
 		e.prevotes = make(map[[crypto.HashSize]byte]map[string]*Vote)
 		e.precommits = make(map[[crypto.HashSize]byte]map[string]*Vote)
 	}
+}
+
+// AdvanceRound advances BFT view-change round on timeout and resets per-round vote state.
+func (e *Engine) AdvanceRound() uint32 {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.advanceRoundLocked()
+	return e.round
+}
+
+// Round returns the current BFT round number.
+func (e *Engine) Round() uint32 {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.round
+}
+
+func (e *Engine) advanceRoundLocked() {
+	e.round++
+	e.step = StepPropose
+	e.roundStartedAt = time.Now()
+	e.proposal = nil
+	e.proposalState = nil
+	e.prevotes = make(map[[crypto.HashSize]byte]map[string]*Vote)
+	e.precommits = make(map[[crypto.HashSize]byte]map[string]*Vote)
+}
+
+func (e *Engine) replayProposalStateLocked(blk *core.Block) (*state.DB, error) {
+	if blk == nil || blk.Header.Height == 0 || blk.Header.Height > uint64(len(e.chain)) {
+		return nil, fmt.Errorf("invalid proposal block for replay")
+	}
+	prev := e.chain[blk.Header.Height-1]
+	snap := e.state.Snapshot()
+	baseFee := prev.Header.BaseFee
+	var totalGas, totalTip uint64
+	for _, tx := range blk.Txs {
+		result, err := applyTxFunc(snap, tx, core.BlockGasLimit-totalGas, e.execVM, baseFee)
+		if err != nil {
+			return nil, err
+		}
+		totalGas += result.GasUsed
+		totalTip += result.ValidatorTip
+		if totalGas > core.BlockGasLimit {
+			return nil, fmt.Errorf("block gas limit exceeded")
+		}
+	}
+	reward := core.BlockReward(blk.Header.Height)
+	income, carry := bits.Add64(totalTip, reward, 0)
+	if carry != 0 {
+		return nil, fmt.Errorf("validator income overflow")
+	}
+	if income > 0 {
+		valAcc := snap.GetAccount(blk.Header.ValidatorAddr)
+		newBal, c2 := bits.Add64(valAcc.Balance, income, 0)
+		if c2 != 0 {
+			return nil, fmt.Errorf("validator balance overflow")
+		}
+		valAcc.Balance = newBal
+		snap.SetAccount(blk.Header.ValidatorAddr, valAcc)
+	}
+	if snap.CommitRoot() != blk.Header.StateRoot {
+		return nil, fmt.Errorf("replayed state root mismatch")
+	}
+	return snap, nil
 }
 
 // buildBlock assembles a new block on a state snapshot.

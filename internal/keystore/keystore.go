@@ -84,6 +84,7 @@ func Encrypt(path, password string, w *crypto.Wallet) error {
 
 	// Derive a 32-byte AES key from the password.
 	key := deriveKey(password, salt, kdfP)
+	defer clear(key)
 
 	// Generate random 12-byte AES-GCM nonce.
 	iv := make([]byte, 12)
@@ -188,13 +189,37 @@ func Decrypt(path, password string) (*crypto.Wallet, error) {
 		return nil, fmt.Errorf("keystore: unsupported cipher %q", kf.Cipher)
 	}
 
+	const (
+		minKDFMemoryKiB uint32 = 16
+		maxKDFMemoryKiB uint32 = 1024 * 1024 // 1 GiB upper bound stops OOM bombs
+		minKDFTime      uint32 = 1
+		maxKDFTime      uint32 = 64
+		minKDFThreads   uint8  = 1
+		maxKDFThreads   uint8  = 64
+	)
+	if kf.KDFParams.Memory < minKDFMemoryKiB || kf.KDFParams.Memory > maxKDFMemoryKiB {
+		return nil, fmt.Errorf("keystore: invalid KDF memory parameter %d", kf.KDFParams.Memory)
+	}
+	if kf.KDFParams.Time < minKDFTime || kf.KDFParams.Time > maxKDFTime {
+		return nil, fmt.Errorf("keystore: invalid KDF time parameter %d", kf.KDFParams.Time)
+	}
+	if kf.KDFParams.Threads < minKDFThreads || kf.KDFParams.Threads > maxKDFThreads {
+		return nil, fmt.Errorf("keystore: invalid KDF threads parameter %d", kf.KDFParams.Threads)
+	}
+
 	salt, err := base64.StdEncoding.DecodeString(kf.KDFParams.Salt)
 	if err != nil {
 		return nil, fmt.Errorf("keystore: decode salt: %w", err)
 	}
+	if len(salt) < 8 || len(salt) > 128 {
+		return nil, fmt.Errorf("keystore: invalid salt length %d", len(salt))
+	}
 	iv, err := base64.StdEncoding.DecodeString(kf.CipherParams.IV)
 	if err != nil {
 		return nil, fmt.Errorf("keystore: decode IV: %w", err)
+	}
+	if len(iv) != 12 {
+		return nil, fmt.Errorf("keystore: invalid IV length %d", len(iv))
 	}
 	ciphertext, err := base64.StdEncoding.DecodeString(kf.CipherParams.Ciphertext)
 	if err != nil {
@@ -206,6 +231,7 @@ func Decrypt(path, password string) (*crypto.Wallet, error) {
 	}
 
 	key := deriveKey(password, salt, kf.KDFParams)
+	defer clear(key)
 	privKey, err := aesgcmOpen(key, iv, ciphertext)
 	if err != nil {
 		return nil, errors.New("keystore: decryption failed — wrong password")
@@ -213,12 +239,14 @@ func Decrypt(path, password string) (*crypto.Wallet, error) {
 
 	addr, err := crypto.HexToAddress(kf.Address)
 	if err != nil {
+		clear(privKey)
 		return nil, fmt.Errorf("keystore: invalid stored address: %w", err)
 	}
 
 	// Verify the derived address matches the stored one.
 	derived := crypto.DeriveAddress(pubKeyBytes)
 	if derived != addr {
+		clear(privKey)
 		return nil, errors.New("keystore: address mismatch — a file may be corrupt")
 	}
 

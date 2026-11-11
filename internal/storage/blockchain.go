@@ -55,6 +55,9 @@ func (s *BlockStore) GetTip() (height uint64, hash [crypto.HashSize]byte, err er
 	if err != nil || val == nil {
 		return 0, [crypto.HashSize]byte{}, err
 	}
+	if len(val) != 8+crypto.HashSize {
+		return 0, [crypto.HashSize]byte{}, fmt.Errorf("storage: corrupt tip record length %d", len(val))
+	}
 	height = binary.BigEndian.Uint64(val[:8])
 	copy(hash[:], val[8:])
 	return height, hash, nil
@@ -80,6 +83,9 @@ func (s *BlockStore) GetBlockByHeight(height uint64) (*core.Block, error) {
 	}
 	if hashBytes == nil {
 		return nil, ErrNotFound
+	}
+	if len(hashBytes) != crypto.HashSize {
+		return nil, fmt.Errorf("storage: corrupt height index hash length %d", len(hashBytes))
 	}
 	var hash [crypto.HashSize]byte
 	copy(hash[:], hashBytes)

@@ -110,4 +110,35 @@ func TestSecurity_ApplyBlocksRejectsTamperedRootGasAndTxs(t *testing.T) {
 	if st.GetBalance(w.Address) != startBal || st.GetBalance(u.Address) != 0 {
 		t.Fatal("failed synced block mutated live state!")
 	}
+
+	// 3. Valid block must pass all validations, execute cleanly, and advance engine height!
+	validSnap := st.Snapshot()
+	validBlk := &core.Block{
+		Header: core.BlockHeader{
+			Version:       1,
+			Height:        startHeight,
+			PrevHash:      genesis.Hash,
+			Timestamp:     time.Now().UnixNano(),
+			ValidatorAddr: w.Address,
+			MerkleRoot:    core.ComputeMerkleRoot([][crypto.HashSize]byte{tx.Hash}),
+			GasLimit:      core.BlockGasLimit,
+			BaseFee:       core.MinBaseFee,
+		},
+		Txs: []*core.Transaction{tx},
+	}
+	validRes, err := state.ApplyBlock(validSnap, validBlk, w.Address, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	validBlk.Header.GasUsed = validRes.GasUsed
+	validBlk.Header.BurnedFees = validRes.BurnedFees
+	validBlk.Header.StateRoot = validSnap.CommitRoot()
+	if err := validBlk.SignHeader(w.PrivateKey); err != nil {
+		t.Fatal(err)
+	}
+
+	s.ApplyBlocks([]*core.Block{validBlk})
+	if eng.Height() != startHeight+1 {
+		t.Fatalf("valid synced block failed to advance engine height! want=%d got=%d", startHeight+1, eng.Height())
+	}
 }

@@ -1,5 +1,11 @@
 package core
 
+import (
+	"math"
+	"math/big"
+	"math/bits"
+)
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ONXC Fee Model — Algorithmic Gas Pricing & Deflationary Burn
 //
@@ -121,21 +127,40 @@ func NextBaseFee(current, gasUsed uint64) uint64 {
 	}
 
 	if gasUsed > target {
-		// Scale delta proportionally to how over-target we are, cap at maxDelta.
+		// Overflow-safe 128-bit+ scaled delta using math/big so large base fees never wrap.
 		over := gasUsed - target
-		delta := current * over / target / MaxBaseFeeChangeDenom
+		num := new(big.Int).Mul(new(big.Int).SetUint64(current), new(big.Int).SetUint64(over))
+		denom := new(big.Int).Mul(new(big.Int).SetUint64(target), new(big.Int).SetUint64(MaxBaseFeeChangeDenom))
+		q := new(big.Int).Div(num, denom)
+
+		var delta uint64
+		if !q.IsUint64() {
+			delta = maxDelta
+		} else {
+			delta = q.Uint64()
+		}
 		if delta == 0 {
 			delta = 1
 		}
 		if delta > maxDelta {
 			delta = maxDelta
 		}
-		return current + delta
+		next, carry := bits.Add64(current, delta, 0)
+		if carry != 0 {
+			return math.MaxUint64
+		}
+		return next
 	}
 
-	// gasUsed < target — decrease.
+	// gasUsed < target — decrease safely using math/big.
 	under := target - gasUsed
-	delta := current * under / target / MaxBaseFeeChangeDenom
+	num := new(big.Int).Mul(new(big.Int).SetUint64(current), new(big.Int).SetUint64(under))
+	denom := new(big.Int).Mul(new(big.Int).SetUint64(target), new(big.Int).SetUint64(MaxBaseFeeChangeDenom))
+	q := new(big.Int).Div(num, denom)
+	if !q.IsUint64() {
+		return MinBaseFee
+	}
+	delta := q.Uint64()
 	if delta >= current-MinBaseFee {
 		return MinBaseFee
 	}
@@ -183,7 +208,15 @@ func FeeEstimate(baseFee uint64, tier FeeTier) (maxFeePerGas, priorityTip uint64
 // at the given base fee and priority tip per gas.
 // ─────────────────────────────────────────────────────────────────────────────
 func TransferCostNanoONXC(baseFee, priorityTip uint64) uint64 {
-	return GasTransfer * (baseFee + priorityTip)
+	perGas, c1 := bits.Add64(baseFee, priorityTip, 0)
+	if c1 != 0 {
+		return math.MaxUint64
+	}
+	hi, lo := bits.Mul64(GasTransfer, perGas)
+	if hi != 0 {
+		return math.MaxUint64
+	}
+	return lo
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

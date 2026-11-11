@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/oenexa/oenexa/internal/metrics"
@@ -19,10 +21,20 @@ const (
 	maxBatchSize   = 100
 )
 
+type ipBucket struct {
+	tokens   float64
+	lastSeen time.Time
+}
+
 // Server is the JSON-RPC 2.0 and Rosetta HTTP server.
 type Server struct {
-	api  *API
-	http *http.Server
+	api         *API
+	http        *http.Server
+	mu          sync.Mutex
+	rateRPS     float64
+	rateBurst   int
+	buckets     map[string]*ipBucket
+	corsOrigins []string
 }
 
 // NewServer creates a JSON-RPC HTTP server that listens on addr.
@@ -36,7 +48,12 @@ func NewServer(addr string, api *API, readTimeout, writeTimeout time.Duration) *
 	}
 
 	mux := http.NewServeMux()
-	s := &Server{api: api}
+	s := &Server{
+		api:       api,
+		rateRPS:   10_000,
+		rateBurst: 20_000,
+		buckets:   make(map[string]*ipBucket),
+	}
 	mux.HandleFunc("/", s.handleRPC)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -51,12 +68,104 @@ func NewServer(addr string, api *API, readTimeout, writeTimeout time.Duration) *
 	}
 
 	s.http = &http.Server{
-		Addr:         addr,
-		Handler:      mux,
-		ReadTimeout:  readTimeout,
-		WriteTimeout: writeTimeout,
+		Addr:              addr,
+		Handler:           s.withSecurityAndRateLimit(mux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    64 << 10,
 	}
 	return s
+}
+
+func (s *Server) withSecurityAndRateLimit(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		if r.URL.Path != "/healthz" && !s.allowIP(clientIP(r.RemoteAddr)) {
+			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// SetRateLimit configures per-IP token-bucket rate limiting.
+// Setting rps <= 0 or burst <= 0 disables rate limiting.
+func (s *Server) SetRateLimit(rps float64, burst int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.rateRPS = rps
+	s.rateBurst = burst
+	s.buckets = make(map[string]*ipBucket)
+}
+
+// SetCORSAllowedOrigins configures allowed CORS origins (empty slice defaults to "*").
+func (s *Server) SetCORSAllowedOrigins(origins []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.corsOrigins = append([]string(nil), origins...)
+}
+
+func (s *Server) allowOriginHeader(origin string) string {
+	s.mu.Lock()
+	origins := s.corsOrigins
+	s.mu.Unlock()
+	if len(origins) == 0 {
+		return "*"
+	}
+	for _, allowed := range origins {
+		if allowed == "*" {
+			return "*"
+		}
+		if origin != "" && allowed == origin {
+			return origin
+		}
+	}
+	return ""
+}
+
+func (s *Server) allowIP(ip string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.rateRPS <= 0 || s.rateBurst <= 0 {
+		return true
+	}
+	now := time.Now()
+	if len(s.buckets) > 10_000 {
+		for k, b := range s.buckets {
+			if now.Sub(b.lastSeen) > 5*time.Minute {
+				delete(s.buckets, k)
+			}
+		}
+	}
+	b, ok := s.buckets[ip]
+	if !ok {
+		b = &ipBucket{tokens: float64(s.rateBurst), lastSeen: now}
+		s.buckets[ip] = b
+	} else {
+		elapsed := now.Sub(b.lastSeen).Seconds()
+		b.tokens += elapsed * s.rateRPS
+		if maxTokens := float64(s.rateBurst); b.tokens > maxTokens {
+			b.tokens = maxTokens
+		}
+		b.lastSeen = now
+	}
+	if b.tokens < 1.0 {
+		return false
+	}
+	b.tokens -= 1.0
+	return true
+}
+
+func clientIP(remoteAddr string) string {
+	host, _, err := net.SplitHostPort(remoteAddr)
+	if err == nil && host != "" {
+		return host
+	}
+	return remoteAddr
 }
 
 // ServeHTTP implements http.Handler so the Server can be used directly in tests.
@@ -81,8 +190,10 @@ func (s *Server) Start(ctx context.Context) {
 
 // handleRPC handles all inbound JSON-RPC requests (both single and batch).
 func (s *Server) handleRPC(w http.ResponseWriter, r *http.Request) {
-	// CORS — allow all origins for browser/dApp integration.
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if origin := s.allowOriginHeader(r.Header.Get("Origin")); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Vary", "Origin")
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
 
@@ -191,7 +302,10 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if origin := s.allowOriginHeader(r.Header.Get("Origin")); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Vary", "Origin")
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	if r.Method == http.MethodOptions {

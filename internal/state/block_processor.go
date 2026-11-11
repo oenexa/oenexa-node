@@ -1,7 +1,9 @@
 package state
 
 import (
+	"errors"
 	"fmt"
+	"math/bits"
 
 	"github.com/oenexa/oenexa/internal/core"
 	"github.com/oenexa/oenexa/internal/crypto"
@@ -60,10 +62,17 @@ func ApplyBlock(
 	reward := core.BlockReward(blk.Header.Height)
 	result.BlockReward = reward
 
-	income := result.ValidatorTip + reward
+	income, carry := bits.Add64(result.ValidatorTip, reward, 0)
+	if carry != 0 {
+		return nil, errors.New("validator income overflow")
+	}
 	if income > 0 {
 		validator := st.GetAccount(validatorAddr)
-		validator.Balance += income
+		newBal, balCarry := bits.Add64(validator.Balance, income, 0)
+		if balCarry != 0 {
+			return nil, errors.New("validator balance overflow")
+		}
+		validator.Balance = newBal
 		st.SetAccount(validatorAddr, validator)
 	}
 

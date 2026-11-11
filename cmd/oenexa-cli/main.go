@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -144,6 +145,9 @@ func handleBalance(addrStr, rpcURL string) {
 func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 	privKeyHex = strings.TrimPrefix(privKeyHex, "0x")
 	privKey, err := hex.DecodeString(privKeyHex)
+	if len(privKey) > 0 {
+		defer clear(privKey)
+	}
 	if err != nil || len(privKey) != crypto.PrivateKeySize {
 		fmt.Printf("Error: Invalid ML-DSA-65 private key (expected %d bytes hex)\n", crypto.PrivateKeySize)
 		return
@@ -154,6 +158,7 @@ func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 		fmt.Printf("Error recovering wallet from private key: %v\n", err)
 		return
 	}
+	defer wallet.Zeroize()
 
 	toAddr, err := crypto.HexToAddress(toAddrHex)
 	if err != nil {
@@ -162,12 +167,16 @@ func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 	}
 
 	amountONXC, err := strconv.ParseFloat(amountStr, 64)
-	if err != nil || amountONXC <= 0 {
+	if err != nil || math.IsNaN(amountONXC) || math.IsInf(amountONXC, 0) || amountONXC <= 0 {
 		fmt.Printf("Error: Invalid transfer amount: %s\n", amountStr)
 		return
 	}
-
-	amountNano := uint64(amountONXC * float64(core.OneONXC))
+	scaled := amountONXC * float64(core.OneONXC)
+	if scaled >= float64(math.MaxUint64) || scaled < 1 {
+		fmt.Printf("Error: Transfer amount out of range: %s\n", amountStr)
+		return
+	}
+	amountNano := uint64(scaled)
 
 	// 1. Fetch current account nonce from node
 	nonceRes, err := callRPC(rpcURL, "onxc_getTransactionCount", []string{crypto.AddressToHex(wallet.Address)})

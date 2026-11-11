@@ -92,3 +92,68 @@ func TestSecurity_RPCCallRevertAndValidationErrors(t *testing.T) {
 		t.Fatalf("unexpected chainInfo response: %+v", res)
 	}
 }
+
+func TestSecurity_RPCRateLimiterAndCORSAndExtendedEndpoints(t *testing.T) {
+	ts, srv := buildRealServer(t)
+
+	// 1. CORS allowlist enforcement
+	srv.SetCORSAllowedOrigins([]string{"https://app.oenexa.com"})
+	reqAllowed, _ := http.NewRequest(http.MethodPost, ts.URL, strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"onxc_blockHeight"}`))
+	reqAllowed.Header.Set("Origin", "https://app.oenexa.com")
+	respAllowed, err := http.DefaultClient.Do(reqAllowed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = respAllowed.Body.Close()
+	if got := respAllowed.Header.Get("Access-Control-Allow-Origin"); got != "https://app.oenexa.com" {
+		t.Fatalf("expected allowed CORS origin, got %q", got)
+	}
+
+	reqDenied, _ := http.NewRequest(http.MethodPost, ts.URL, strings.NewReader(`{"jsonrpc":"2.0","id":2,"method":"onxc_blockHeight"}`))
+	reqDenied.Header.Set("Origin", "https://evil.example")
+	respDenied, err := http.DefaultClient.Do(reqDenied)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = respDenied.Body.Close()
+	if got := respDenied.Header.Get("Access-Control-Allow-Origin"); got != "" {
+		t.Fatalf("expected disallowed CORS origin omitted, got %q", got)
+	}
+	srv.SetCORSAllowedOrigins(nil)
+
+	// 2. Tokenomics, Supply, Staking, Receipt, TxByHash endpoints
+	for _, method := range []string{"onxc_getCirculatingSupply", "onxc_getTotalSupply", "onxc_getTokenomics", "onxc_getStakingInfo"} {
+		out := rpcCall(t, ts, method, nil)
+		if len(out) == 0 {
+			t.Fatalf("expected non-empty map for %s", method)
+		}
+	}
+
+	zeroHash := "0x" + strings.Repeat("00", 32)
+	reqNilTx, _ := http.Post(ts.URL, "application/json", strings.NewReader(`{"jsonrpc":"2.0","id":10,"method":"onxc_getTransactionByHash","params":["`+zeroHash+`"]}`))
+	if reqNilTx != nil {
+		_ = reqNilTx.Body.Close()
+	}
+	reqNilRcpt, _ := http.Post(ts.URL, "application/json", strings.NewReader(`{"jsonrpc":"2.0","id":11,"method":"onxc_getTransactionReceipt","params":["`+zeroHash+`"]}`))
+	if reqNilRcpt != nil {
+		_ = reqNilRcpt.Body.Close()
+	}
+
+	// 3. Per-IP Rate Limiter returns HTTP 429 when burst exhausted
+	srv.SetRateLimit(1, 2)
+	got429 := false
+	for i := 0; i < 6; i++ {
+		r, err := http.Post(ts.URL, "application/json", strings.NewReader(`{"jsonrpc":"2.0","id":99,"method":"onxc_blockHeight"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = r.Body.Close()
+		if r.StatusCode == http.StatusTooManyRequests {
+			got429 = true
+			break
+		}
+	}
+	if !got429 {
+		t.Fatal("expected HTTP 429 Too Many Requests when rate burst exceeded")
+	}
+}

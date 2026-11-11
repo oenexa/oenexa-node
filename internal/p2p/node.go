@@ -15,6 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
+	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 
 	oenexaCrypto "github.com/oenexa/oenexa/internal/crypto"
 	"github.com/oenexa/oenexa/internal/core"
@@ -72,6 +73,7 @@ type Node struct {
 	OnTxReceived    func(peer.ID, *core.Transaction) error
 	OnBlockReceived func(peer.ID, *core.Block) error
 	OnVoteReceived  func([]byte)
+	OnVoteValidated func(peer.ID, []byte) error
 	OnSyncReq       func(SyncReq)
 	OnSyncRes       func(SyncRes)
 	
@@ -111,13 +113,19 @@ func NewNode(local *Identity, listenPort int) (*Node, error) {
 	}
 
 	listenAddr := fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", listenPort)
-	
+
+	cm, err := connmgr.NewConnManager(50, 200, connmgr.WithGracePeriod(time.Minute))
+	if err != nil {
+		return nil, fmt.Errorf("connmgr: %w", err)
+	}
+
 	h, err := libp2p.New(
 		libp2p.ListenAddrStrings(listenAddr),
 		libp2p.Identity(privKey),
 		libp2p.DefaultTransports,
 		libp2p.DefaultSecurity,
 		libp2p.DefaultMuxers,
+		libp2p.ConnectionManager(cm),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("libp2p.New: %w", err)
@@ -407,12 +415,25 @@ func (n *Node) handleTxSub(ctx context.Context) {
 			continue
 		}
 
+		computedHash := tx.ComputeHash()
 		if tx.Hash == [oenexaCrypto.HashSize]byte{} {
-			tx.Hash = tx.ComputeHash()
+			tx.Hash = computedHash
+		} else if tx.Hash != computedHash {
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltyInvalidTxFormat, "tx hash mismatch")
+			}
+			continue
 		}
 
-		// Deduplication: skip if already seen
+		// Deduplication: skip if already seen (checked before heavy ML-DSA verify)
 		if n.hasSeenTx(tx.Hash) {
+			continue
+		}
+		// Authenticate sender signature before polluting seenTxs or worker queue.
+		if err := tx.Verify(); err != nil {
+			if n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltyInvalidSignature, err.Error())
+			}
 			continue
 		}
 		n.markSeenTx(tx.Hash)
@@ -503,7 +524,11 @@ func (n *Node) handleVoteSub(ctx context.Context) {
 			}
 			continue
 		}
-		if n.OnVoteReceived != nil {
+		if n.OnVoteValidated != nil {
+			if err := n.OnVoteValidated(msg.ReceivedFrom, msg.Data); err != nil && n.rm != nil {
+				n.rm.Penalize(msg.ReceivedFrom, PenaltyInvalidSignature, err.Error())
+			}
+		} else if n.OnVoteReceived != nil {
 			n.OnVoteReceived(msg.Data)
 		}
 	}
@@ -575,5 +600,13 @@ func (n *Node) handleSyncResSub(ctx context.Context) {
 			n.OnSyncRes(res)
 		}
 	}
+}
+
+// Close shuts down the underlying libp2p host and releases sockets.
+func (n *Node) Close() error {
+	if n != nil && n.host != nil {
+		return n.host.Close()
+	}
+	return nil
 }
 

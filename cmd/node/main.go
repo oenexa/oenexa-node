@@ -283,6 +283,7 @@ var walletExportVKCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("unlock wallet: %w", err)
 		}
+		defer w.Zeroize()
 		vk := crypto.Hash256(append([]byte("OENEXA_VIEWING_KEY"), w.PrivateKey...))
 		fmt.Printf("Viewing Key: %s\n", hex.EncodeToString(vk[:]))
 		return nil
@@ -347,6 +348,7 @@ var txSendCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("unlock wallet: %w", err)
 		}
+		defer w.Zeroize()
 
 		toAddr, err := crypto.HexToAddress(flagTxTo)
 		if err != nil {
@@ -439,8 +441,8 @@ var queryChainCmd = &cobra.Command{
 var queryBlockCmd = &cobra.Command{
 	Use:   "block",
 	Short: "Display a block by height",
-	RunE: func(_ *cobra.Command, _ []string) error {
-		if flagQueryHeight == 0 && !flagQueryHeightSet {
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		if flagQueryHeight == 0 && !cmd.Flags().Changed("height") {
 			return fmt.Errorf("--height required")
 		}
 		result, err := rpcCall(flagRPCAddr, "onxc_blockByHeight", []uint64{flagQueryHeight})
@@ -466,9 +468,8 @@ var queryFeeCmd = &cobra.Command{
 }
 
 var (
-	flagQueryAddr      string
-	flagQueryHeight    uint64
-	flagQueryHeightSet bool
+	flagQueryAddr   string
+	flagQueryHeight uint64
 )
 
 var queryTurnstileCmd = &cobra.Command{
@@ -487,8 +488,6 @@ var queryTurnstileCmd = &cobra.Command{
 func init() {
 	queryBalanceCmd.Flags().StringVar(&flagQueryAddr, "address", "", "address to query")
 	queryBlockCmd.Flags().Uint64Var(&flagQueryHeight, "height", 0, "block height to retrieve")
-	_ = queryBlockCmd.Flags().Lookup("height")
-	flagQueryHeightSet = false // reset; cobra will set it when --height is provided
 
 	queryCmd.AddCommand(queryBalanceCmd)
 	queryCmd.AddCommand(queryChainCmd)
