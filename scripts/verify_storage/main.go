@@ -35,7 +35,7 @@ func main() {
 	}
 	defer db.Close()
 
-	// 1. Verify chain metadata
+	// 1. Verify chain identity metadata when present
 	rawMeta, err := db.Get([]byte("meta:chain_identity"), nil)
 	if err != nil && err != leveldb.ErrNotFound {
 		log.Fatalf("Error reading metadata: %v", err)
@@ -48,7 +48,7 @@ func main() {
 		if m.NativeSymbol != "ONXC" {
 			log.Fatalf("FAIL: Native symbol is %s, expected ONXC", m.NativeSymbol)
 		}
-		fmt.Printf("[verify] ✓ Chain identity confirmed: %s (%s)\n", m.CoinName, m.NativeSymbol)
+		fmt.Printf("[verify] Chain identity confirmed: %s (%s)\n", m.CoinName, m.NativeSymbol)
 	}
 
 	// 2. Iterate all account records and check structural integrity
@@ -63,6 +63,6 @@ func main() {
 	}
 	iter.Release()
 
-	fmt.Printf("[verify] ✓ %d account records passed structural integrity.\n", totalAccounts)
-	fmt.Printf("[verify] ✓ State trie storage verification PASSED (100%% Clean).\n")
+	fmt.Printf("[verify] %d account records passed structural integrity.\n", totalAccounts)
+	fmt.Printf("[verify] State trie storage verification PASSED.\n")
 }

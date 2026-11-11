@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Starts a local OENEXA devnet node and builds required binaries if needed.
 
@@ -68,7 +68,7 @@ if ($IsLinux -or $IsMacOS) {
 }
 
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host "       OENEXA (OEN) — Local Development Network Launcher        " -ForegroundColor Green
+Write-Host "       OENEXA (ONXC) — Local Development Network Launcher       " -ForegroundColor Green
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host "Repository : $RepoRoot" -ForegroundColor Gray
 Write-Host "Config     : $ConfigPath" -ForegroundColor Gray
@@ -178,7 +178,7 @@ if ($MetricsPort -ne 9090) {
     $ArgsList += @("--metrics-addr", "127.0.0.1:$MetricsPort")
 }
 
-$env:OEN_PASSWORD = $Password
+$env:ONXC_PASSWORD = $Password
 
 Write-Host "`n[3/3] Starting OENEXA Local Full Node..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------" -ForegroundColor Cyan

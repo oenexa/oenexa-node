@@ -66,7 +66,7 @@ func (s *DB) SetStorage(addr [crypto.AddressSize]byte, slot uint32, value uint64
 
 
 
-// Transfer moves OEN between two accounts synchronously during VM execution.
+// Transfer moves ONXC between two accounts synchronously during VM execution.
 func (s *DB) Transfer(from, to [crypto.AddressSize]byte, amount uint64) error {
 	// Note: GetAccount uses its own RWMutex internally.
 	sender := s.GetAccount(from)

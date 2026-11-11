@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# OENEXA (OEN) — Local Development Network Launcher (Bash)
+# OENEXA (ONXC) — Local Development Network Launcher (Bash)
 # ─────────────────────────────────────────────────────────────────────────────
 set -e
 
@@ -63,7 +63,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo "================================================================="
-echo "       OENEXA (OEN) — Local Development Network Launcher        "
+echo "       OENEXA (ONXC) — Local Development Network Launcher       "
 echo "================================================================="
 echo "Repository : $REPO_ROOT"
 echo "Config     : $CONFIG_PATH"
@@ -158,7 +158,7 @@ if [ "$METRICS_PORT" != "9090" ]; then
     ARGS+=("--metrics-addr" "127.0.0.1:$METRICS_PORT")
 fi
 
-export OEN_PASSWORD="$PASSWORD"
+export ONXC_PASSWORD="$PASSWORD"
 
 echo -e "\n[3/3] Starting OENEXA Local Full Node..."
 echo "-----------------------------------------------------------------"

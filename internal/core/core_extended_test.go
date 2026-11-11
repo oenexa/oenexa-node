@@ -120,8 +120,8 @@ func TestCore_FeeEstimate(t *testing.T) {
 	}
 }
 
-func TestCore_TransferCostOenexa(t *testing.T) {
-	cost := TransferCostOenexa(10, 5)
+func TestCore_TransferCostNanoONXC(t *testing.T) {
+	cost := TransferCostNanoONXC(10, 5)
 	if cost != GasTransfer*15 {
 		t.Errorf("expected %d, got %d", GasTransfer*15, cost)
 	}

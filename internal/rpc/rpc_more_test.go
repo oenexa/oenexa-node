@@ -94,7 +94,7 @@ func TestRPCServer_RecentBlocks(t *testing.T) {
 	req := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"id":      1,
-		"method":  "oen_recentBlocks",
+		"method":  "onxc_recentBlocks",
 		"params":  []int{5},
 	}
 	body, _ := json.Marshal(req)
@@ -119,8 +119,8 @@ func TestRPCServer_RecentBlocks(t *testing.T) {
 func TestRPCServer_Batch(t *testing.T) {
 	ts, _ := buildRealServer(t)
 	req := []map[string]interface{}{
-		{"jsonrpc": "2.0", "id": 1, "method": "oen_chainInfo"},
-		{"jsonrpc": "2.0", "id": 2, "method": "oen_gasPrice"},
+		{"jsonrpc": "2.0", "id": 1, "method": "onxc_chainInfo"},
+		{"jsonrpc": "2.0", "id": 2, "method": "onxc_gasPrice"},
 	}
 	body, _ := json.Marshal(req)
 	resp, _ := http.Post(ts.URL, "application/json", bytes.NewReader(body))
@@ -144,7 +144,7 @@ func TestRPCServer_Batch_Misc(t *testing.T) {
 	}
 
 	// Test batch with invalid inner request and one error request
-	body2 := []byte(`[123, {"jsonrpc": "2.0", "id": 2, "method": "oen_unknown"}]`)
+	body2 := []byte(`[123, {"jsonrpc": "2.0", "id": 2, "method": "onxc_unknown"}]`)
 	resp2, _ := http.Post(ts.URL, "application/json", bytes.NewReader(body2))
 	var out2 []map[string]interface{}
 	json.NewDecoder(resp2.Body).Decode(&out2)
@@ -239,7 +239,7 @@ func TestRPCServer_Start(t *testing.T) {
 func TestRPCServer_InvalidJSONRPC2(t *testing.T) {
 	ts, _ := buildRealServer(t)
 	req := map[string]interface{}{
-		"jsonrpc": "1.0", "id": 1, "method": "oen_chainInfo",
+		"jsonrpc": "1.0", "id": 1, "method": "onxc_chainInfo",
 	}
 	body, _ := json.Marshal(req)
 	resp, _ := http.Post(ts.URL, "application/json", bytes.NewReader(body))
@@ -261,24 +261,24 @@ func TestRPCServer_InvalidJSONRPC2(t *testing.T) {
 func TestRPC_BlockByHash(t *testing.T) {
 	ts, _ := buildTestHandler(t) // we can use the handler from rpc_test.go
 	// bad param
-	resp := rpcCallErr(t, ts, "oen_blockByHash", []string{"nothex"})
+	resp := rpcCallErr(t, ts, "onxc_blockByHash", []string{"nothex"})
 	if resp == nil {
 		t.Errorf("expected error")
 	}
 
 	// good param but not found
 	hash := crypto.Hash256([]byte("dummy"))
-	_ = rpcCallErr(t, ts, "oen_blockByHash", []string{crypto.ToHex(hash)})
+	_ = rpcCallErr(t, ts, "onxc_blockByHash", []string{crypto.ToHex(hash)})
 }
 
 func TestRPC_MissingParams(t *testing.T) {
 	ts, _ := buildTestHandler(t)
 	methods := []string{
-		"oen_blockByHeight",
-		"oen_blockByHash",
-		"oen_getBalance",
-		"oen_getTransactionCount",
-		"oen_sendRawTransaction",
+		"onxc_blockByHeight",
+		"onxc_blockByHash",
+		"onxc_getBalance",
+		"onxc_getTransactionCount",
+		"onxc_sendRawTransaction",
 	}
 	for _, m := range methods {
 		if err := rpcCallErr(t, ts, m, nil); err == nil {
@@ -289,12 +289,12 @@ func TestRPC_MissingParams(t *testing.T) {
 
 func TestRPC_BlockByHeight_BadParams(t *testing.T) {
 	ts, _ := buildTestHandler(t)
-	resp := rpcCallErr(t, ts, "oen_blockByHeight", []string{"notanumber"})
+	resp := rpcCallErr(t, ts, "onxc_blockByHeight", []string{"notanumber"})
 	if resp == nil {
 		t.Errorf("expected error")
 	}
 	// Test out of bounds
-	resp2 := rpcCallErr(t, ts, "oen_blockByHeight", []uint64{9999})
+	resp2 := rpcCallErr(t, ts, "onxc_blockByHeight", []uint64{9999})
 	if resp2 == nil {
 		t.Errorf("expected error for not found")
 	}
@@ -306,7 +306,7 @@ func TestRPC_SendRawTransaction_Success(t *testing.T) {
 	tx.Sign(w.PrivateKey)
 	raw, _ := rpc.GobEncodeTx(tx)
 
-	resp := rpcCallErr(t, ts, "oen_sendRawTransaction", []string{hex.EncodeToString(raw)})
+	resp := rpcCallErr(t, ts, "onxc_sendRawTransaction", []string{hex.EncodeToString(raw)})
 	if resp != nil {
 		t.Errorf("expected success, got error: %v", resp)
 	}
@@ -315,10 +315,10 @@ func TestRPC_SendRawTransaction_Success(t *testing.T) {
 func TestRPC_BlockByHash_Success(t *testing.T) {
 	ts, _ := buildTestHandler(t)
 	// get height 0 hash first
-	resp := rpcCall(t, ts, "oen_blockByHeight", []uint64{0})
+	resp := rpcCall(t, ts, "onxc_blockByHeight", []uint64{0})
 	hash := resp["hash"].(string)
 
-	resp2 := rpcCall(t, ts, "oen_blockByHash", []string{hash})
+	resp2 := rpcCall(t, ts, "onxc_blockByHash", []string{hash})
 	if resp2["hash"] != hash {
 		t.Errorf("expected hash %s, got %v", hash, resp2["hash"])
 	}
@@ -326,7 +326,7 @@ func TestRPC_BlockByHash_Success(t *testing.T) {
 
 func TestRPC_GetBalance_BadParams(t *testing.T) {
 	ts, _ := buildTestHandler(t)
-	resp := rpcCallErr(t, ts, "oen_getBalance", []string{"nothex"})
+	resp := rpcCallErr(t, ts, "onxc_getBalance", []string{"nothex"})
 	if resp == nil {
 		t.Errorf("expected error")
 	}
@@ -334,7 +334,7 @@ func TestRPC_GetBalance_BadParams(t *testing.T) {
 
 func TestRPC_GetTransactionCount_BadParams(t *testing.T) {
 	ts, _ := buildTestHandler(t)
-	resp := rpcCallErr(t, ts, "oen_getTransactionCount", []string{"nothex"})
+	resp := rpcCallErr(t, ts, "onxc_getTransactionCount", []string{"nothex"})
 	if resp == nil {
 		t.Errorf("expected error")
 	}
@@ -366,13 +366,13 @@ func rpcCallErr(t *testing.T, ts *httptest.Server, method string, params interfa
 func TestRPC_SendRawTransaction(t *testing.T) {
 	ts, _ := buildTestHandler(t)
 
-	err := rpcCallErr(t, ts, "oen_sendRawTransaction", []string{"badhex"})
+	err := rpcCallErr(t, ts, "onxc_sendRawTransaction", []string{"badhex"})
 	if err == nil {
 		t.Errorf("expected error for bad hex")
 	}
 
 	// test decode tx fail
-	err2 := rpcCallErr(t, ts, "oen_sendRawTransaction", []string{"000000"})
+	err2 := rpcCallErr(t, ts, "onxc_sendRawTransaction", []string{"000000"})
 	if err2 == nil {
 		t.Errorf("expected error for bad gob")
 	}
@@ -380,7 +380,7 @@ func TestRPC_SendRawTransaction(t *testing.T) {
 	// test pool reject (invalid signature)
 	tx := &core.Transaction{Nonce: 1}
 	raw, _ := rpc.GobEncodeTx(tx) // Also tests GobEncodeTx
-	err3 := rpcCallErr(t, ts, "oen_sendRawTransaction", []string{hex.EncodeToString(raw)})
+	err3 := rpcCallErr(t, ts, "onxc_sendRawTransaction", []string{hex.EncodeToString(raw)})
 	if err3 == nil {
 		t.Errorf("expected error for pool reject")
 	}
@@ -389,7 +389,7 @@ func TestRPC_SendRawTransaction(t *testing.T) {
 func TestRPC_FeeEstimate(t *testing.T) {
 	ts, _ := buildTestHandler(t)
 
-	err := rpcCallErr(t, ts, "oen_feeEstimate", []int{0})
+	err := rpcCallErr(t, ts, "onxc_feeEstimate", []int{0})
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

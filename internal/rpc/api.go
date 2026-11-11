@@ -59,60 +59,60 @@ func (a *API) Dispatch(req *Request) *Response {
 	switch req.Method {
 
 	// ── Shielded / Turnstile (Dual-Pool) ───────────────────────────
-	case "onxc_getShieldedBalance", "oen_getShieldedBalance":
+	case "onxc_getShieldedBalance":
 		return a.getShieldedBalance(req)
-	case "onxc_getTurnstileStatus", "oen_getTurnstileStatus":
+	case "onxc_getTurnstileStatus":
 		return a.getTurnstileStatus(req)
 	// ── Tokenomics & Supply (Exchange Integration) ────────────────────────
-	case "onxc_getCirculatingSupply", "oen_getCirculatingSupply", "eth_circulatingSupply":
+	case "onxc_getCirculatingSupply", "eth_circulatingSupply":
 		return a.getCirculatingSupply(req)
-	case "onxc_getTotalSupply", "oen_getTotalSupply", "eth_totalSupply":
+	case "onxc_getTotalSupply", "eth_totalSupply":
 		return a.getTotalSupply(req)
-	case "onxc_getTokenomics", "oen_getTokenomics":
+	case "onxc_getTokenomics":
 		return a.getTokenomics(req)
-	case "onxc_getStakingInfo", "oen_getStakingInfo":
+	case "onxc_getStakingInfo":
 		return a.getStakingInfo(req)
 
 	// ── Chain ──────────────────────────────────────────────────────────────
-	case "onxc_chainInfo", "oen_chainInfo":
+	case "onxc_chainInfo":
 		return a.chainInfo(req)
 
 	// ── Blocks ─────────────────────────────────────────────────────────────
-	case "onxc_recentBlocks", "oen_recentBlocks", "onxc_getLatestBlocks", "oen_getLatestBlocks":
+	case "onxc_recentBlocks", "onxc_getLatestBlocks":
 		return a.recentBlocks(req)
-	case "onxc_blockByHeight", "oen_blockByHeight", "eth_getBlockByNumber":
+	case "onxc_blockByHeight", "eth_getBlockByNumber":
 		return a.blockByHeight(req)
-	case "onxc_blockByHash", "oen_blockByHash":
+	case "onxc_blockByHash":
 		return a.blockByHash(req)
-	case "onxc_blockHeight", "oen_blockHeight", "eth_blockNumber":
+	case "onxc_blockHeight", "eth_blockNumber":
 		return okResponse(req.ID, a.engine.Height())
 
 	// ── Accounts ───────────────────────────────────────────────────────────
-	case "onxc_getBalance", "oen_getBalance", "eth_getBalance":
+	case "onxc_getBalance", "eth_getBalance":
 		return a.getBalance(req)
-	case "onxc_getTransactionCount", "oen_getTransactionCount", "eth_getTransactionCount":
+	case "onxc_getTransactionCount", "eth_getTransactionCount":
 		return a.getTransactionCount(req)
 
 	// ── Transactions ───────────────────────────────────────────────────────
-	case "onxc_sendRawTransaction", "oen_sendRawTransaction", "eth_sendRawTransaction":
+	case "onxc_sendRawTransaction", "eth_sendRawTransaction":
 		return a.sendRawTransaction(req)
-	case "onxc_call", "oen_call", "eth_call":
+	case "onxc_call", "eth_call":
 		return a.call(req)
-	case "onxc_getTransactionReceipt", "oen_getTransactionReceipt", "eth_getTransactionReceipt":
+	case "onxc_getTransactionReceipt", "eth_getTransactionReceipt":
 		return a.getTransactionReceipt(req)
-	case "onxc_getTransactionByHash", "oen_getTransactionByHash", "eth_getTransactionByHash":
+	case "onxc_getTransactionByHash", "eth_getTransactionByHash":
 		return a.getTransactionByHash(req)
 
 	// ── Staking Delegation ────────────────────────────────────────────────
-	case "onxc_getDelegations", "oen_getDelegations":
+	case "onxc_getDelegations":
 		return a.getDelegations(req)
-	case "onxc_getTotalDelegated", "oen_getTotalDelegated":
+	case "onxc_getTotalDelegated":
 		return a.getTotalDelegated(req)
 
 	// ── Fees ───────────────────────────────────────────────────────────────
-	case "onxc_feeEstimate", "oen_feeEstimate":
+	case "onxc_feeEstimate":
 		return a.feeEstimate(req)
-	case "onxc_gasPrice", "oen_gasPrice", "eth_gasPrice":
+	case "onxc_gasPrice", "eth_gasPrice":
 		return a.gasPrice(req)
 
 	// ── Web3 Compatibility ─────────────────────────────────────────────────
@@ -271,17 +271,13 @@ func (a *API) getBalance(req *Request) *Response {
 	return okResponse(req.ID, map[string]interface{}{
 		"balance_nano_onxc": bal,
 		"balance_onxc":      float64(bal) / float64(core.OneONXC),
-		"balance_oenexa":    bal,
-		"balance_nano_oen":  bal,
 		"balance":           bal,
-		"balance_oen":       float64(bal) / float64(core.OneONXC),
 	})
 }
 
 func (a *API) getShieldedBalance(req *Request) *Response {
 	return okResponse(req.ID, map[string]interface{}{
 		"shielded_balance_nano_onxc": a.st.GetShieldedBalance(),
-		"shielded_balance_nano_oen":  a.st.GetShieldedBalance(),
 		"tree_leaf_count":            a.st.CommitmentTree().LeafCount(),
 		"tree_root":                  crypto.ToHex(a.st.CommitmentTreeRoot()),
 	})
@@ -295,9 +291,6 @@ func (a *API) getTurnstileStatus(req *Request) *Response {
 		"transparent_supply_nano_onxc": trans,
 		"shielded_supply_nano_onxc":    shielded,
 		"total_supply_nano_onxc":       total,
-		"transparent_supply_nano_oen":  trans,
-		"shielded_supply_nano_oen":     shielded,
-		"total_supply_nano_oen":        total,
 		"invariant_preserved":          trans+shielded == total,
 		"status":                       "SECURE",
 	})
@@ -366,9 +359,9 @@ func (a *API) feeEstimate(req *Request) *Response {
 		UltraLowTip:      ulTip,
 		StandardTip:      stdTip,
 		FastTip:          fastTip,
-		TransferUltraLow: core.TransferCostOenexa(baseFee, ulTip),
-		TransferStandard: core.TransferCostOenexa(baseFee, stdTip),
-		TransferFast:     core.TransferCostOenexa(baseFee, fastTip),
+		TransferUltraLow: core.TransferCostNanoONXC(baseFee, ulTip),
+		TransferStandard: core.TransferCostNanoONXC(baseFee, stdTip),
+		TransferFast:     core.TransferCostNanoONXC(baseFee, fastTip),
 	})
 }
 
@@ -600,8 +593,6 @@ func (a *API) getCirculatingSupply(req *Request) *Response {
 		"circulating_supply_nano": supplyNano,
 		"circulating_supply_onxc": float64(supplyNano) / float64(core.OneONXC),
 		"max_supply_onxc":         float64(core.MaxSupply) / float64(core.OneONXC),
-		"circulating_supply_oen":  float64(supplyNano) / float64(core.OneONXC),
-		"max_supply_oen":          float64(core.MaxSupply) / float64(core.OneONXC),
 		"ticker":                  core.Ticker,
 		"coin_name":               core.CoinName,
 	})
@@ -612,14 +603,12 @@ func (a *API) getTotalSupply(req *Request) *Response {
 	circNano := core.CirculatingSupply(h)
 	shieldedNano := a.st.GetShieldedBalance()
 	return okResponse(req.ID, map[string]interface{}{
-		"total_supply_nano":     circNano,
-		"total_supply_onxc":     float64(circNano) / float64(core.OneONXC),
-		"max_supply_onxc":       float64(core.MaxSupply) / float64(core.OneONXC),
-		"total_supply_oen":      float64(circNano) / float64(core.OneONXC),
-		"shielded_supply_nano":  shieldedNano,
-		"max_supply_oen":        float64(core.MaxSupply) / float64(core.OneONXC),
-		"ticker":                core.Ticker,
-		"coin_name":             core.CoinName,
+		"total_supply_nano":    circNano,
+		"total_supply_onxc":    float64(circNano) / float64(core.OneONXC),
+		"max_supply_onxc":      float64(core.MaxSupply) / float64(core.OneONXC),
+		"shielded_supply_nano": shieldedNano,
+		"ticker":               core.Ticker,
+		"coin_name":            core.CoinName,
 	})
 }
 
@@ -644,13 +633,6 @@ func (a *API) getTokenomics(req *Request) *Response {
 		"staking_bootstrap_onxc":    float64(core.StakingBootstrap) / float64(core.OneONXC),
 		"circulating_supply_onxc":   float64(circ) / float64(core.OneONXC),
 		"max_supply_onxc":           float64(core.MaxSupply) / float64(core.OneONXC),
-		"current_block_reward_oen":  float64(reward) / float64(core.OneONXC),
-		"genesis_premine_oen":       float64(core.GenesisPremine) / float64(core.OneONXC),
-		"treasury_allocation_oen":   float64(core.TreasuryAllocation) / float64(core.OneONXC),
-		"liquidity_reserve_oen":     float64(core.LiquidityReserve) / float64(core.OneONXC),
-		"staking_bootstrap_oen":     float64(core.StakingBootstrap) / float64(core.OneONXC),
-		"circulating_supply_oen":    float64(circ) / float64(core.OneONXC),
-		"max_supply_oen":            float64(core.MaxSupply) / float64(core.OneONXC),
 		"ticker":                    core.Ticker,
 		"coin_name":                 core.CoinName,
 		"staking_yield_apy_67pct":   core.StakingYieldEstimate(h, 0.67),
@@ -688,12 +670,11 @@ func (a *API) getDelegations(req *Request) *Response {
 
 func (a *API) getTotalDelegated(req *Request) *Response {
 	if a.delegationMgr == nil {
-		return okResponse(req.ID, map[string]interface{}{"total_delegated": 0, "total_delegated_onxc": 0.0, "total_delegated_oen": 0.0})
+		return okResponse(req.ID, map[string]interface{}{"total_delegated": 0, "total_delegated_onxc": 0.0})
 	}
 	total := a.delegationMgr.TotalDelegatedStake()
 	return okResponse(req.ID, map[string]interface{}{
 		"total_delegated":      total,
 		"total_delegated_onxc": float64(total) / float64(core.OneONXC),
-		"total_delegated_oen":  float64(total) / float64(core.OneONXC),
 	})
 }

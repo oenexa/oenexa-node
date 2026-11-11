@@ -28,9 +28,9 @@ func main() {
 	workers := flag.Int("workers", 10, "Number of concurrent workers")
 	flag.Parse()
 
-	password := os.Getenv("OEN_PASSWORD")
+	password := os.Getenv("ONXC_PASSWORD")
 	if password == "" {
-		log.Fatal("OEN_PASSWORD environment variable is required")
+		log.Fatal("ONXC_PASSWORD environment variable is required")
 	}
 
 	w, err := keystore.Decrypt(*ksPath, password)
@@ -92,7 +92,7 @@ func main() {
 					rawHex := hex.EncodeToString(raw)
 
 					t0 := time.Now()
-					_, err := rpcCall(*rpcAddr, "oen_sendRawTransaction", []string{rawHex})
+					_, err := rpcCall(*rpcAddr, "onxc_sendRawTransaction", []string{rawHex})
 					latMs := uint64(time.Since(t0).Milliseconds())
 					atomic.AddUint64(&totalLatMs, latMs)
 
@@ -130,7 +130,7 @@ func main() {
 }
 
 func fetchNonce(endpoint, addr string) (uint64, error) {
-	result, err := rpcCall(endpoint, "oen_getTransactionCount", []string{addr})
+	result, err := rpcCall(endpoint, "onxc_getTransactionCount", []string{addr})
 	if err != nil {
 		return 0, err
 	}

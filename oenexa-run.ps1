@@ -1,6 +1,6 @@
-<#
+﻿<#
 .SYNOPSIS
-    OENEXA (OEN) — Unified Docker Deployment & Runner Script (PowerShell)
+    OENEXA (ONXC) — Unified Docker Deployment & Runner Script (PowerShell)
     Clones latest main branch of backend and frontend, builds, and runs via Docker.
 .PARAMETER Reset
     Purge previous containers, networks, and chain data volumes.
@@ -74,7 +74,7 @@ if ($Status) {
 }
 
 Write-Host "==========================================================================" -ForegroundColor Cyan
-Write-Host "    OENEXA (OEN) — Full Stack Docker Runner (Clone & Run from Main)       " -ForegroundColor Cyan
+Write-Host "    OENEXA (ONXC) — Full Stack Docker Runner (Clone & Run from Main)      " -ForegroundColor Cyan
 Write-Host "==========================================================================" -ForegroundColor Cyan
 
 # 1. Pre-flight checks
@@ -172,13 +172,13 @@ services:
     container_name: oenexa-node
     restart: unless-stopped
     environment:
-      - OEN_PASSWORD=devpassword
+      - ONXC_PASSWORD=devpassword
     ports:
       - "${P2pPort}:8765"
       - "${RpcPort}:8545"
       - "${MetricsPort}:9090"
     volumes:
-      - oen-chain-data:/data
+      - onxc-chain-data:/data
       - ./oenexa-node/configs/docker-devnet.toml:/data/config.toml:ro
     command: >
       start
@@ -204,7 +204,7 @@ services:
       - oenexa-net
 
 volumes:
-  oen-chain-data:
+  onxc-chain-data:
 
 networks:
   oenexa-net:

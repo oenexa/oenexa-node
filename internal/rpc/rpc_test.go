@@ -178,7 +178,7 @@ func rpcCall(t *testing.T, ts *httptest.Server, method string, params interface{
 func TestRPC_BlockHeight(t *testing.T) {
 	ts, _ := buildTestHandler(t)
 	body, _ := json.Marshal(map[string]interface{}{
-		"jsonrpc": "2.0", "id": 1, "method": "oen_blockHeight", "params": nil,
+		"jsonrpc": "2.0", "id": 1, "method": "onxc_blockHeight", "params": nil,
 	})
 	resp, err := http.Post(ts.URL, "application/json", bytes.NewReader(body))
 	if err != nil {
@@ -202,10 +202,10 @@ func TestRPC_BlockHeight(t *testing.T) {
 
 func TestRPC_GetBalance(t *testing.T) {
 	ts, w := buildTestHandler(t)
-	result := rpcCall(t, ts, "oen_getBalance", []string{crypto.AddressToHex(w.Address)})
-	bal, ok := result["balance_oenexa"].(float64)
+	result := rpcCall(t, ts, "onxc_getBalance", []string{crypto.AddressToHex(w.Address)})
+	bal, ok := result["balance_nano_onxc"].(float64)
 	if !ok {
-		t.Fatalf("missing balance_oenexa in %v", result)
+		t.Fatalf("missing balance_nano_onxc in %v", result)
 	}
 	if bal <= 0 {
 		t.Errorf("expected positive balance, got %v", bal)
@@ -214,7 +214,7 @@ func TestRPC_GetBalance(t *testing.T) {
 
 func TestRPC_GetTransactionCount(t *testing.T) {
 	ts, w := buildTestHandler(t)
-	result := rpcCall(t, ts, "oen_getTransactionCount", []string{crypto.AddressToHex(w.Address)})
+	result := rpcCall(t, ts, "onxc_getTransactionCount", []string{crypto.AddressToHex(w.Address)})
 	_, ok := result["nonce"]
 	if !ok {
 		t.Fatalf("missing nonce in %v", result)
@@ -223,7 +223,7 @@ func TestRPC_GetTransactionCount(t *testing.T) {
 
 func TestRPC_ChainInfo(t *testing.T) {
 	ts, _ := buildTestHandler(t)
-	result := rpcCall(t, ts, "oen_chainInfo", nil)
+	result := rpcCall(t, ts, "onxc_chainInfo", nil)
 	if _, ok := result["height"]; !ok {
 		t.Errorf("missing height in chain info: %v", result)
 	}
@@ -234,7 +234,7 @@ func TestRPC_ChainInfo(t *testing.T) {
 
 func TestRPC_BlockByHeight(t *testing.T) {
 	ts, _ := buildTestHandler(t)
-	result := rpcCall(t, ts, "oen_blockByHeight", []uint64{0})
+	result := rpcCall(t, ts, "onxc_blockByHeight", []uint64{0})
 	if _, ok := result["hash"]; !ok {
 		t.Errorf("missing hash in block: %v", result)
 	}
@@ -242,7 +242,7 @@ func TestRPC_BlockByHeight(t *testing.T) {
 
 func TestRPC_GasPrice(t *testing.T) {
 	ts, _ := buildTestHandler(t)
-	result := rpcCall(t, ts, "oen_gasPrice", nil)
+	result := rpcCall(t, ts, "onxc_gasPrice", nil)
 	if _, ok := result["base_fee"]; !ok {
 		t.Errorf("missing base_fee in gas price: %v", result)
 	}
@@ -251,7 +251,7 @@ func TestRPC_GasPrice(t *testing.T) {
 func TestRPC_MethodNotFound(t *testing.T) {
 	ts, _ := buildTestHandler(t)
 	body, _ := json.Marshal(map[string]interface{}{
-		"jsonrpc": "2.0", "id": 1, "method": "oen_nonExistent", "params": nil,
+		"jsonrpc": "2.0", "id": 1, "method": "onxc_nonExistent", "params": nil,
 	})
 	resp, err := http.Post(ts.URL, "application/json", bytes.NewReader(body))
 	if err != nil {
@@ -276,46 +276,37 @@ func TestRPC_MethodNotFound(t *testing.T) {
 
 func TestRPC_ShieldedAndTurnstile(t *testing.T) {
 	ts, _ := buildTestHandler(t)
-	resShielded := rpcCall(t, ts, "oen_getShieldedBalance", nil)
-	if _, ok := resShielded["shielded_balance_nano_oen"]; !ok {
-		t.Fatalf("missing shielded_balance_nano_oen in %v", resShielded)
+	resShielded := rpcCall(t, ts, "onxc_getShieldedBalance", nil)
+	if _, ok := resShielded["shielded_balance_nano_onxc"]; !ok {
+		t.Fatalf("missing shielded_balance_nano_onxc in %v", resShielded)
 	}
 	if _, ok := resShielded["tree_leaf_count"]; !ok {
 		t.Fatalf("missing tree_leaf_count in %v", resShielded)
 	}
 
-	resTurnstile := rpcCall(t, ts, "oen_getTurnstileStatus", nil)
-	if _, ok := resTurnstile["transparent_supply_nano_oen"]; !ok {
-		t.Fatalf("missing transparent_supply_nano_oen in %v", resTurnstile)
+	resTurnstile := rpcCall(t, ts, "onxc_getTurnstileStatus", nil)
+	if _, ok := resTurnstile["transparent_supply_nano_onxc"]; !ok {
+		t.Fatalf("missing transparent_supply_nano_onxc in %v", resTurnstile)
 	}
 	if val, ok := resTurnstile["invariant_preserved"].(bool); !ok || !val {
 		t.Fatalf("expected invariant_preserved to be true, got %v", resTurnstile)
 	}
 }
 
-func TestRPC_OenAliases(t *testing.T) {
+func TestRPC_ONXCNamespace(t *testing.T) {
 	ts, w := buildTestHandler(t)
-	// Test primary ONXC RPC method
+	// Test canonical ONXC RPC methods and zero-alias strictness
 	resChainONXC := rpcCall(t, ts, "onxc_chainInfo", nil)
 	if ticker, ok := resChainONXC["ticker"].(string); !ok || ticker != "ONXC" {
 		t.Errorf("expected ticker ONXC in onxc_chainInfo, got %v", ticker)
-	}
-
-	// Test backwards-compatible legacy alias
-	resChain := rpcCall(t, ts, "oen_chainInfo", nil)
-	if _, ok := resChain["height"]; !ok {
-		t.Errorf("missing height in oen_chainInfo: %v", resChain)
-	}
-	if ticker, ok := resChain["ticker"].(string); !ok || ticker != "ONXC" {
-		t.Errorf("expected ticker ONXC, got %v", ticker)
 	}
 
 	resBal := rpcCall(t, ts, "onxc_getBalance", []string{crypto.AddressToHex(w.Address)})
 	if _, ok := resBal["balance_nano_onxc"]; !ok {
 		t.Fatalf("missing balance_nano_onxc in %v", resBal)
 	}
-	if _, ok := resBal["balance_nano_oen"]; !ok {
-		t.Fatalf("missing backwards-compatible balance_nano_oen in %v", resBal)
+	if _, ok := resBal["balance_onxc"]; !ok {
+		t.Fatalf("missing balance_onxc in %v", resBal)
 	}
 }
 
@@ -342,8 +333,8 @@ func TestRPC_Web3Compatibility(t *testing.T) {
 
 	// eth_getBalance with 0x prefix
 	resBal := rpcCall(t, ts, "eth_getBalance", []string{"0x" + crypto.AddressToHex(w.Address)})
-	if _, ok := resBal["balance_nano_oen"]; !ok {
-		t.Fatalf("missing balance_nano_oen in %v", resBal)
+	if _, ok := resBal["balance_nano_onxc"]; !ok {
+		t.Fatalf("missing balance_nano_onxc in %v", resBal)
 	}
 
 	// eth_getTransactionCount
@@ -400,7 +391,7 @@ func TestRPC_DelegationEndpoints(t *testing.T) {
 	t.Cleanup(ts.Close)
 
 	// Without delegation manager attached
-	res := rpcCall(t, ts, "oen_getTotalDelegated", []interface{}{})
+	res := rpcCall(t, ts, "onxc_getTotalDelegated", []interface{}{})
 	if res["total_delegated"] != float64(0) {
 		t.Fatalf("expected 0 total delegated, got %v", res["total_delegated"])
 	}
@@ -409,14 +400,14 @@ func TestRPC_DelegationEndpoints(t *testing.T) {
 	dm := consensus.NewDelegationManager(vs, 100)
 	api.SetDelegationManager(dm)
 
-	res = rpcCall(t, ts, "oen_getTotalDelegated", []interface{}{})
+	res = rpcCall(t, ts, "onxc_getTotalDelegated", []interface{}{})
 	if res["total_delegated"] != float64(0) {
 		t.Fatalf("expected 0 total delegated, got %v", res["total_delegated"])
 	}
 
 	// Test valid query with no delegations
 	addrHex := crypto.ToHex([crypto.AddressSize]byte{2})
-	delsResp := rpcCall(t, ts, "oen_getDelegations", []string{addrHex})
+	delsResp := rpcCall(t, ts, "onxc_getDelegations", []string{addrHex})
 	_ = delsResp
 }
 

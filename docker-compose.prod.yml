@@ -96,13 +96,13 @@ services:
     container_name: oenexa-node
     restart: unless-stopped
     environment:
-      OEN_PASSWORD: "${OEN_PASSWORD}"
+      ONXC_PASSWORD: "${ONXC_PASSWORD}"
     ports:
       - "${P2P_PORT:-8765}:8765"
       - "127.0.0.1:${RPC_PORT:-8545}:8545"
       - "127.0.0.1:${METRICS_PORT:-9090}:9090"
     volumes:
-      - oen-chain-data:/data
+      - onxc-chain-data:/data
       - ./configs/node.toml:/data/config.toml:ro
     command: >
       start
@@ -183,8 +183,8 @@ services:
       - oenexa-net
 
 volumes:
-  oen-chain-data:
-    name: oen-chain-data
+  onxc-chain-data:
+    name: onxc-chain-data
   oenexa-postgres-data:
     name: oenexa-postgres-data
   oenexa-redis-data:

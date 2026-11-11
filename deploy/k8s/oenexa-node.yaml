@@ -22,7 +22,7 @@ metadata:
   namespace: oenexa-network
 type: Opaque
 stringData:
-  OEN_PASSWORD: "my-secure-password" # Change this for production!
+  ONXC_PASSWORD: "my-secure-password" # Change this for production!
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -51,11 +51,11 @@ spec:
             - "/data"
             - "--metrics"
           env:
-            - name: OEN_PASSWORD
+            - name: ONXC_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: oenexa-secrets
-                  key: OEN_PASSWORD
+                  key: ONXC_PASSWORD
           ports:
             - containerPort: 8765
               name: p2p

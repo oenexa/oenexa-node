@@ -14,7 +14,7 @@ import (
 // PURPOSE:
 //   1. Represents an indivisible state-transition directive executed on the
 //      OENEXA Layer-1 sovereign blockchain.
-//   2. Authenticates sovereign ownership, transacts native OEN value, executes
+//   2. Authenticates sovereign ownership, transacts native ONXC value, executes
 //      smart contract calls, manages validator staking, and processes zero-knowledge
 //      shielded privacy commitments.
 //   3. Guarantees deterministic, tamper-proof execution semantics across all
@@ -205,7 +205,7 @@ func NewTransfer(from [crypto.AddressSize]byte, to [crypto.AddressSize]byte,
 	}
 }
 
-// NewShield creates a shield transaction (deposits transparent OEN to a shielded note commitment).
+// NewShield creates a shield transaction (deposits transparent ONXC to a shielded note commitment).
 func NewShield(from [crypto.AddressSize]byte, pubKey []byte, nonce, amount, gasPrice uint64, noteCommitment [crypto.HashSize]byte, encryptedNote []byte) *Transaction {
 	data := make([]byte, 0, crypto.HashSize+len(encryptedNote))
 	data = append(data, noteCommitment[:]...)

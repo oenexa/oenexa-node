@@ -50,8 +50,8 @@ func TestResolvePassword(t *testing.T) {
 	}
 	flagPassword = ""
 
-	os.Setenv("OEN_PASSWORD", "env_pass")
-	defer os.Unsetenv("OEN_PASSWORD")
+	os.Setenv("ONXC_PASSWORD", "env_pass")
+	defer os.Unsetenv("ONXC_PASSWORD")
 	if resolvePassword() != "env_pass" {
 		t.Errorf("expected env_pass, got %s", resolvePassword())
 	}

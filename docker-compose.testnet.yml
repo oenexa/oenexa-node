@@ -7,7 +7,7 @@ services:
     container_name: oenexa-node0
     restart: unless-stopped
     environment:
-      OEN_PASSWORD: "testnet-password"
+      ONXC_PASSWORD: "testnet-password"
     ports:
       - "8545:8545" # RPC for node0
     volumes:
@@ -25,7 +25,7 @@ services:
     container_name: oenexa-node1
     restart: unless-stopped
     environment:
-      OEN_PASSWORD: "testnet-password"
+      ONXC_PASSWORD: "testnet-password"
     ports:
       - "8546:8545"
     volumes:
@@ -43,7 +43,7 @@ services:
     container_name: oenexa-node2
     restart: unless-stopped
     environment:
-      OEN_PASSWORD: "testnet-password"
+      ONXC_PASSWORD: "testnet-password"
     ports:
       - "8547:8545"
     volumes:
@@ -61,7 +61,7 @@ services:
     container_name: oenexa-node3
     restart: unless-stopped
     environment:
-      OEN_PASSWORD: "testnet-password"
+      ONXC_PASSWORD: "testnet-password"
     ports:
       - "8548:8545"
     volumes:

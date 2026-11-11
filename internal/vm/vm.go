@@ -19,7 +19,7 @@ type VM struct {
 
 var newRuntime = wazero.NewRuntime
 
-// NewVM creates a new VM and registers the OEN host module.
+// NewVM creates a new VM and registers the OENEXA host module.
 func NewVM(ctx context.Context) (*VM, error) {
 	// Enable CloseOnContextDone to protect against infinite loops (Gas Exhaustion)
 	cfg := wazero.NewRuntimeConfig().WithCloseOnContextDone(true)
@@ -35,7 +35,7 @@ func NewVM(ctx context.Context) (*VM, error) {
 	return v, nil
 }
 
-// registerHostModule installs all OEN host functions under the "env" module.
+// registerHostModule installs all OENEXA host functions under the "env" module.
 func (v *VM) registerHostModule(ctx context.Context) error {
 	_, err := v.rt.NewHostModuleBuilder("env").
 		NewFunctionBuilder().

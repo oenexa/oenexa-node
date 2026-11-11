@@ -186,6 +186,6 @@ func TestnetDefault() *Config {
 		"oenexa-testnet-seed1.oenexa.io:8765",
 		"oenexa-testnet-seed2.oenexa.io:8765",
 	}
-	cfg.Node.DataDir = "~/.oenexa-testnet"
+	cfg.Node.DataDir = "~/.onxc-testnet"
 	return cfg
 }

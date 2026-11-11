@@ -1,4 +1,4 @@
-// Package node wires every OEN subsystem together into a production-ready
+// Package node wires every OENEXA subsystem together into a production-ready
 // full node.  It replaces the demo harness in cmd/node/main.go.
 //
 // Lifecycle:
@@ -45,7 +45,7 @@ import (
 	"github.com/oenexa/oenexa/internal/vm"
 )
 
-// Node is a fully wired OEN full node.
+// Node is a fully wired OENEXA full node.
 type Node struct {
 	cfg        *config.Config
 	wallet     *crypto.Wallet

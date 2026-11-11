@@ -15,7 +15,7 @@ type BlockResult struct {
 	BurnedFees      uint64 // base-fee portion burned (removed from supply)
 	ValidatorTip    uint64 // priority-tip portion credited to validator
 	BlockReward     uint64 // coinbase subsidy
-	ShieldedBalance uint64 // total nano-OEN in shielded pool
+	ShieldedBalance uint64 // total nano-ONXC in shielded pool
 	TxResults       []*TxResult
 }
 

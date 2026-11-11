@@ -26,7 +26,7 @@ type ExecutionContext struct {
 	State        StateAccessor
 	ContractAddr [crypto.AddressSize]byte
 	CallerAddr   [crypto.AddressSize]byte
-	Value        uint64 // OEN (in oenexa) sent with the call
+	Value        uint64 // ONXC (in nano-ONXC) sent with the call
 	BlockHeight  uint64
 	BlockTime    int64
 	GasLimit     uint64

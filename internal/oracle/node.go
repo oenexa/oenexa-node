@@ -23,14 +23,6 @@ var SovereignValuationPairs = map[string]string{
 	"ONXC-JPY":  "jpy",
 	"ONXC-CHF":  "chf",
 	"ONXC-USDC": "usd",
-	// Legacy ticker aliases for seamless backwards-compatibility
-	"OEN":      "oenexa",
-	"OEN-USD":  "usd",
-	"OEN-EUR":  "eur",
-	"OEN-GBP":  "gbp",
-	"OEN-JPY":  "jpy",
-	"OEN-CHF":  "chf",
-	"OEN-USDC": "usd",
 }
 
 // OracleReport represents an attestation submitted by a decentralized validator oracle node.
@@ -67,14 +59,14 @@ func NewNode(id string, stake uint64, rpc string) *OracleNode {
 // coinGeckoSimplePrice is the shape of CoinGecko /simple/price responses.
 type coinGeckoSimplePrice map[string]map[string]float64
 
-// FetchSovereignPrice fetches live valuation data for sovereign OEN pairs
-// (OEN, OEN-USD, OEN-EUR, OEN-GBP, OEN-JPY, OEN-CHF, OEN-USDC).
+// FetchSovereignPrice fetches live valuation data for sovereign ONXC pairs
+// (ONXC, ONXC-USD, ONXC-EUR, ONXC-GBP, ONXC-JPY, ONXC-CHF, ONXC-USDC).
 // Strictly native to OENEXA Layer-1 without external cryptocurrency dependencies.
 func (n *OracleNode) FetchSovereignPrice(pair string) (uint64, error) {
 	upper := strings.ToUpper(strings.TrimSpace(pair))
 	curr, ok := SovereignValuationPairs[upper]
 	if !ok {
-		return 0, fmt.Errorf("unknown sovereign pair %q; supported pairs: OEN, OEN-USD, OEN-EUR, OEN-GBP, OEN-JPY, OEN-CHF, OEN-USDC", pair)
+		return 0, fmt.Errorf("unknown sovereign pair %q; supported pairs: ONXC, ONXC-USD, ONXC-EUR, ONXC-GBP, ONXC-JPY, ONXC-CHF, ONXC-USDC", pair)
 	}
 
 	url := fmt.Sprintf(

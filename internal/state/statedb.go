@@ -65,7 +65,7 @@ type DB struct {
 	// ContractAddr -> Slot -> Value
 	dirtyStorage map[[crypto.AddressSize]byte]map[uint32]uint64
 
-	// shieldedPool is the total nano-OEN value locked in the shielded pool.
+	// shieldedPool is the total nano-ONXC value locked in the shielded pool.
 	shieldedPool uint64
 
 	// nullifiers is the set of already-spent note nullifiers.
@@ -157,7 +157,7 @@ func (s *DB) SetAccount(addr [crypto.AddressSize]byte, acc *Account) {
 	s.dirty[addr] = acc.Clone()
 }
 
-// GetBalance returns the OEN balance of an address.
+// GetBalance returns the ONXC balance of an address (in nano-ONXC).
 func (s *DB) GetBalance(addr [crypto.AddressSize]byte) uint64 {
 	return s.GetAccount(addr).Balance
 }
@@ -277,7 +277,7 @@ func (s *DB) CommitAndFlush() ([crypto.HashSize]byte, error) {
 // Shielded pool
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GetShieldedBalance returns the total nano-OEN held in the shielded pool.
+// GetShieldedBalance returns the total nano-ONXC held in the shielded pool.
 func (s *DB) GetShieldedBalance() uint64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

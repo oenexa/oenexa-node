@@ -52,8 +52,8 @@ func TestMetrics_SetAndObserve(t *testing.T) {
 	FeeBurned.Add(1000)
 	BaseFee.Set(1e9)
 	BlockProductionDuration.Observe(0.001)
-	RPCRequests.WithLabelValues("oen_chainInfo").Inc()
-	RPCErrors.WithLabelValues("oen_chainInfo").Inc()
+	RPCRequests.WithLabelValues("onxc_chainInfo").Inc()
+	RPCErrors.WithLabelValues("onxc_chainInfo").Inc()
 	// If any of these panic, the test fails.
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# OENEXA (OEN) — Unified Docker Deployment & Runner Script
+# OENEXA (ONXC) — Unified Docker Deployment & Runner Script
 # Clones latest main branch of backend and frontend, builds, and runs via Docker.
 # ─────────────────────────────────────────────────────────────────────────────
 set -e
@@ -139,7 +139,7 @@ fi
 
 echo -e "${CYAN}${BOLD}"
 echo "=========================================================================="
-echo "    OENEXA (OEN) — Full Stack Docker Runner (Clone & Run from Main)       "
+echo "    OENEXA (ONXC) — Full Stack Docker Runner (Clone & Run from Main)      "
 echo "=========================================================================="
 echo -e "${NC}"
 
@@ -238,13 +238,13 @@ services:
     container_name: oenexa-node
     restart: unless-stopped
     environment:
-      - OEN_PASSWORD=devpassword
+      - ONXC_PASSWORD=devpassword
     ports:
       - "${P2P_PORT}:8765"
       - "${RPC_PORT}:8545"
       - "${METRICS_PORT}:9090"
     volumes:
-      - oen-chain-data:/data
+      - onxc-chain-data:/data
       - ./oenexa-node/configs/docker-devnet.toml:/data/config.toml:ro
     command: >
       start
@@ -270,7 +270,7 @@ services:
       - oenexa-net
 
 volumes:
-  oen-chain-data:
+  onxc-chain-data:
 
 networks:
   oenexa-net:

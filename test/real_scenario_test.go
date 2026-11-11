@@ -125,8 +125,8 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 		t.Errorf("web3_clientVersion: want Oenexa/v1.0.0, got %v", clientVer)
 	}
 
-	// Test oen_chainInfo
-	chainInfoRaw := callRPC(t, ts.URL, "oen_chainInfo", nil)
+	// Test onxc_chainInfo
+	chainInfoRaw := callRPC(t, ts.URL, "onxc_chainInfo", nil)
 	var chainInfo rpc.ChainInfo
 	reencodeJSON(chainInfoRaw, &chainInfo)
 	if chainInfo.Height != 1 { // Genesis block is height 0, engine length is 1
@@ -202,7 +202,7 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 	}
 
 	// ── 8. Verify Balances and Receipts ────────────────────────────────────
-	bobBalRes := callRPC(t, ts.URL, "oen_getBalance", []string{crypto.AddressToHex(bobWallet.Address)})
+	bobBalRes := callRPC(t, ts.URL, "onxc_getBalance", []string{crypto.AddressToHex(bobWallet.Address)})
 	reencodeJSON(bobBalRes, &balMap)
 	if uint64(balMap["balance"].(float64)) != transferAmount {
 		t.Errorf("Bob balance: want %d, got %v", transferAmount, balMap["balance"])
@@ -280,18 +280,18 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 	}
 
 	// ── 11. Verify Shielded Pool Balance & Turnstile Invariant ─────────────
-	shieldRes := callRPC(t, ts.URL, "oen_getShieldedBalance", nil)
+	shieldRes := callRPC(t, ts.URL, "onxc_getShieldedBalance", nil)
 	var shieldMap map[string]interface{}
 	reencodeJSON(shieldRes, &shieldMap)
-	if uint64(shieldMap["shielded_balance_nano_oen"].(float64)) != shieldAmount {
-		t.Errorf("shielded balance: want %d, got %v", shieldAmount, shieldMap["shielded_balance_nano_oen"])
+	if uint64(shieldMap["shielded_balance_nano_onxc"].(float64)) != shieldAmount {
+		t.Errorf("shielded balance: want %d, got %v", shieldAmount, shieldMap["shielded_balance_nano_onxc"])
 	}
 	if uint64(shieldMap["tree_leaf_count"].(float64)) != 1 {
 		t.Errorf("tree leaf count: want 1, got %v", shieldMap["tree_leaf_count"])
 	}
 
 	// Query Turnstile Status via RPC
-	turnstileRes := callRPC(t, ts.URL, "oen_getTurnstileStatus", nil)
+	turnstileRes := callRPC(t, ts.URL, "onxc_getTurnstileStatus", nil)
 	var turnstileMap map[string]interface{}
 	reencodeJSON(turnstileRes, &turnstileMap)
 	if turnstileMap["status"] != "SECURE" {
@@ -302,14 +302,14 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 	}
 
 	// ── 12. Query Recent Blocks and Fee Estimates ──────────────────────────
-	feeEstRes := callRPC(t, ts.URL, "oen_feeEstimate", nil)
+	feeEstRes := callRPC(t, ts.URL, "onxc_feeEstimate", nil)
 	var feeEst rpc.FeeEstimateResult
 	reencodeJSON(feeEstRes, &feeEst)
 	if feeEst.BaseFee < core.MinBaseFee {
 		t.Errorf("fee estimate base fee below minimum: %d", feeEst.BaseFee)
 	}
 
-	recentRes := callRPC(t, ts.URL, "oen_recentBlocks", []uint64{5})
+	recentRes := callRPC(t, ts.URL, "onxc_recentBlocks", []uint64{5})
 	var recentBlocks []*rpc.BlockInfo
 	reencodeJSON(recentRes, &recentBlocks)
 	if len(recentBlocks) != 3 { // genesis, block 1, block 2
@@ -333,7 +333,7 @@ func TestRealScenario_FullBlockchainLifecycle(t *testing.T) {
 		t.Errorf("max supply: want 100M, got %v", tMap["max_supply_onxc"])
 	}
 
-	stakingRes := callRPC(t, ts.URL, "oen_getStakingInfo", nil)
+	stakingRes := callRPC(t, ts.URL, "onxc_getStakingInfo", nil)
 	var sMap map[string]interface{}
 	reencodeJSON(stakingRes, &sMap)
 	if sMap["target_bonded_ratio"].(float64) != 0.67 {

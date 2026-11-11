@@ -101,28 +101,28 @@ func TestFeeEstimate_Fast_TipLargerThanStandard(t *testing.T) {
 	}
 }
 
-// ── TransferCostOenexa ────────────────────────────────────────────────────────
+// ── TransferCostNanoONXC ──────────────────────────────────────────────────────
 
-func TestTransferCostOenexa_AtGenesis(t *testing.T) {
-	cost := TransferCostOenexa(InitialBaseFee, 0)
+func TestTransferCostNanoONXC_AtGenesis(t *testing.T) {
+	cost := TransferCostNanoONXC(InitialBaseFee, 0)
 	want := GasTransfer * InitialBaseFee
 	if cost != want {
 		t.Errorf("transfer cost at genesis: want %d, got %d", want, cost)
 	}
 }
 
-func TestTransferCostOenexa_SubMicroDollar(t *testing.T) {
+func TestTransferCostNanoONXC_SubMicroDollar(t *testing.T) {
 	// At $1/ONXC, cost of transfer at genesis base fee = 210 nano-ONXC = $0.00000021.
 	// Verify it is strictly sub-micro-dollar (< $0.00001).
-	costONXC := float64(TransferCostOenexa(InitialBaseFee, 0)) / float64(OneONXC)
+	costONXC := float64(TransferCostNanoONXC(InitialBaseFee, 0)) / float64(OneONXC)
 	subMicroThreshold := 0.00001
 	if costONXC >= subMicroThreshold {
 		t.Errorf("ONXC fee $%.10f should be strictly sub-micro-dollar < $%.5f", costONXC, subMicroThreshold)
 	}
 }
 
-func TestTransferCostOenexa_AboveZero(t *testing.T) {
-	cost := TransferCostOenexa(MinBaseFee, 0)
+func TestTransferCostNanoONXC_AboveZero(t *testing.T) {
+	cost := TransferCostNanoONXC(MinBaseFee, 0)
 	if cost == 0 {
 		t.Error("transfer cost must never be zero (spam prevention)")
 	}
@@ -163,10 +163,10 @@ func TestFeeComparisonTable_HasExpectedChains(t *testing.T) {
 // ── Gas constants sanity ──────────────────────────────────────────────────────
 
 func TestGasConstants_TransferUltraCheap(t *testing.T) {
-	// Transfer must cost less than 1000 oenexa at genesis base fee.
-	cost := TransferCostOenexa(InitialBaseFee, 0)
+	// Transfer must cost less than 1000 nano-ONXC at genesis base fee.
+	cost := TransferCostNanoONXC(InitialBaseFee, 0)
 	if cost >= 1000 {
-		t.Errorf("transfer cost %d oenexa should be < 1000 for ultra-cheap positioning", cost)
+		t.Errorf("transfer cost %d nano-ONXC should be < 1000 for ultra-cheap positioning", cost)
 	}
 }
 

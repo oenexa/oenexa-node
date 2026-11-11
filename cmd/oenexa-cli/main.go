@@ -87,7 +87,7 @@ func handleKeygen() {
 }
 
 func handleInfo(rpcURL string) {
-	res, err := callRPC(rpcURL, "oen_chainInfo", nil)
+	res, err := callRPC(rpcURL, "onxc_chainInfo", nil)
 	if err != nil {
 		fmt.Printf("Error querying node: %v\n", err)
 		return
@@ -111,7 +111,7 @@ func handleInfo(rpcURL string) {
 
 func handleBalance(addrStr, rpcURL string) {
 	addrStr = strings.TrimPrefix(addrStr, "0x")
-	res, err := callRPC(rpcURL, "oen_getBalance", []string{addrStr})
+	res, err := callRPC(rpcURL, "onxc_getBalance", []string{addrStr})
 	if err != nil {
 		fmt.Printf("Error querying balance: %v\n", err)
 		return
@@ -125,20 +125,6 @@ func handleBalance(addrStr, rpcURL string) {
 
 	var balNano uint64
 	if v, ok := data["balance_nano_onxc"]; ok {
-		switch n := v.(type) {
-		case float64:
-			balNano = uint64(n)
-		case uint64:
-			balNano = n
-		}
-	} else if v, ok := data["balance_nano_oen"]; ok {
-		switch n := v.(type) {
-		case float64:
-			balNano = uint64(n)
-		case uint64:
-			balNano = n
-		}
-	} else if v, ok := data["balance_oenexa"]; ok {
 		switch n := v.(type) {
 		case float64:
 			balNano = uint64(n)
@@ -182,7 +168,7 @@ func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 	amountNano := uint64(amountONXC * float64(core.OneONXC))
 
 	// 1. Fetch current account nonce from node
-	nonceRes, err := callRPC(rpcURL, "oen_getTransactionCount", []string{crypto.AddressToHex(wallet.Address)})
+	nonceRes, err := callRPC(rpcURL, "onxc_getTransactionCount", []string{crypto.AddressToHex(wallet.Address)})
 	if err != nil {
 		fmt.Printf("Error querying account nonce: %v\n", err)
 		return
@@ -200,7 +186,7 @@ func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 	}
 
 	// 2. Fetch current gas price / base fee from node
-	gasRes, err := callRPC(rpcURL, "oen_gasPrice", nil)
+	gasRes, err := callRPC(rpcURL, "onxc_gasPrice", nil)
 	gasPrice := uint64(core.MinGasPrice + 10)
 	if err == nil {
 		var gasData map[string]interface{}
@@ -233,8 +219,8 @@ func handleTransfer(privKeyHex, toAddrHex, amountStr, rpcURL string) {
 		return
 	}
 
-	// 5. Submit via oen_sendRawTransaction
-	sendRes, err := callRPC(rpcURL, "oen_sendRawTransaction", []string{hex.EncodeToString(encoded)})
+	// 5. Submit via onxc_sendRawTransaction
+	sendRes, err := callRPC(rpcURL, "onxc_sendRawTransaction", []string{hex.EncodeToString(encoded)})
 	if err != nil {
 		fmt.Printf("Transaction rejected by network: %v\n", err)
 		return

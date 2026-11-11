@@ -83,12 +83,12 @@ package core
 // ─────────────────────────────────────────────────────────────────────────────
 
 const (
-	// InitialBaseFee is the base fee at genesis (oenexa per gas).
-	// Transfer fee at genesis = GasTransfer × InitialBaseFee = 21 × 10 = 210 oenexa.
+	// InitialBaseFee is the base fee at genesis (nano-ONXC per gas).
+	// Transfer fee at genesis = GasTransfer × InitialBaseFee = 21 × 10 = 210 nano-ONXC.
 	InitialBaseFee uint64 = 10
 
 	// MinBaseFee is the lowest the base fee can ever fall.
-	// At 1 oenexa/gas a transfer costs 21 oenexa = 0.000000021 OEN.
+	// At 1 nano-ONXC/gas a transfer costs 21 nano-ONXC = 0.000000021 ONXC.
 	MinBaseFee uint64 = 1
 
 	// MaxBaseFeeChangeDenom is the denominator for the ±12.5% cap per block.
@@ -179,10 +179,10 @@ func FeeEstimate(baseFee uint64, tier FeeTier) (maxFeePerGas, priorityTip uint64
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TransferCostOenexa returns the total oenexa cost of a simple transfer
+// TransferCostNanoONXC returns the total nano-ONXC cost of a simple transfer
 // at the given base fee and priority tip per gas.
 // ─────────────────────────────────────────────────────────────────────────────
-func TransferCostOenexa(baseFee, priorityTip uint64) uint64 {
+func TransferCostNanoONXC(baseFee, priorityTip uint64) uint64 {
 	return GasTransfer * (baseFee + priorityTip)
 }
 
@@ -200,7 +200,7 @@ type FeeComparison struct {
 func FeeComparisonTable() []FeeComparison {
 	// ONXC transfer fee at genesis base fee, assuming $1/ONXC:
 	//   21 gas × 10 nano-ONXC/gas = 210 nano-ONXC = 0.00000021 ONXC = $0.00000021
-	onxcFeeUSD := float64(TransferCostOenexa(InitialBaseFee, 0)) / float64(OneONXC)
+	onxcFeeUSD := float64(TransferCostNanoONXC(InitialBaseFee, 0)) / float64(OneONXC)
 
 	return []FeeComparison{
 		{Chain: "Proof-of-Work Distributed Layer-1", TransferUSD: 1.50, TPSLimit: 15},

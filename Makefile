@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# OENEXA (OEN) — Makefile
+# OENEXA (ONXC) — Makefile
 # ─────────────────────────────────────────────────────────────────────────────
 
 MODULE  := github.com/oenexa/oenexa
@@ -104,12 +104,12 @@ docker-push:      ## Push Docker image to registry (set REGISTRY env var)
 
 run-local: build build-cli ## Build and start a local standalone devnet node
 	@echo "▶ Starting local standalone devnet node…"
-	OEN_PASSWORD=devpassword $(BINARY) start \
+	ONXC_PASSWORD=devpassword $(BINARY) start \
 	  --config configs/local-dev.toml
 
 run-node: build   ## Build and start a local node (miner, testnet config)
 	@echo "▶ Starting local testnet node…"
-	OEN_PASSWORD=dev $(BINARY) start \
+	ONXC_PASSWORD=dev $(BINARY) start \
 	  --config configs/testnet.toml \
 	  --miner \
 	  --rpc-listen 127.0.0.1:8545 \
@@ -128,12 +128,12 @@ testnet-logs:     ## Tail logs from the Docker Compose stack
 
 ## ── Wallet helpers ───────────────────────────────────────────────────────────
 
-wallet-new: build ## Create a new wallet (prompts for password via env OEN_PASSWORD)
-	@[ -n "$(OEN_PASSWORD)" ] || (echo "Set OEN_PASSWORD env var first" && exit 1)
-	$(BINARY) wallet new --datadir ~/.oen
+wallet-new: build ## Create a new wallet (prompts for password via env ONXC_PASSWORD)
+	@[ -n "$(ONXC_PASSWORD)" ] || (echo "Set ONXC_PASSWORD env var first" && exit 1)
+	$(BINARY) wallet new --datadir ~/.onxc
 
 wallet-show: build ## Show the address in the default keystore
-	$(BINARY) wallet show --datadir ~/.oen
+	$(BINARY) wallet show --datadir ~/.onxc
 
 ## ── Release ──────────────────────────────────────────────────────────────────
 

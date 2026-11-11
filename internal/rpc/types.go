@@ -120,9 +120,9 @@ type FeeEstimateResult struct {
 	UltraLowTip      uint64 `json:"ultra_low_tip"`
 	StandardTip      uint64 `json:"standard_tip"`
 	FastTip          uint64 `json:"fast_tip"`
-	TransferUltraLow uint64 `json:"transfer_ultra_low_oenexa"`
-	TransferStandard uint64 `json:"transfer_standard_oenexa"`
-	TransferFast     uint64 `json:"transfer_fast_oenexa"`
+	TransferUltraLow uint64 `json:"transfer_ultra_low_nano_onxc"`
+	TransferStandard uint64 `json:"transfer_standard_nano_onxc"`
+	TransferFast     uint64 `json:"transfer_fast_nano_onxc"`
 }
 
 // TxReceipt is the JSON representation of a transaction receipt.

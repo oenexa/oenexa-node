@@ -34,13 +34,6 @@ func TestSovereignValuationPairs_Known(t *testing.T) {
 		{"ONXC-JPY", "jpy"},
 		{"ONXC-CHF", "chf"},
 		{"ONXC-USDC", "usd"},
-		{"OEN", "oenexa"},
-		{"OEN-USD", "usd"},
-		{"OEN-EUR", "eur"},
-		{"OEN-GBP", "gbp"},
-		{"OEN-JPY", "jpy"},
-		{"OEN-CHF", "chf"},
-		{"OEN-USDC", "usd"},
 	}
 	for _, tc := range cases {
 		curr, ok := SovereignValuationPairs[tc.pair]

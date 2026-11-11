@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# OENEXA (OEN) — Scaleway Interactive / Automated Deployment Script
+# OENEXA (ONXC) — Scaleway Interactive / Automated Deployment Script
 # Target: Scaleway Elastic Metal Dedicated Servers & Scaleway Instances
 # OS: Ubuntu 22.04 LTS / 24.04 LTS / Debian 12
 # ==============================================================================
@@ -20,7 +20,7 @@ LOG_FILE="/var/log/oenexa-deploy.log"
 
 echo -e "${CYAN}${BOLD}"
 echo "=========================================================================="
-echo "    🏛️ OENEXA (OEN) — Scaleway Dedicated Cloud Node Deployment Runner      "
+echo "    🏛️ OENEXA (ONXC) — Scaleway Dedicated Cloud Node Deployment Runner     "
 echo "=========================================================================="
 echo -e "${NC}"
 
@@ -88,7 +88,7 @@ echo -e "${BLUE}[5/7] Deploying OENEXA Configuration & Orchestration Files...${N
 if [ ! -f "$ROOT_DIR/.env" ]; then
   AUTO_PASS=$(openssl rand -hex 24)
   cat << EOF > "$ROOT_DIR/.env"
-OEN_PASSWORD=${AUTO_PASS}
+ONXC_PASSWORD=${AUTO_PASS}
 NETWORK_MODE=standalone-miner
 LOG_LEVEL=info
 P2P_PORT=8765
@@ -153,13 +153,13 @@ services:
     container_name: oenexa-node
     restart: unless-stopped
     environment:
-      OEN_PASSWORD: "${OEN_PASSWORD}"
+      ONXC_PASSWORD: "${ONXC_PASSWORD}"
     ports:
       - "${P2P_PORT:-8765}:8765/tcp"
       - "127.0.0.1:${RPC_PORT:-8545}:8545/tcp"
       - "127.0.0.1:${METRICS_PORT:-9090}:9090/tcp"
     volumes:
-      - oen-chain-data:/data
+      - onxc-chain-data:/data
       - ./configs/node.toml:/data/config.toml:ro
     command: >
       start
@@ -192,8 +192,8 @@ services:
       - oenexa-net
 
 volumes:
-  oen-chain-data:
-    name: oen-chain-data
+  onxc-chain-data:
+    name: onxc-chain-data
 
 networks:
   oenexa-net:
@@ -234,10 +234,10 @@ case "$1" in
     echo "✓ Keystore backed up to /opt/oenexa/backups/keystore_$TS.json"
     ;;
   rpc)
-    curl -s -X POST http://127.0.0.1:8545/ -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"${2:-oen_chainInfo}\",\"params\":${3:-null}}" | jq .
+    curl -s -X POST http://127.0.0.1:8545/ -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"${2:-onxc_chainInfo}\",\"params\":${3:-null}}" | jq .
     ;;
   height)
-    curl -s -X POST http://127.0.0.1:8545/ -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"oen_blockHeight","params":null}' | jq -r .result
+    curl -s -X POST http://127.0.0.1:8545/ -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"onxc_blockHeight","params":null}' | jq -r .result
     ;;
   *)
     echo "Usage: oenexa-ctl {status|logs|restart|start|stop|backup-keystore|rpc|height}"

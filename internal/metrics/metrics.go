@@ -1,4 +1,4 @@
-// Package metrics registers and exposes Prometheus metrics for the OEN node.
+// Package metrics registers and exposes Prometheus metrics for the ONXC/OENEXA node.
 package metrics
 
 import (
@@ -53,18 +53,18 @@ var (
 		Help:      "Total transactions included in committed blocks since startup.",
 	})
 
-	// FeeBurned is the cumulative oenexa burned via base-fee since startup.
+	// FeeBurned is the cumulative nano-ONXC burned via base-fee since startup.
 	FeeBurned = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "onxc",
-		Name:      "fee_burned_oenexa_total",
-		Help:      "Cumulative oenexa burned as base fee since startup.",
+		Name:      "fee_burned_nano_onxc_total",
+		Help:      "Cumulative nano-ONXC burned as base fee since startup.",
 	})
 
-	// BaseFee is the current block base fee in oenexa/gas.
+	// BaseFee is the current block base fee in nano-ONXC/gas.
 	BaseFee = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: "onxc",
-		Name:      "base_fee_oenexa",
-		Help:      "Current block base fee in oenexa per gas.",
+		Name:      "base_fee_nano_onxc",
+		Help:      "Current block base fee in nano-ONXC per gas.",
 	})
 
 	// BlockProductionDuration tracks block-building latency.

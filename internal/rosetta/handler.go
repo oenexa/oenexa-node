@@ -56,7 +56,7 @@ import (
 //
 //   1. Value Balance Conservation Invariant (Theorem 1):
 //      Let Ops be the set of operations defining a transfer:
-//        Ops = { Op_1(sender, -A, OEN), Op_2(recipient, +A, OEN) }
+//        Ops = { Op_1(sender, -A, ONXC), Op_2(recipient, +A, ONXC) }
 //      Invariant:
 //        \sum_{op \in Ops} op.Amount.Value == (-A) + (+A) == 0
 //      Proof:
@@ -84,11 +84,10 @@ import (
 // ─────────────────────────────────────────────────────────────────────────────
 
 const (
-	CurrencySymbol       = "ONXC"
-	LegacyCurrencySymbol = "OEN"
-	CurrencyDecimals     = 9
-	RosettaAPIVersion    = "1.4.14"
-	NodeVersion          = "v1.0.0"
+	CurrencySymbol    = "ONXC"
+	CurrencyDecimals  = 9
+	RosettaAPIVersion = "1.4.14"
+	NodeVersion       = "v1.0.0"
 )
 
 // Handler implements the Coinbase Rosetta v1.4.14 Data & Construction API.

@@ -9,7 +9,7 @@
 #   journalctl -u oenexa-node -f
 
 [Unit]
-Description=OENEXA (OEN) Quantum-Shielded Full Node
+Description=OENEXA (ONXC) Quantum-Shielded Full Node
 Documentation=https://github.com/oenexa/oenexa
 After=network-online.target
 Wants=network-online.target

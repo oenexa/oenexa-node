@@ -56,7 +56,7 @@ metadata:
   namespace: oenexa-testnet
 type: Opaque
 stringData:
-  OEN_PASSWORD: "testnet-password"
+  ONXC_PASSWORD: "testnet-password"
 ---
 apiVersion: v1
 kind: Service
@@ -111,11 +111,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: OEN_PASSWORD
+            - name: ONXC_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: oenexa-secrets
-                  key: OEN_PASSWORD
+                  key: ONXC_PASSWORD
           command:
             - "/oenexa-node"
             - "start"

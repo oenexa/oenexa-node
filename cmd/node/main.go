@@ -44,8 +44,8 @@ import (
 var rootCmd = &cobra.Command{
 	Use:     "oenexa-node",
 	Aliases: []string{"oenexa-node"},
-	Short:   "OENEXA (OEN) full node — quantum-resistant, privacy-preserving Layer-1 blockchain",
-	Long: `OENEXA (OEN) — Open Economy, Next Generation Exchange & Assets.
+	Short:   "OENEXA (ONXC) full node — quantum-resistant, privacy-preserving Layer-1 blockchain",
+	Long: `OENEXA (ONXC) — Open Network for the Next Generation Coin.
 A quantum-resistant, privacy-preserving Layer-1 blockchain with native Dual-Pool architecture.
 
 Cryptography: ML-DSA-65 (FIPS 204) | ML-KEM-768 (FIPS 203) | SHA-3-256 (FIPS 202) | AES-256-GCM
@@ -53,7 +53,7 @@ Shielded privacy: Note commitments, nullifiers, selective viewing keys
 Turnstile: Strict supply conservation invariant (Transparent + Shielded == Total)
 Fee model: EIP-1559 ultra-low (burn + tip)
 Block time: 2 seconds
-Hard cap: 100,000,000 OEN`,
+Hard cap: 100,000,000 ONXC`,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,9 +70,9 @@ var (
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&flagConfig, "config", "", "path to a TOML config file")
-	rootCmd.PersistentFlags().StringVar(&flagDataDir, "datadir", "", "override data directory (default: ~/.oen)")
+	rootCmd.PersistentFlags().StringVar(&flagDataDir, "datadir", "", "override data directory (default: ~/.onxc)")
 	rootCmd.PersistentFlags().StringVar(&flagKeystore, "keystore", "", "override keystore file path")
-	rootCmd.PersistentFlags().StringVar(&flagPassword, "password", "", "keystore password (avoid using on CLI; prefer OEN_PASSWORD env var)")
+	rootCmd.PersistentFlags().StringVar(&flagPassword, "password", "", "keystore password (avoid using on CLI; prefer ONXC_PASSWORD env var)")
 	rootCmd.PersistentFlags().StringVar(&flagRPCAddr, "rpc", "http://127.0.0.1:8545", "RPC endpoint for query/tx commands")
 
 	rootCmd.AddCommand(startCmd)
@@ -181,7 +181,7 @@ var walletNewCmd = &cobra.Command{
 
 		password := resolvePassword()
 		if password == "" {
-			return fmt.Errorf("password required (--password or OEN_PASSWORD env var)")
+			return fmt.Errorf("password required (--password or ONXC_PASSWORD env var)")
 		}
 
 		ksPath := resolvePath(cfg.Node.DataDir, cfg.Node.KeystoreFile)
@@ -237,27 +237,27 @@ var (
 
 var walletShieldCmd = &cobra.Command{
 	Use:   "shield",
-	Short: "Deposit transparent OEN into the shielded pool",
+	Short: "Deposit transparent ONXC into the shielded pool",
 	RunE: func(_ *cobra.Command, _ []string) error {
 		if flagShieldAmount == 0 {
-			return fmt.Errorf("--amount must be > 0 (in nano-OEN)")
+			return fmt.Errorf("--amount must be > 0 (in nano-ONXC)")
 		}
-		fmt.Printf("✓ Shield operation initiated: %d nano-OEN to shielded pool\n", flagShieldAmount)
+		fmt.Printf("✓ Shield operation initiated: %d nano-ONXC to shielded pool\n", flagShieldAmount)
 		return nil
 	},
 }
 
 var walletUnshieldCmd = &cobra.Command{
 	Use:   "unshield",
-	Short: "Withdraw shielded OEN into a transparent address",
+	Short: "Withdraw shielded ONXC into a transparent address",
 	RunE: func(_ *cobra.Command, _ []string) error {
 		if flagShieldAmount == 0 {
-			return fmt.Errorf("--amount must be > 0 (in nano-OEN)")
+			return fmt.Errorf("--amount must be > 0 (in nano-ONXC)")
 		}
 		if flagUnshieldTo == "" {
 			return fmt.Errorf("--to address required")
 		}
-		fmt.Printf("✓ Unshield operation initiated: %d nano-OEN to %s\n", flagShieldAmount, flagUnshieldTo)
+		fmt.Printf("✓ Unshield operation initiated: %d nano-ONXC to %s\n", flagShieldAmount, flagUnshieldTo)
 		return nil
 	},
 }
@@ -275,7 +275,7 @@ var walletExportVKCmd = &cobra.Command{
 		}
 		password := resolvePassword()
 		if password == "" {
-			return fmt.Errorf("password required (--password or OEN_PASSWORD env var)")
+			return fmt.Errorf("password required (--password or ONXC_PASSWORD env var)")
 		}
 		ksPath := resolvePath(cfg.Node.DataDir, cfg.Node.KeystoreFile)
 		w, err := keystore.Decrypt(ksPath, password)
@@ -289,10 +289,10 @@ var walletExportVKCmd = &cobra.Command{
 }
 
 func init() {
-	walletShieldCmd.Flags().Uint64Var(&flagShieldAmount, "amount", 0, "amount in nano-OEN")
+	walletShieldCmd.Flags().Uint64Var(&flagShieldAmount, "amount", 0, "amount in nano-ONXC")
 	walletShieldCmd.Flags().StringVar(&flagShieldZAddr, "zaddr", "", "recipient shielded address")
 
-	walletUnshieldCmd.Flags().Uint64Var(&flagShieldAmount, "amount", 0, "amount in nano-OEN")
+	walletUnshieldCmd.Flags().Uint64Var(&flagShieldAmount, "amount", 0, "amount in nano-ONXC")
 	walletUnshieldCmd.Flags().StringVar(&flagUnshieldTo, "to", "", "recipient transparent address (hex)")
 
 	walletCmd.AddCommand(walletNewCmd)
@@ -319,13 +319,13 @@ var (
 
 var txSendCmd = &cobra.Command{
 	Use:   "send",
-	Short: "Sign and broadcast a OEN transfer",
+	Short: "Sign and broadcast an ONXC transfer",
 	RunE: func(_ *cobra.Command, _ []string) error {
 		if flagTxTo == "" {
 			return fmt.Errorf("--to address required")
 		}
 		if flagTxAmount == 0 {
-			return fmt.Errorf("--amount must be > 0 (in oenexa)")
+			return fmt.Errorf("--amount must be > 0 (in nano-ONXC)")
 		}
 
 		cfg, err := loadConfig()
@@ -338,7 +338,7 @@ var txSendCmd = &cobra.Command{
 
 		password := resolvePassword()
 		if password == "" {
-			return fmt.Errorf("password required (--password or OEN_PASSWORD env var)")
+			return fmt.Errorf("password required (--password or ONXC_PASSWORD env var)")
 		}
 
 		ksPath := resolvePath(cfg.Node.DataDir, cfg.Node.KeystoreFile)
@@ -370,7 +370,7 @@ var txSendCmd = &cobra.Command{
 		}
 		rawHex := hex.EncodeToString(raw)
 
-		result, err := rpcCall(flagRPCAddr, "oen_sendRawTransaction", []string{rawHex})
+		result, err := rpcCall(flagRPCAddr, "onxc_sendRawTransaction", []string{rawHex})
 		if err != nil {
 			return fmt.Errorf("broadcast: %w", err)
 		}
@@ -416,9 +416,6 @@ var queryBalanceCmd = &cobra.Command{
 			return err
 		}
 		balNano := extractUint64(result, "balance_nano_onxc")
-		if balNano == 0 {
-			balNano = extractUint64(result, "balance_oenexa")
-		}
 		fmt.Printf("Address : %s\n", addr)
 		fmt.Printf("Balance : %d nano-ONXC  (%g ONXC)\n", balNano, float64(balNano)/float64(core.OneONXC))
 		return nil
@@ -429,7 +426,7 @@ var queryChainCmd = &cobra.Command{
 	Use:   "chain",
 	Short: "Display current chain status",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		result, err := rpcCall(flagRPCAddr, "oen_chainInfo", nil)
+		result, err := rpcCall(flagRPCAddr, "onxc_chainInfo", nil)
 		if err != nil {
 			return err
 		}
@@ -445,7 +442,7 @@ var queryBlockCmd = &cobra.Command{
 		if flagQueryHeight == 0 && !flagQueryHeightSet {
 			return fmt.Errorf("--height required")
 		}
-		result, err := rpcCall(flagRPCAddr, "oen_blockByHeight", []uint64{flagQueryHeight})
+		result, err := rpcCall(flagRPCAddr, "onxc_blockByHeight", []uint64{flagQueryHeight})
 		if err != nil {
 			return err
 		}
@@ -458,7 +455,7 @@ var queryFeeCmd = &cobra.Command{
 	Use:   "fee",
 	Short: "Display current fee estimate for all tiers",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		result, err := rpcCall(flagRPCAddr, "oen_feeEstimate", nil)
+		result, err := rpcCall(flagRPCAddr, "onxc_feeEstimate", nil)
 		if err != nil {
 			return err
 		}
@@ -477,7 +474,7 @@ var queryTurnstileCmd = &cobra.Command{
 	Use:   "turnstile",
 	Short: "Display current turnstile supply conservation status",
 	RunE: func(_ *cobra.Command, _ []string) error {
-		result, err := rpcCall(flagRPCAddr, "oen_getTurnstileStatus", nil)
+		result, err := rpcCall(flagRPCAddr, "onxc_getTurnstileStatus", nil)
 		if err != nil {
 			return err
 		}
@@ -509,7 +506,7 @@ var versionCmd = &cobra.Command{
 	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Printf("oenexa-node %s\n", upgrade.Current())
 		fmt.Println("Chain ID: 1  (OENEXA Mainnet)")
-		fmt.Println("Ticker  : OEN  (Open Economy, Next Generation Exchange & Assets)")
+		fmt.Println("Ticker  : ONXC  (Open Network for the Next Generation Coin)")
 		fmt.Println("Crypto  : ML-DSA-65 (FIPS 204) | ML-KEM-768 (FIPS 203) | SHA-3-256 (FIPS 202)")
 		fmt.Println("Privacy : Dual-Pool Quantum Shielded Engine (Transparent + Shielded)")
 	},
@@ -559,7 +556,7 @@ func resolvePassword() string {
 	if flagPassword != "" {
 		return flagPassword
 	}
-	return os.Getenv("OEN_PASSWORD")
+	return os.Getenv("ONXC_PASSWORD")
 }
 
 func resolvePath(dataDir, rel string) string {
@@ -575,7 +572,7 @@ func resolvePath(dataDir, rel string) string {
 
 func printBanner() {
 	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
-	fmt.Printf("║  OENEXA (OEN) %-49s║\n", upgrade.Current())
+	fmt.Printf("║  OENEXA (ONXC) %-48s║\n", upgrade.Current())
 	fmt.Println("║  ML-DSA-65 / ML-KEM-768 / SHA-3-256 | EIP-1559 Ultra-Low Fees    ║")
 	fmt.Println("╚══════════════════════════════════════════════════════════════════╝")
 }
@@ -638,14 +635,14 @@ func rpcCall(endpoint, method string, params interface{}) (map[string]interface{
 	}
 	var result map[string]interface{}
 	if err := json.Unmarshal(resp.Result, &result); err != nil {
-		// Might be a scalar (e.g. oen_blockHeight returns uint64).
+		// Might be a scalar (e.g. onxc_blockHeight returns uint64).
 		return map[string]interface{}{"value": string(resp.Result)}, nil
 	}
 	return result, nil
 }
 
 func fetchBaseFee(endpoint string) (uint64, error) {
-	result, err := rpcCall(endpoint, "oen_gasPrice", nil)
+	result, err := rpcCall(endpoint, "onxc_gasPrice", nil)
 	if err != nil {
 		return 0, err
 	}

@@ -22,7 +22,7 @@ func main() {
 		url = os.Args[1]
 	}
 
-	payload := []byte(`{"jsonrpc":"2.0","id":1,"method":"oen_blockHeight","params":null}`)
+	payload := []byte(`{"jsonrpc":"2.0","id":1,"method":"onxc_blockHeight","params":null}`)
 
 	client := http.Client{
 		Timeout: 3 * time.Second,

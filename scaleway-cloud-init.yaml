@@ -1,6 +1,6 @@
 #cloud-config
 # ==============================================================================
-# OENEXA (OEN) — Scaleway Cloud-init Setup Script (Cloud-init VERSION 22.1+)
+# OENEXA (ONXC) — Scaleway Cloud-init Setup Script (Cloud-init VERSION 22.1+)
 # Target: Scaleway Elastic Metal (Dedicated Servers) & Scaleway Cloud Instances
 # Operating System: Ubuntu 22.04 LTS / 24.04 LTS / Debian 12 (x86_64 / arm64)
 # ==============================================================================
@@ -82,7 +82,7 @@ write_files:
       # OENEXA CLOUD ENVIRONMENT CONFIGURATION
       # ────────────────────────────────────────────────────────────────────────
       # Keystore encryption password (leave blank to auto-generate a secure 32-char key)
-      OEN_PASSWORD=
+      ONXC_PASSWORD=
 
       # Network Mode: standalone-miner (produces blocks immediately) | testnet | mainnet
       NETWORK_MODE=standalone-miner
@@ -164,7 +164,7 @@ write_files:
           container_name: oenexa-node
           restart: unless-stopped
           environment:
-            OEN_PASSWORD: "${OEN_PASSWORD}"
+            ONXC_PASSWORD: "${ONXC_PASSWORD}"
           ports:
             # P2P mesh port - MUST be publicly open
             - "${P2P_PORT:-8765}:8765/tcp"
@@ -173,7 +173,7 @@ write_files:
             # Prometheus metrics - bound locally
             - "127.0.0.1:${METRICS_PORT:-9090}:9090/tcp"
           volumes:
-            - oen-chain-data:/data
+            - onxc-chain-data:/data
             - ./configs/node.toml:/data/config.toml:ro
           command: >
             start
@@ -208,8 +208,8 @@ write_files:
             - oenexa-net
 
       volumes:
-        oen-chain-data:
-          name: oen-chain-data
+        onxc-chain-data:
+          name: onxc-chain-data
 
       networks:
         oenexa-net:
@@ -222,7 +222,7 @@ write_files:
     permissions: '0644'
     content: |
       [Unit]
-      Description=OENEXA (OEN) Quantum-Shielded Layer-1 Blockchain Stack
+      Description=OENEXA (ONXC) Quantum-Shielded Layer-1 Blockchain Stack
       Documentation=https://github.com/oenexa/oenexa-node
       After=docker.service network-online.target
       Requires=docker.service
@@ -269,8 +269,8 @@ write_files:
           echo -e "${CYAN}=== Node Telemetry (/api/status) ===${NC}"
           curl -s --connect-timeout 2 http://127.0.0.1:8545/api/status | jq . 2>/dev/null || curl -s http://127.0.0.1:8545/api/status || echo -e "${RED}Node RPC unreachable${NC}"
           echo ""
-          echo -e "${CYAN}=== Recent Chain Info (oen_chainInfo) ===${NC}"
-          curl -s -X POST http://127.0.0.1:8545/ -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"oen_chainInfo","params":null}' | jq . 2>/dev/null || true
+          echo -e "${CYAN}=== Recent Chain Info (onxc_chainInfo) ===${NC}"
+          curl -s -X POST http://127.0.0.1:8545/ -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"onxc_chainInfo","params":null}' | jq . 2>/dev/null || true
           ;;
         logs)
           SERVICE="${2:-}"
@@ -296,7 +296,7 @@ write_files:
           mkdir -p "$BACKUP_DIR"
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           TARGET="$BACKUP_DIR/keystore_backup_$TIMESTAMP.json"
-          docker cp oenexa-node:/data/keystore.json "$TARGET" 2>/dev/null || cp /var/lib/docker/volumes/oen-chain-data/_data/keystore.json "$TARGET" 2>/dev/null || true
+          docker cp oenexa-node:/data/keystore.json "$TARGET" 2>/dev/null || cp /var/lib/docker/volumes/onxc-chain-data/_data/keystore.json "$TARGET" 2>/dev/null || true
           if [ -f "$TARGET" ]; then
             chmod 600 "$TARGET"
             echo -e "${GREEN}✓ Keystore backed up to: $TARGET${NC}"
@@ -306,7 +306,7 @@ write_files:
           fi
           ;;
         rpc)
-          METHOD="${2:-oen_chainInfo}"
+          METHOD="${2:-onxc_chainInfo}"
           PARAMS="${3:-null}"
           curl -s -X POST http://127.0.0.1:8545/ \
             -H "Content-Type: application/json" \
@@ -315,7 +315,7 @@ write_files:
         height)
           curl -s -X POST http://127.0.0.1:8545/ \
             -H "Content-Type: application/json" \
-            -d '{"jsonrpc":"2.0","id":1,"method":"oen_blockHeight","params":null}' | jq -r .result
+            -d '{"jsonrpc":"2.0","id":1,"method":"onxc_blockHeight","params":null}' | jq -r .result
           ;;
         *)
           echo "Usage: oenexa-ctl {status|logs [service]|restart|start|stop|backup-keystore|rpc <method> <params>|height}"
@@ -364,11 +364,11 @@ runcmd:
   # Step F: Generate Secure Keystore Password if None Provided
   - |
     ENV_FILE="/opt/oenexa/.env"
-    EXISTING_PASS=$(grep '^OEN_PASSWORD=' "$ENV_FILE" | cut -d '=' -f2-)
+    EXISTING_PASS=$(grep '^ONXC_PASSWORD=' "$ENV_FILE" | cut -d '=' -f2-)
     if [ -z "$EXISTING_PASS" ]; then
       AUTO_PASS=$(openssl rand -hex 24)
-      sed -i "s/^OEN_PASSWORD=.*/OEN_PASSWORD=${AUTO_PASS}/" "$ENV_FILE"
-      echo "[Security] Generated 48-char random OEN_PASSWORD and saved to $ENV_FILE" >> /var/log/oenexa-deploy.log
+      sed -i "s/^ONXC_PASSWORD=.*/ONXC_PASSWORD=${AUTO_PASS}/" "$ENV_FILE"
+      echo "[Security] Generated 48-char random ONXC_PASSWORD and saved to $ENV_FILE" >> /var/log/oenexa-deploy.log
     fi
 
   # Step G: Clone or Prepare Source Repositories
@@ -427,7 +427,7 @@ runcmd:
     # Generate Motd Login Banner
     cat << EOF > /etc/motd
     ========================================================================
-     🏛️ OENEXA (OEN) Quantum-Shielded Layer-1 Blockchain Server
+     🏛️ OENEXA (ONXC) Quantum-Shielded Layer-1 Blockchain Server
      Platform: Scaleway Cloud / Elastic Metal Dedicated Server
     ========================================================================
      • Public Web Explorer : http://${PUBLIC_IP}

@@ -36,10 +36,9 @@ func TestHandleBalance_WithFloatingPointResponse(t *testing.T) {
 			"jsonrpc": "2.0",
 			"id":      1,
 			"result": map[string]interface{}{
-				"balance_oenexa":   1000000000,
-				"balance_nano_oen": 1000000000,
-				"balance":          1000000000,
-				"balance_oen":      1.0, // Floating point number in JSON!
+				"balance_nano_onxc": 1000000000,
+				"balance":           1000000000,
+				"balance_onxc":      1.0, // Floating point number in JSON!
 			},
 		})
 	}))
@@ -88,19 +87,19 @@ func TestHandleTransfer_Flow(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		switch method {
-		case "oen_getTransactionCount":
+		case "onxc_getTransactionCount":
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"jsonrpc": "2.0",
 				"id":      1,
 				"result":  map[string]interface{}{"nonce": 0},
 			})
-		case "oen_gasPrice":
+		case "onxc_gasPrice":
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"jsonrpc": "2.0",
 				"id":      1,
 				"result":  map[string]interface{}{"base_fee": core.InitialBaseFee},
 			})
-		case "oen_sendRawTransaction":
+		case "onxc_sendRawTransaction":
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"jsonrpc": "2.0",
 				"id":      1,
