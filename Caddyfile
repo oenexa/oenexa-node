@@ -1,5 +1,5 @@
 # Caddyfile — OENEXA Layer-1 JSON-RPC, Status, Health & Rosetta Gateway
-{$OENEXA_DOMAIN:chain.oenexa.com} {
+{$OENEXA_DOMAIN:rpc.oenexa.com}, node.oenexa.com, chain.oenexa.com {
     header {
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
