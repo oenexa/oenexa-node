@@ -9,19 +9,19 @@
 
 ## Core Specifications
 
-| Property | Value | Source |
-| :--- | :--- | :--- |
-| **Native Coin** | **ONXC** (`Open Network for the Next Generation Coin`) | [`internal/core/types.go`](internal/core/types.go) |
-| **Atomic Unit** | `1 ONXC = 1,000,000,000 nano-ONXC` (`9` decimals) | [`internal/core/types.go`](internal/core/types.go) |
-| **Hard Supply Cap** | `100,000,000 ONXC` (`10M` Genesis Premine + `<90M` Block Rewards) | [`internal/core/tokenomics.go`](internal/core/tokenomics.go) |
-| **Block Interval** | `2` seconds (Instant BFT Finality) | [`internal/consensus/engine.go`](internal/consensus/engine.go) |
-| **Halving Schedule** | Initial `45 ONXC/block`, halving every `1,000,000` blocks | [`internal/core/tokenomics.go`](internal/core/tokenomics.go) |
-| **Cryptography** | `ML-DSA-65` (FIPS 204), `ML-KEM-768` (FIPS 203), `SHA-3-256` (FIPS 202) | [`internal/crypto/`](internal/crypto/) |
-| **Fee Model** | Dynamic EIP-1559 (`InitialBaseFee = 10`, `MinBaseFee = 1 nano-ONXC/gas`) | [`internal/core/fee.go`](internal/core/fee.go) |
-| **Privacy Engine** | Dual-Pool (Transparent + Shielded) with Turnstile supply invariant | [`internal/shielded/`](internal/shielded/) |
-| **Smart Contracts** | Pure-Go `wazero` WebAssembly runtime (`OenexaVM`) | [`internal/vm/`](internal/vm/) |
-| **State Storage** | `256`-bit Sparse Merkle Trie over LevelDB | [`internal/mpt/`](internal/mpt/), [`internal/storage/`](internal/storage/) |
-| **APIs** | JSON-RPC 2.0 (`onxc_*` & `eth_*`) + Rosetta API v1.4.14 | [`internal/rpc/`](internal/rpc/), [`internal/rosetta/`](internal/rosetta/) |
+| Property             | Value                                                                    | Source                                                                     |
+|:---------------------|:-------------------------------------------------------------------------|:---------------------------------------------------------------------------|
+| **Native Coin**      | **ONXC** (`Open Network for the Next Generation Coin`)                   | [`internal/core/types.go`](internal/core/types.go)                         |
+| **Atomic Unit**      | `1 ONXC = 1,000,000,000 nano-ONXC` (`9` decimals)                        | [`internal/core/types.go`](internal/core/types.go)                         |
+| **Hard Supply Cap**  | `100,000,000 ONXC` (`10M` Genesis Premine + `<90M` Block Rewards)        | [`internal/core/tokenomics.go`](internal/core/tokenomics.go)               |
+| **Block Interval**   | `2` seconds (Instant BFT Finality)                                       | [`internal/consensus/engine.go`](internal/consensus/engine.go)             |
+| **Halving Schedule** | Initial `45 ONXC/block`, halving every `1,000,000` blocks                | [`internal/core/tokenomics.go`](internal/core/tokenomics.go)               |
+| **Cryptography**     | `ML-DSA-65` (FIPS 204), `ML-KEM-768` (FIPS 203), `SHA-3-256` (FIPS 202)  | [`internal/crypto/`](internal/crypto/)                                     |
+| **Fee Model**        | Dynamic EIP-1559 (`InitialBaseFee = 10`, `MinBaseFee = 1 nano-ONXC/gas`) | [`internal/core/fee.go`](internal/core/fee.go)                             |
+| **Privacy Engine**   | Dual-Pool (Transparent + Shielded) with Turnstile supply invariant       | [`internal/shielded/`](internal/shielded/)                                 |
+| **Smart Contracts**  | Pure-Go `wazero` WebAssembly runtime (`OenexaVM`)                        | [`internal/vm/`](internal/vm/)                                             |
+| **State Storage**    | `256`-bit Sparse Merkle Trie over LevelDB                                | [`internal/mpt/`](internal/mpt/), [`internal/storage/`](internal/storage/) |
+| **APIs**             | JSON-RPC 2.0 (`onxc_*` & `eth_*`) + Rosetta API v1.4.14                  | [`internal/rpc/`](internal/rpc/), [`internal/rosetta/`](internal/rosetta/) |
 
 ---
 

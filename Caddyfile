@@ -1,5 +1,20 @@
 # Caddyfile — OENEXA Layer-1 JSON-RPC, Status, Health & Rosetta Gateway
-{$OENEXA_DOMAIN:node.oenexa.io} {
+{$OENEXA_DOMAIN:chain.oenexa.com} {
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+
+    handle /metrics* {
+        respond 403
+    }
+
+    handle /actuator* {
+        respond 403
+    }
+
     handle /healthz {
         reverse_proxy oenexa-node:8545
     }
