@@ -1,46 +1,162 @@
-# Caddyfile — OENEXA Layer-1 JSON-RPC, Status, Health & Rosetta Gateway
-{$OENEXA_DOMAIN:rpc.oenexa.com}, node.oenexa.com, chain.oenexa.com {
+# Caddyfile — OENEXA Unified Ecosystem Edge Router (Phase 4 Canonical Host Routing)
+
+# 1. Main Website & Public Portal
+oenexa.com, www.oenexa.com {
     header {
-        X-Frame-Options "DENY"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "SAMEORIGIN"
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+
+    handle /actuator/* {
+        respond 403
     }
 
     handle /metrics* {
         respond 403
     }
 
-    handle /actuator* {
-        respond 403
-    }
-
-    handle /healthz {
+    # Dual-mode subpath routing (fallback for non-subdomain traffic)
+    handle_path /rpc* {
         reverse_proxy oenexa-node:8545
     }
 
     handle /api/* {
-        reverse_proxy oenexa-node:8545
+        reverse_proxy oenexa-ai-core:8080
     }
 
-    handle /network/* {
-        reverse_proxy oenexa-node:8545
+    handle /ai* {
+        reverse_proxy oenexa-ai-web:80
     }
 
-    handle /account/* {
-        reverse_proxy oenexa-node:8545
+    handle /explorer* {
+        reverse_proxy oenexa-explorer:80
     }
 
-    handle /block* {
-        reverse_proxy oenexa-node:8545
+    handle {
+        reverse_proxy oenexa-ui:80
+    }
+}
+
+# 2. Unified Customer Application Portal
+app.oenexa.com {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
     }
 
-    handle /mempool* {
-        reverse_proxy oenexa-node:8545
+    handle /actuator/* {
+        respond 403
     }
 
-    handle /construction/* {
-        reverse_proxy oenexa-node:8545
+    handle /metrics* {
+        respond 403
+    }
+
+    handle /api/* {
+        reverse_proxy oenexa-ai-core:8080
+    }
+
+    handle {
+        reverse_proxy oenexa-ui:80
+    }
+}
+
+# 3. Central Identity & SSO Authority
+id.oenexa.com {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    handle /actuator/* {
+        respond 403
+    }
+
+    handle /metrics* {
+        respond 403
+    }
+
+    handle /.well-known/* {
+        reverse_proxy oenexa-ai-core:8080
+    }
+
+    handle /api/v1/auth/* {
+        reverse_proxy oenexa-ai-core:8080
+    }
+
+    handle {
+        reverse_proxy oenexa-ui:80
+    }
+}
+
+# 4. Public API Gateway
+api.oenexa.com {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    handle /actuator/* {
+        respond 403
+    }
+
+    handle /metrics* {
+        respond 403
+    }
+
+    handle {
+        reverse_proxy oenexa-ai-core:8080
+    }
+}
+
+# 5. AI Code & Autonomous Agent Studio
+ai.oenexa.com {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    handle /actuator/* {
+        respond 403
+    }
+
+    handle /metrics* {
+        respond 403
+    }
+
+    handle /api/* {
+        reverse_proxy oenexa-ai-core:8080
+    }
+
+    handle {
+        reverse_proxy oenexa-ai-web:80
+    }
+}
+
+# 6. Blockchain Explorer
+explorer.oenexa.com {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    handle /actuator/* {
+        respond 403
+    }
+
+    handle /metrics* {
+        respond 403
     }
 
     handle_path /rpc* {
@@ -48,6 +164,98 @@
     }
 
     handle {
+        reverse_proxy oenexa-explorer:80
+    }
+}
+
+# 7. Layer-1 Blockchain Node JSON-RPC Gateway
+rpc.oenexa.com, node.oenexa.com, chain.oenexa.com {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    handle /actuator/* {
+        respond 403
+    }
+
+    handle /metrics* {
+        respond 403
+    }
+
+    handle {
         reverse_proxy oenexa-node:8545
     }
+}
+
+# 8. Admin & Governance Operations Portal
+admin.oenexa.com {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    handle /actuator/* {
+        respond 403
+    }
+
+    handle /metrics* {
+        respond 403
+    }
+
+    handle /api/* {
+        reverse_proxy oenexa-ai-core:8080
+    }
+
+    handle {
+        reverse_proxy oenexa-ui:80
+    }
+}
+
+# 9. Technical & Developer Documentation Portal
+docs.oenexa.com {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    handle /actuator/* {
+        respond 403
+    }
+
+    handle {
+        reverse_proxy oenexa-ui:80
+    }
+}
+
+# 10. Canonical 301 Vanity Redirects (preserving SPA origin & SEO)
+exchange.oenexa.com {
+    redir https://app.oenexa.com/exchange{uri} permanent
+}
+
+trade.oenexa.com {
+    redir https://app.oenexa.com/trade{uri} permanent
+}
+
+wallet.oenexa.com {
+    redir https://app.oenexa.com/wallet{uri} permanent
+}
+
+coin.oenexa.com {
+    redir https://oenexa.com/coins{uri} permanent
+}
+
+identity.oenexa.com {
+    redir https://id.oenexa.com{uri} permanent
+}
+
+# 11. Plaintext bare IP Redirect
+http://62.210.92.60 {
+    redir https://oenexa.com{uri} permanent
 }
