@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "domain": "com.oenexa.node",
+  "version": "1.0.0",
+  "events": [
+    {
+      "type": "com.oenexa.node.block.committed.v1",
+      "description": "Emitted when a new block reaches BFT consensus and commits to the state tree",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "height": { "type": "integer" },
+              "hash": { "type": "string" },
+              "txCount": { "type": "integer" },
+              "baseFee": { "type": "integer" },
+              "supply": { "type": "string" },
+              "validatorAddr": { "type": "string" }
+            },
+            "required": ["height", "hash", "txCount"]
+          }
+        }
+      }
+    },
+    {
+      "type": "com.oenexa.node.mempool.tx_admitted.v1",
+      "description": "Emitted when a validated transaction enters the local node mempool",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "txHash": { "type": "string" },
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "amount": { "type": "string" }
+            },
+            "required": ["txHash", "from", "to"]
+          }
+        }
+      }
+    }
+  ]
+}

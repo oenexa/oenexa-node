@@ -1,0 +1,112 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OENEXA Sovereign Layer 1 Node JSON-RPC 2.0 API",
+    "version": "1.0.0",
+    "description": "JSON-RPC 2.0 endpoint for the OENEXA Layer 1 Post-Quantum Blockchain Node at rpc.oenexa.com"
+  },
+  "servers": [
+    {
+      "url": "https://rpc.oenexa.com",
+      "description": "Production L1 Node JSON-RPC Gateway"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "summary": "Execute JSON-RPC 2.0 Method",
+        "operationId": "jsonRpcHandler",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonRpcRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON-RPC 2.0 Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonRpcResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "summary": "Node Liveness Healthcheck",
+        "operationId": "healthcheck",
+        "responses": {
+          "200": {
+            "description": "Node healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "block_height": { "type": "integer", "example": 572855 },
+                    "version": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "JsonRpcRequest": {
+        "type": "object",
+        "properties": {
+          "jsonrpc": { "type": "string", "enum": ["2.0"] },
+          "method": {
+            "type": "string",
+            "enum": [
+              "eth_blockNumber",
+              "eth_getBalance",
+              "onxc_chainInfo",
+              "onxc_blockHeight",
+              "onxc_blockByHeight",
+              "onxc_getBalance",
+              "onxc_getShieldedBalance",
+              "onxc_sendRawTransaction",
+              "onxc_feeEstimate"
+            ]
+          },
+          "params": { "type": "array", "items": {} },
+          "id": { "oneOf": [{ "type": "string" }, { "type": "integer" }] }
+        },
+        "required": ["jsonrpc", "method", "params", "id"]
+      },
+      "JsonRpcResponse": {
+        "type": "object",
+        "properties": {
+          "jsonrpc": { "type": "string", "enum": ["2.0"] },
+          "result": {},
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "integer" },
+              "message": { "type": "string" },
+              "data": {}
+            },
+            "required": ["code", "message"]
+          },
+          "id": { "oneOf": [{ "type": "string" }, { "type": "integer" }] }
+        },
+        "required": ["jsonrpc", "id"]
+      }
+    }
+  }
+}
