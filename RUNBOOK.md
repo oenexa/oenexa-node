@@ -26,10 +26,10 @@ docker inspect --format='{{json .State.Health}}' oenexa-node | jq .
 
 ### 2. Live JSON-RPC Node Diagnostics
 ```bash
-# Query Current Block Number
+# Query Current Block Height
 curl -s -X POST http://127.0.0.1:8545 \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"onxc_blockNumber","params":[],"id":1}' | jq .
+  -d '{"jsonrpc":"2.0","method":"onxc_blockHeight","params":[],"id":1}' | jq .
 
 # Query Node Network & Peer Count
 curl -s -X POST http://127.0.0.1:8545 \
