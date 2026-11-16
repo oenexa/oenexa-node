@@ -1,0 +1,96 @@
+name: OENEXA Node CI/CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  quality-and-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.24'
+          cache-dependency-path: go.sum
+
+      - name: Go Vet
+        run: go vet ./...
+
+      - name: Run Go Tests
+        run: go test -v ./...
+
+  build-and-push:
+    needs: quality-and-tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push OENEXA Node Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY || secrets.VPS_SSH_KEY }}
+        if: env.SSH_KEY != ''
+        with:
+          host: ${{ secrets.SERVER_HOST || '62.210.92.60' }}
+          username: ${{ secrets.SERVER_USER || 'ubuntu' }}
+          key: ${{ secrets.SERVER_SSH_KEY || secrets.VPS_SSH_KEY }}
+          port: 22
+          timeout: 60s
+          command_timeout: 10m
+          script: |
+            set -e
+            echo "Deploying OENEXA Node on VPS (62.210.92.60)..."
+            if [ -d "/opt/oenexa/src/oenexa-node" ]; then
+              cd /opt/oenexa/src/oenexa-node
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+            cd /opt/oenexa
+            docker compose -f docker-compose.prod.yml build oenexa-node
+            docker compose -f docker-compose.prod.yml up -d --no-deps oenexa-node
+            docker compose -f docker-compose.prod.yml ps oenexa-node
+
+      - name: Report missing SSH secret
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY || secrets.VPS_SSH_KEY }}
+        if: env.SSH_KEY == ''
+        run: echo "::warning::SERVER_SSH_KEY / VPS_SSH_KEY secret is not configured in this repository. Skipping automatic SSH deployment to VPS."
