@@ -100,4 +100,4 @@ volumes:
 networks:
   oenexa-net:
     name: oenexa-net
-    driver: bridge
+    external: true

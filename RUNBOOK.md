@@ -1,28 +1,65 @@
 ﻿# Operations Runbook: oenexa-node
 
+## Service Overview
+- **Service Name:** `oenexa-node`
+- **Role:** Layer-1 Post-Quantum Sovereign Blockchain Node (ONXC)
+- **Consensus:** NIST ML-DSA-65 / ML-KEM-768 / SHA-3-256 + PoS BFT Engine
+- **JSON-RPC Port:** `8545` (Internal / Proxied via Caddy TLS at `/rpc`)
+- **P2P Gossip Port:** `8765` (Public TCP)
+- **Prometheus Metrics Port:** `9090` (Internal `/metrics`)
+
 ## Incident Escalation Matrix
-- **Level 1:** SRE On-Call (PagerDuty)
-- **Level 2:** oenexa-node Domain Lead
+- **Level 1:** SRE / On-Call Node Operator
+- **Level 2:** Core Protocol Engineers (`@oenexa/blockchain-core`)
 - **Level 3:** Enterprise Architecture & Security Board
 
 ## Quick Diagnostic Commands
-\\\ash
-# Check pod status
-kubectl get pods -n oenexa-production -l app=oenexa-node
 
-# Stream recent logs
-kubectl logs -n oenexa-production -l app=oenexa-node --tail=100 -f
+### 1. Check Container & Process Health
+```bash
+# Check Docker container status and health state
+docker ps --filter name=oenexa-node
 
-# Check recent Prometheus alerts
-curl -s http://prometheus.oenexa.internal/api/v1/alerts
-\\\
-"@
+# Inspect health check details directly
+docker inspect --format='{{json .State.Health}}' oenexa-node | jq .
+```
 
-Write-IfMissing "API.md" @"
-# API Specification: oenexa-node
+### 2. Live JSON-RPC Node Diagnostics
+```bash
+# Query Current Block Number
+curl -s -X POST http://127.0.0.1:8545 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"onxc_blockNumber","params":[],"id":1}' | jq .
 
-> **Synchronous Protocol:** REST (OpenAPI 3.1) / gRPC (HTTP/2)  
-> **Base Path:** \/v1\  
-> **Auth:** Bearer JWT issued by \id.oenexa.com\ (RFC 9068)  
+# Query Node Network & Peer Count
+curl -s -X POST http://127.0.0.1:8545 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"net_peerCount","params":[],"id":1}' | jq .
 
-Detailed OpenAPI specifications are maintained in [\/api/v1/openapi.json\](file:///C:/workspace/oenexarepo/oenexa-node/api/v1/openapi.json).
+# Query Node Synchronization Status
+curl -s -X POST http://127.0.0.1:8545 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"onxc_syncing","params":[],"id":1}' | jq .
+```
+
+### 3. Log Stream & Prometheus Metrics
+```bash
+# Follow live consensus and block production logs
+docker logs -f --tail=100 oenexa-node
+
+# Probe Prometheus metrics endpoint
+curl -s http://127.0.0.1:9090/metrics | grep -E "oenexa_|consensus_|block_height"
+```
+
+## Emergency Procedures
+
+### Node Stalled or Block Sync Lagging
+1. Verify network connectivity on P2P port 8765:
+   ```bash
+   nc -zv 127.0.0.1 8765
+   ```
+2. Restart the node container cleanly without impacting other services:
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --no-deps oenexa-node
+   ```
+3. Verify resumption of block height progression within 30 seconds.
