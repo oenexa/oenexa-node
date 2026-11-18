@@ -173,6 +173,40 @@ func TestMempool_Full(t *testing.T) {
 	}
 }
 
+func TestMempool_DynamicFeeEviction(t *testing.T) {
+	mp := New(2)
+	txLow := signedTx(t, walletA, walletB.Address, 0, core.MinGasPrice)
+	txMid := signedTx(t, walletA, walletB.Address, 1, core.MinGasPrice*2)
+	txHigh := signedTx(t, walletB, walletA.Address, 0, core.MinGasPrice*10)
+
+	if err := mp.Add(txLow); err != nil {
+		t.Fatalf("failed to add txLow: %v", err)
+	}
+	if err := mp.Add(txMid); err != nil {
+		t.Fatalf("failed to add txMid: %v", err)
+	}
+	if mp.Size() != 2 {
+		t.Fatalf("expected size 2, got %d", mp.Size())
+	}
+
+	// High-fee tx should evict txLow
+	if err := mp.Add(txHigh); err != nil {
+		t.Fatalf("expected high-fee tx to evict lowest tx and succeed, got: %v", err)
+	}
+	if mp.Size() != 2 {
+		t.Fatalf("expected size 2 after eviction, got %d", mp.Size())
+	}
+	if _, ok := mp.Get(txLow.Hash); ok {
+		t.Fatal("txLow should have been evicted")
+	}
+	if _, ok := mp.Get(txHigh.Hash); !ok {
+		t.Fatal("txHigh should be present in mempool")
+	}
+	if _, ok := mp.Get(txMid.Hash); !ok {
+		t.Fatal("txMid should remain in mempool")
+	}
+}
+
 func TestMempool_Size_AfterOperations(t *testing.T) {
 	mp := New(0)
 	if mp.Size() != 0 {

@@ -78,6 +78,8 @@ func (a *API) Dispatch(req *Request) *Response {
 	// ── Chain ──────────────────────────────────────────────────────────────
 	case "onxc_chainInfo":
 		return a.chainInfo(req)
+	case "onxc_getQuantumSecurityReport", "onxc_getConsensusStatus":
+		return a.getQuantumSecurityReport(req)
 
 	// ── Blocks ─────────────────────────────────────────────────────────────
 	case "onxc_recentBlocks", "onxc_getLatestBlocks":

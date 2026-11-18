@@ -310,3 +310,27 @@ func TestRPC_DelegationEndpoints(t *testing.T) {
 	_ = delsResp
 }
 
+func TestRPC_QuantumSecurityReport(t *testing.T) {
+	ts, _ := buildTestHandler(t)
+	res := rpcCall(t, ts, "onxc_getQuantumSecurityReport", []interface{}{})
+
+	if res["quantum_security_level"] == nil || !strings.Contains(res["quantum_security_level"].(string), "NIST-Level-5") {
+		t.Fatalf("expected NIST-Level-5 quantum security level, got %v", res["quantum_security_level"])
+	}
+	if res["validator_consensus_state"] != "HEALTHY_BFT_POS" {
+		t.Fatalf("expected HEALTHY_BFT_POS consensus state, got %v", res["validator_consensus_state"])
+	}
+	if res["anti_mev_protection"] != true {
+		t.Fatalf("expected anti_mev_protection to be true, got %v", res["anti_mev_protection"])
+	}
+	if res["dynamic_fee_eviction"] != true {
+		t.Fatalf("expected dynamic_fee_eviction to be true, got %v", res["dynamic_fee_eviction"])
+	}
+
+	// Also verify alias onxc_getConsensusStatus
+	aliasRes := rpcCall(t, ts, "onxc_getConsensusStatus", []interface{}{})
+	if aliasRes["quantum_security_level"] == nil {
+		t.Fatalf("expected valid response from onxc_getConsensusStatus alias, got nil")
+	}
+}
+

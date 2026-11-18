@@ -138,3 +138,20 @@ type TxReceipt struct {
 	Status            string `json:"status"`
 }
 
+// QuantumSecurityReport carries post-quantum cryptography, consensus telemetry, and anti-MEV security status.
+type QuantumSecurityReport struct {
+	Network                 string   `json:"network"`
+	ChainID                 uint32   `json:"chain_id"`
+	Height                  uint64   `json:"height"`
+	QuantumSecurityLevel    string   `json:"quantum_security_level"`
+	SupportedAlgorithms     []string `json:"supported_algorithms"`
+	ValidatorConsensusState string   `json:"validator_consensus_state"`
+	ActiveValidators        int      `json:"active_validators"`
+	ValidatorAddress        string   `json:"validator_address"`
+	MempoolSize             int      `json:"mempool_size"`
+	MempoolCapacity         int      `json:"mempool_capacity"`
+	AntiMevProtection       bool     `json:"anti_mev_protection"`
+	DynamicFeeEviction      bool     `json:"dynamic_fee_eviction"`
+	ShieldedPoolActive      bool     `json:"shielded_pool_active"`
+}
+

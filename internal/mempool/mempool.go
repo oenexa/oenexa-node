@@ -125,7 +125,20 @@ func (mp *Mempool) Add(tx *core.Transaction) error {
 		return errors.New("duplicate transaction")
 	}
 	if len(mp.txs) >= mp.maxSize {
-		return errors.New("mempool full")
+		// Dynamic knapsack fee density eviction: find the lowest-bidding transaction
+		var minTx *core.Transaction
+		for _, cand := range mp.heap {
+			if minTx == nil || cand.GasPrice < minTx.GasPrice || (cand.GasPrice == minTx.GasPrice && cand.Timestamp > minTx.Timestamp) {
+				minTx = cand
+			}
+		}
+		if minTx != nil && (tx.GasPrice > minTx.GasPrice || (tx.GasPrice == minTx.GasPrice && tx.Timestamp < minTx.Timestamp)) {
+			// Evict the lowest-fee transaction to admit the higher-priority transaction
+			mp.remove(minTx.Hash)
+			mp.rebuildHeap()
+		} else {
+			return errors.New("mempool full")
+		}
 	}
 
 	senderKey := tx.From
